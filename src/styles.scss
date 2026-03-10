@@ -1,0 +1,101 @@
+/* RESET / BASE */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  font-family: Arial, Helvetica, sans-serif;
+  background: var(--page-bg);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* DEFAULT THEME = black + gold */
+body.theme-dark {
+  --page-bg: #000000;
+  --section-bg: #0f0f0f;
+  --card-bg: #151515;
+  --header-bg: #000000;
+  --text-color: #d4af37;
+  --muted-text: #c7b26a;
+  --accent-color: #d4af37;
+  --border-color: rgba(212, 175, 55, 0.25);
+
+  --button-bg: #d4af37;
+  --button-text: #000000;
+  --button-border: #d4af37;
+
+  --input-bg: #111111;
+  --input-text: #f5e7a1;
+  --input-border: rgba(212, 175, 55, 0.35);
+}
+
+/* BOOKING THEME = white + gold */
+body.theme-light {
+  --page-bg: #ffffff;
+  --section-bg: #fffdf7;
+  --card-bg: #ffffff;
+  --header-bg: #ffffff;
+  --text-color: #d4af37;
+  --muted-text: #8d7627;
+  --accent-color: #d4af37;
+  --border-color: rgba(212, 175, 55, 0.3);
+
+  --button-bg: #d4af37;
+  --button-text: #ffffff;
+  --button-border: #d4af37;
+
+  --input-bg: #ffffff;
+  --input-text: #3b2f08;
+  --input-border: rgba(212, 175, 55, 0.4);
+}
+
+/* GLOBAL ELEMENTS */
+section {
+  background: var(--section-bg);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.card,
+.box,
+.service-card,
+.booking-card {
+  background: var(--card-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+h1, h2, h3, h4, h5, h6,
+p,
+span,
+label,
+li {
+  color: inherit;
+}
+
+input,
+textarea,
+select {
+  background: var(--input-bg);
+  color: var(--input-text);
+  border: 1px solid var(--input-border);
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+button {
+  font: inherit;
+}
+
+/* shared button class if you use it elsewhere */
+.btn-primary,
+.btn-gold {
+  background: var(--button-bg);
+  color: var(--button-text);
+  border: 1px solid var(--button-border);
+}
