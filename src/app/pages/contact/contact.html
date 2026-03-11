@@ -1,1 +1,74 @@
-<p>contact works!</p>
+<section class="contact-page">
+  <div class="container">
+    <div class="contact-header">
+      <h1>Contact Us</h1>
+      <p>Need cleaning services? Send us a message and our team will contact you shortly.</p>
+    </div>
+
+    <div class="contact-grid">
+      <!-- FORM -->
+      <div class="contact-form">
+        <form [formGroup]="contactForm" (ngSubmit)="submit()">
+          <div class="form-group">
+            <label>Name</label>
+            <input type="text" formControlName="name" />
+          </div>
+
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="text" formControlName="phone" />
+          </div>
+
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" formControlName="email" />
+          </div>
+
+          <div class="form-group">
+            <label>Service</label>
+
+            <select formControlName="service">
+              <option value="">Select Service</option>
+              <option>House Cleaning</option>
+              <option>Deep Cleaning</option>
+              <option>Office Cleaning</option>
+              <option>Move In / Out Cleaning</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Message</label>
+            <textarea rows="4" formControlName="message"></textarea>
+          </div>
+
+          <button type="submit">Send Message</button>
+        </form>
+      </div>
+
+      <!-- CONTACT INFO -->
+      <div class="contact-info">
+        <h3>Contact Information</h3>
+
+        <div class="info-item">
+          <strong>Phone</strong>
+          <p>+962 7 9000 0000</p>
+        </div>
+
+        <div class="info-item">
+          <strong>Email</strong>
+          <p>info@cleanhome.com</p>
+        </div>
+
+        <div class="info-item">
+          <strong>Location</strong>
+          <p>Amman, Jordan</p>
+        </div>
+
+        <div class="info-item">
+          <strong>Working Hours</strong>
+          <p>Sat - Thu: 8:00 AM - 6:00 PM</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

@@ -11,7 +11,9 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   background: var(--page-bg);
   color: var(--text-color);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 /* DEFAULT THEME = black + gold */
@@ -58,7 +60,9 @@ body.theme-light {
 section {
   background: var(--section-bg);
   color: var(--text-color);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 .card,
@@ -68,10 +72,18 @@ section {
   background: var(--card-bg);
   color: var(--text-color);
   border: 1px solid var(--border-color);
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease;
 }
 
-h1, h2, h3, h4, h5, h6,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
 p,
 span,
 label,
@@ -85,7 +97,10 @@ select {
   background: var(--input-bg);
   color: var(--input-text);
   border: 1px solid var(--input-border);
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease;
 }
 
 button {
@@ -98,4 +113,27 @@ button {
   background: var(--button-bg);
   color: var(--button-text);
   border: 1px solid var(--button-border);
+}
+
+:root {
+  --bg-soft: #f6f7fb;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --text: #111827;
+  --text-muted: #6b7280;
+  --border: #e5e7eb;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+.dark-theme {
+  --bg-soft: #0f172a;
+  --surface: #1e293b;
+  --surface-2: #334155;
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --border: #475569;
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
 }

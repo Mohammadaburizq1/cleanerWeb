@@ -1,1 +1,22 @@
-<p>services works!</p>
+<section class="services-page">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">Our Services</span>
+      <h2>Cleaning Solutions Built Around Your Needs</h2>
+      <p>
+        From regular house cleaning to commercial services, we offer reliable cleaning options for
+        every type of space.
+      </p>
+    </div>
+
+    <div class="services-grid">
+      @for (service of services; track service.title) {
+        <div class="service-card">
+          <h3>{{ service.title }}</h3>
+          <p>{{ service.description }}</p>
+          <a href="/contact">Book Now</a>
+        </div>
+      }
+    </div>
+  </div>
+</section>
