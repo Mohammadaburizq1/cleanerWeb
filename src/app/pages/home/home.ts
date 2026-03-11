@@ -1,73 +1,18 @@
 import { Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
-
-
-type ServiceItem = {
-  icon: string;
-  title: string;
-  description: string;
-};
-
-type TestimonialItem = {
-  quote: string;
-  name: string;
-};
+import { Hero } from './components/hero/hero';
+import { Services } from './components/services/services';
+import { WhyUs } from './components/why-us/why-us';
+import { HowItWorks } from './components/how-it-works/how-it-works';
+import { Testimonials } from './components/testimonials/testimonials';
+import { Cta } from './components/cta/cta';
+import { TrustBadges } from './components/trust-badges/trust-badges';
+import { BookingForm } from './components/booking-form/booking-form';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink],
+  imports: [Services, WhyUs, HowItWorks, Testimonials, Hero, Cta, TrustBadges, BookingForm],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
-export class Home {
-  services: ServiceItem[] = [
-    {
-      icon: '🏠',
-      title: 'Residential Cleaning',
-      description:
-        'Regular home cleaning that keeps your space fresh, organized, and consistently spotless.',
-    },
-    {
-      icon: '✨',
-      title: 'Deep Cleaning',
-      description:
-        'A detailed top-to-bottom cleaning service for kitchens, bathrooms, floors, and neglected areas.',
-    },
-    {
-      icon: '🚚',
-      title: 'Move In / Move Out',
-      description:
-        'Complete cleaning for relocations, property handovers, and new beginnings.',
-    },
-    {
-      icon: '🧹',
-      title: 'Office Cleaning',
-      description:
-        'Professional cleaning for workspaces that need a polished and reliable appearance.',
-    },
-  ];
-
-  testimonials: TestimonialItem[] = [
-    {
-      quote: 'Amazing service. My house looked perfect and the team was very professional.',
-      name: 'Sarah M.',
-    },
-    {
-      quote: 'Reliable, clean, and on time. Exactly what I want from a premium service.',
-      name: 'David K.',
-    },
-    {
-      quote: 'The deep cleaning was excellent. I would absolutely book again.',
-      name: 'Emily R.',
-    },
-  ];
-
-  trackByTitle(index: number, item: ServiceItem): string {
-    return item.title;
-  }
-
-  trackByName(index: number, item: TestimonialItem): string {
-    return item.name;
-  }
-}
+export class Home {}

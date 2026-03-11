@@ -1,0 +1,16 @@
+<section class="testimonials">
+  <div class="container">
+    <div class="section-header">
+      <h2>What Our Customers Say</h2>
+    </div>
+
+    <div class="testimonial-grid">
+      @for (testimonial of testimonials; track trackByName($index, testimonial)) {
+        <div class="testimonial">
+          <p>"{{ testimonial.quote }}"</p>
+          <h4>{{ testimonial.name }}</h4>
+        </div>
+      }
+    </div>
+  </div>
+</section>

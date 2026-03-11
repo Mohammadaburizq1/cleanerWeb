@@ -1,0 +1,12 @@
+<section class="trust-badges">
+  <div class="container">
+    <div class="badges-grid">
+      @for (item of items; track trackByTitle($index, item)) {
+        <div class="badge-card">
+          <h3>{{ item.title }}</h3>
+          <p>{{ item.text }}</p>
+        </div>
+      }
+    </div>
+  </div>
+</section>

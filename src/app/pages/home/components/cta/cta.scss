@@ -1,0 +1,69 @@
+:host {
+  display: block;
+}
+
+.cta {
+  padding: 88px 0;
+  background: var(--page-bg);
+  color: var(--text-color);
+}
+
+.container {
+  width: min(1200px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+.cta-box {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 26px;
+  padding: 52px 28px;
+  text-align: center;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.3);
+}
+
+.cta-box h2 {
+  margin: 0 0 12px;
+  color: var(--accent-color);
+  font-size: 42px;
+}
+
+.cta-box p {
+  margin: 0 0 24px;
+  color: var(--muted-text);
+  font-size: 16px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 22px;
+  border-radius: 10px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: 0.25s ease;
+  cursor: pointer;
+}
+
+.btn-gold {
+  background: var(--accent-color);
+  color: var(--button-text);
+  border: 1px solid var(--accent-color);
+}
+
+.btn-gold:hover {
+  background: #e0bf57;
+  border-color: #e0bf57;
+}
+
+@media (max-width: 768px) {
+  .cta {
+    padding: 68px 0;
+  }
+
+  .cta-box h2 {
+    font-size: 32px;
+  }
+}

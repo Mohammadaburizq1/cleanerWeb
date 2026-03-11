@@ -1,0 +1,18 @@
+<section class="how-it-works">
+  <div class="container">
+    <div class="section-header">
+      <h2>How It Works</h2>
+      <p>Booking your cleaning service is simple, fast, and designed around your routine.</p>
+    </div>
+
+    <div class="steps-grid">
+      @for (step of steps; track trackByStep($index, step)) {
+        <div class="step-card">
+          <div class="step-number">{{ step.number }}</div>
+          <h3>{{ step.title }}</h3>
+          <p>{{ step.description }}</p>
+        </div>
+      }
+    </div>
+  </div>
+</section>
