@@ -1,9 +1,15 @@
 .navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
   width: 100%;
   background: var(--header-bg);
   color: var(--text-color);
   border-bottom: 1px solid var(--border-color);
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease;
 }
 
 .container {

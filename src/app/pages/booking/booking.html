@@ -1,1 +1,183 @@
-<p>booking works!</p>
+<section class="booking-page">
+  <div class="container">
+    <div class="booking-hero">
+      <span class="section-tag">BOOKING PAGE</span>
+      <h1>Book Your Cleaning Service</h1>
+      <p>
+        Fill out the form below and we will contact you to confirm your appointment and final
+        details.
+      </p>
+    </div>
+
+    <div class="booking-layout">
+      <aside class="booking-info">
+        <div class="info-card">
+          <h2>Why Book With Us</h2>
+          <ul>
+            <li>✔ Fast response and confirmation</li>
+            <li>✔ Flexible scheduling</li>
+            <li>✔ Residential and commercial cleaning</li>
+            <li>✔ Trusted, professional cleaners</li>
+            <li>✔ Satisfaction-focused service</li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <h2>Need Help?</h2>
+          <p>
+            If you are not sure which service fits your needs, contact us and we will guide you.
+          </p>
+          <div class="contact-lines">
+            <a href="tel:+962790000000">+962 7 9000 0000</a>
+            <a href="mailto:info@cleanhome.com">info@cleanhome.com</a>
+          </div>
+        </div>
+      </aside>
+
+      <div class="booking-card">
+        <form [formGroup]="bookingForm" (ngSubmit)="submit()">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="fullName">Full Name</label>
+              <input
+                id="fullName"
+                type="text"
+                formControlName="fullName"
+                placeholder="Enter your full name"
+              />
+              @if (submitted && f.fullName.errors) {
+                <small class="error">Full name is required.</small>
+              }
+            </div>
+
+            <div class="form-group">
+              <label for="phone">Phone Number</label>
+              <input
+                id="phone"
+                type="text"
+                formControlName="phone"
+                placeholder="Enter your phone number"
+              />
+              @if (submitted && f.phone.errors) {
+                <small class="error">Phone number is required.</small>
+              }
+            </div>
+
+            <div class="form-group">
+              <label for="email">Email Address</label>
+              <input
+                id="email"
+                type="email"
+                formControlName="email"
+                placeholder="Enter your email"
+              />
+              @if (submitted && f.email.errors) {
+                <small class="error">Email format is invalid.</small>
+              }
+            </div>
+
+            <div class="form-group">
+              <label for="serviceType">Service Type</label>
+              <select id="serviceType" formControlName="serviceType">
+                <option value="">Select service</option>
+                @for (service of serviceOptions; track service.value) {
+                  <option [value]="service.value">{{ service.label }}</option>
+                }
+              </select>
+              @if (submitted && f.serviceType.errors) {
+                <small class="error">Service type is required.</small>
+              }
+            </div>
+
+            <div class="form-group">
+              <label for="propertyType">Property Type</label>
+              <select id="propertyType" formControlName="propertyType">
+                <option value="">Select property type</option>
+                <option value="apartment">Apartment</option>
+                <option value="villa">Villa</option>
+                <option value="office">Office</option>
+                <option value="shop">Shop</option>
+              </select>
+              @if (submitted && f.propertyType.errors) {
+                <small class="error">Property type is required.</small>
+              }
+            </div>
+
+            <div class="form-group">
+              <label for="preferredDate">Preferred Date</label>
+              <input id="preferredDate" type="date" formControlName="preferredDate" />
+              @if (submitted && f.preferredDate.errors) {
+                <small class="error">Preferred date is required.</small>
+              }
+            </div>
+
+            <div class="form-group">
+              <label for="preferredTime">Preferred Time</label>
+              <input id="preferredTime" type="time" formControlName="preferredTime" />
+              @if (submitted && f.preferredTime.errors) {
+                <small class="error">Preferred time is required.</small>
+              }
+            </div>
+
+            <div class="form-group">
+              <label for="bedrooms">Bedrooms</label>
+              <input
+                id="bedrooms"
+                type="number"
+                min="0"
+                formControlName="bedrooms"
+                placeholder="0"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="bathrooms">Bathrooms</label>
+              <input
+                id="bathrooms"
+                type="number"
+                min="0"
+                formControlName="bathrooms"
+                placeholder="0"
+              />
+            </div>
+
+            <div class="form-group form-group-full">
+              <label for="address">Address</label>
+              <input
+                id="address"
+                type="text"
+                formControlName="address"
+                placeholder="Enter full address"
+              />
+              @if (submitted && f.address.errors) {
+                <small class="error">Address is required.</small>
+              }
+            </div>
+
+            <div class="form-group form-group-full">
+              <label for="notes">Additional Notes</label>
+              <textarea
+                id="notes"
+                rows="5"
+                formControlName="notes"
+                placeholder="Add any special instructions or cleaning details"
+              ></textarea>
+            </div>
+          </div>
+
+          @if (successMessage) {
+            <div class="alert alert-success">{{ successMessage }}</div>
+          }
+
+          @if (errorMessage) {
+            <div class="alert alert-error">{{ errorMessage }}</div>
+          }
+
+          <button type="submit" class="btn-submit" [disabled]="sending">
+            {{ sending ? 'Submitting...' : 'Submit Booking Request' }}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>

@@ -7,11 +7,26 @@ import { Testimonials } from './components/testimonials/testimonials';
 import { Cta } from './components/cta/cta';
 import { TrustBadges } from './components/trust-badges/trust-badges';
 import { BookingForm } from './components/booking-form/booking-form';
+import { ServiceArea } from './components/service-area/service-area';
+import { Faq } from './components/faq/faq';
+import { Gallery } from './components/gallery/gallery';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [Services, WhyUs, HowItWorks, Testimonials, Hero, Cta, TrustBadges, BookingForm],
+  imports: [
+    Services,
+    WhyUs,
+    HowItWorks,
+    Testimonials,
+    Hero,
+    Cta,
+    TrustBadges,
+    BookingForm,
+    Faq,
+    ServiceArea,
+    Gallery,
+  ],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })

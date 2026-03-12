@@ -1,0 +1,27 @@
+<section class="gallery">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">OUR WORK</span>
+      <h2>See the Difference We Make</h2>
+      <p>
+        From kitchens and bathrooms to offices and living spaces, our cleaning service delivers
+        visible results you can trust.
+      </p>
+    </div>
+
+    <div class="gallery-grid">
+      @for (item of items; track trackByTitle($index, item)) {
+        <div class="gallery-card">
+          <div class="gallery-image">
+            <img [src]="item.image" [alt]="item.title" />
+          </div>
+
+          <div class="gallery-content">
+            <h3>{{ item.title }}</h3>
+            <p>{{ item.description }}</p>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>

@@ -1,1 +1,18 @@
-<p>faq works!</p>
+<section class="faq">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">FAQ</span>
+      <h2>Frequently Asked Questions</h2>
+      <p>Everything you need to know before booking our cleaning service.</p>
+    </div>
+
+    <div class="faq-list">
+      @for (item of faqs; track trackByQuestion($index, item)) {
+        <div class="faq-item">
+          <h3>{{ item.question }}</h3>
+          <p>{{ item.answer }}</p>
+        </div>
+      }
+    </div>
+  </div>
+</section>

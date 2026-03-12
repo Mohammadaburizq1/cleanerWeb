@@ -1,1 +1,18 @@
-<p>service-area works!</p>
+<section class="service-area">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">SERVICE AREA</span>
+      <h2>Areas We Serve</h2>
+      <p>We provide professional cleaning services across key areas.</p>
+    </div>
+
+    <div class="areas-grid">
+      @for (area of areas; track trackByName($index, area)) {
+        <div class="area-card">
+          <h3>{{ area.name }}</h3>
+          <p>{{ area.description }}</p>
+        </div>
+      }
+    </div>
+  </div>
+</section>

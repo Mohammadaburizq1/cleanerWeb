@@ -2,7 +2,7 @@
   display: block;
 }
 
-.service-area {
+.gallery {
   padding: 88px 0;
   background: var(--page-bg);
   color: var(--text-color);
@@ -16,6 +16,15 @@
 .section-header {
   text-align: center;
   margin-bottom: 48px;
+}
+
+.section-tag {
+  display: inline-block;
+  margin-bottom: 14px;
+  color: var(--accent-color);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 2px;
 }
 
 .section-header h2 {
@@ -33,52 +42,71 @@
   font-size: 16px;
 }
 
-.areas-grid {
+.gallery-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 24px;
 }
 
-.area-card {
+.gallery-card {
+  overflow: hidden;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 20px;
-  padding: 26px;
-  transition: transform 0.2s ease;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease;
 }
 
-.area-card:hover {
+.gallery-card:hover {
   transform: translateY(-4px);
+  border-color: var(--accent-color);
 }
 
-.area-card h3 {
+.gallery-image {
+  overflow: hidden;
+}
+
+.gallery-image img {
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+  display: block;
+}
+
+.gallery-content {
+  padding: 22px;
+}
+
+.gallery-content h3 {
   margin: 0 0 10px;
-  color: var(--accent-color);
+  color: var(--text-color);
   font-size: 22px;
 }
 
-.area-card p {
+.gallery-content p {
   margin: 0;
   color: var(--muted-text);
   line-height: 1.7;
 }
 
 @media (max-width: 1100px) {
-  .areas-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .gallery-grid {
+    grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 768px) {
-  .areas-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .service-area {
+  .gallery {
     padding: 68px 0;
   }
 
   .section-header h2 {
     font-size: 32px;
+  }
+
+  .gallery-image img {
+    height: 220px;
   }
 }
