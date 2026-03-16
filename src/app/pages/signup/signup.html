@@ -41,14 +41,19 @@
 
           <div class="form-group">
             <label for="signup-password" class="form-label">Password</label>
-            <input
-              id="signup-password"
-              type="password"
-              formControlName="password"
-              class="form-input"
-              placeholder="••••••••"
-              autocomplete="new-password"
-            />
+            <div class="password-field">
+              <input
+                id="signup-password"
+                [type]="showPassword ? 'text' : 'password'"
+                formControlName="password"
+                class="form-input"
+                placeholder="••••••••"
+                autocomplete="new-password"
+              />
+              <button type="button" class="password-toggle" (click)="showPassword = !showPassword">
+                {{ showPassword ? 'Hide' : 'Show' }}
+              </button>
+            </div>
             @if ((submitted || password?.touched) && password?.invalid && password?.dirty) {
               <p class="form-error">Password must be at least 6 characters.</p>
             }
@@ -56,14 +61,19 @@
 
           <div class="form-group">
             <label for="signup-confirm" class="form-label">Confirm password</label>
-            <input
-              id="signup-confirm"
-              type="password"
-              formControlName="confirmPassword"
-              class="form-input"
-              placeholder="••••••••"
-              autocomplete="new-password"
-            />
+            <div class="password-field">
+              <input
+                id="signup-confirm"
+                [type]="showConfirmPassword ? 'text' : 'password'"
+                formControlName="confirmPassword"
+                class="form-input"
+                placeholder="••••••••"
+                autocomplete="new-password"
+              />
+              <button type="button" class="password-toggle" (click)="showConfirmPassword = !showConfirmPassword">
+                {{ showConfirmPassword ? 'Hide' : 'Show' }}
+              </button>
+            </div>
             @if ((submitted || confirmPassword?.touched) && (confirmPassword?.invalid && confirmPassword?.dirty || signupForm.hasError('passwordMismatch'))) {
               <p class="form-error">
                 @if (signupForm.hasError('passwordMismatch')) {

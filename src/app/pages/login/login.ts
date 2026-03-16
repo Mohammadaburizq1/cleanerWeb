@@ -2,6 +2,8 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../../core/auth.service';
+import { LoginDto } from '../../core/auth.dto';
 
 @Component({
   selector: 'app-login',
@@ -13,6 +15,7 @@ import { Router, RouterLink } from '@angular/router';
 export class Login {
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private auth = inject(AuthService);
 
   loginForm = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
@@ -40,11 +43,27 @@ export class Login {
     }
 
     this.loading = true;
-    // Replace with real auth (e.g. HttpClient call to your API)
-    setTimeout(() => {
-      this.loading = false;
-      // Demo: accept any email/password and redirect home
-      this.router.navigate(['/']);
-    }, 800);
+
+    const payload: LoginDto = {
+      email: this.email?.value ?? '',
+      password: this.password?.value ?? '',
+    };
+
+    this.auth.login(payload).subscribe({
+      next: (result) => {
+        this.loading = false;
+        if (result.success) {
+          this.auth.loadMe().subscribe();  
+          console.log(this.auth.me());
+          this.router.navigate(['/']);
+        } else {
+          this.errorMessage = result.errors?.join(', ') || 'Login failed.';
+        }
+      },
+      error: () => {
+        this.loading = false;
+        this.errorMessage = 'Unable to login. Please try again.';
+      },
+    });
   }
 }

@@ -9,8 +9,12 @@
       <a routerLink="/services" routerLinkActive="active">Services</a>
       <a routerLink="/about" routerLinkActive="active">About</a>
       <a routerLink="/contact" routerLinkActive="active">Contact</a>
-      <a routerLink="/login" routerLinkActive="active">Account Login</a>
-      <a routerLink="/admin" routerLinkActive="active">Admin</a>
+      @if (!isLoggedIn()) {
+        <a routerLink="/login" routerLinkActive="active">Account Login</a>
+      }
+      @if (isAdmin()) {
+        <a routerLink="/admin" routerLinkActive="active">Admin</a>
+      }
     </nav>
 
     <div class="actions">

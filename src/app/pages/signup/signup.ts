@@ -2,6 +2,8 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../../core/auth.service';
+import { RegisterDto } from '../../core/auth.dto';
 
 function passwordMatchValidator(group: AbstractControl): { passwordMismatch: true } | null {
   const g = group as FormGroup;
@@ -20,6 +22,7 @@ function passwordMatchValidator(group: AbstractControl): { passwordMismatch: tru
 export class Signup {
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private auth = inject(AuthService);
 
   signupForm = this.fb.group(
     {
@@ -34,6 +37,9 @@ export class Signup {
   submitted = false;
   loading = false;
   errorMessage = '';
+
+  showPassword = false;
+  showConfirmPassword = false;
 
   get fullName() {
     return this.signupForm.get('fullName');
@@ -60,10 +66,26 @@ export class Signup {
     }
 
     this.loading = true;
-    // Replace with real API call (e.g. register endpoint)
-    setTimeout(() => {
-      this.loading = false;
-      this.router.navigate(['/login']);
-    }, 800);
+
+    const payload: RegisterDto = {
+      fullName: this.fullName?.value ?? '',
+      email: this.email?.value ?? '',
+      password: this.password?.value ?? '',
+    };
+
+    this.auth.register(payload).subscribe({
+      next: (result) => {
+        this.loading = false;
+        if (result.success) {
+          this.router.navigate(['/login']);
+        } else {
+          this.errorMessage = result.errors?.join(', ') || 'Sign up failed.';
+        }
+      },
+      error: () => {
+        this.loading = false;
+        this.errorMessage = 'Unable to sign up. Please try again.';
+      },
+    });
   }
 }
