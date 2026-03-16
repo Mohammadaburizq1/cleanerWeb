@@ -1,10 +1,5 @@
 import { Component } from '@angular/core';
-
-type GalleryItem = {
-  title: string;
-  description: string;
-  image: string;
-};
+import { GalleryItem } from '../../models/home.models';
 
 @Component({
   selector: 'app-gallery',

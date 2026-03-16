@@ -11,6 +11,65 @@
 
     <div class="booking-layout">
       <aside class="booking-info">
+        <section class="booking-summary-section" aria-label="Booking summary">
+          <div class="booking-summary">
+            <h2 class="booking-summary-title">BOOKING SUMMARY</h2>
+            <div class="booking-summary-details">
+              <div class="booking-summary-row">
+                <span class="booking-summary-icon" aria-hidden="true">⌂</span>
+                <span>{{ propertyLabel }}</span>
+              </div>
+              <div class="booking-summary-row">
+                <span class="booking-summary-icon" aria-hidden="true">📅</span>
+                <span>{{ serviceDateLabel }}</span>
+              </div>
+              <div class="booking-summary-row">
+                <span class="booking-summary-icon" aria-hidden="true">↻</span>
+                <span>One Time</span>
+              </div>
+            </div>
+            <div class="booking-summary-divider"></div>
+            <div class="booking-summary-cost">
+              <div class="booking-summary-cost-row">
+                <span>SUB-TOTAL</span>
+                <span>{{ subTotal | number : '1.2-2' }} {{ currency }}</span>
+              </div>
+              <div class="booking-summary-cost-row booking-summary-tax">
+                <span>SALES TAX</span>
+                <span>{{ salesTax | number : '1.2-2' }} {{ currency }}</span>
+              </div>
+              <div class="booking-summary-cost-row booking-summary-total">
+                <span>TOTAL</span>
+                <span>{{ total | number : '1.2-2' }} {{ currency }}</span>
+              </div>
+            </div>
+          </div>
+
+          @if (selectedTasks.length > 0 || selectedSectionsWithPrices.length > 0) {
+            <details class="selected-tasks-details">
+              <summary>Selected services ({{ selectedTasks.length }} tasks)</summary>
+              @if (selectedSectionsWithPrices.length > 0) {
+                <ul class="cost-breakdown-list">
+                  @for (entry of selectedSectionsWithPrices; track entry.title) {
+                    @if (entry.taskCount != null && entry.pricePerTask != null) {
+                      <li>{{ entry.title }}: {{ entry.taskCount }} × {{ entry.pricePerTask }} {{ currency }} = {{ entry.amount }} {{ currency }}</li>
+                    } @else {
+                      <li>{{ entry.title }}: {{ entry.amount }} {{ currency }}</li>
+                    }
+                  }
+                </ul>
+              }
+              @if (selectedTasks.length > 0) {
+                <ul class="selected-tasks-list">
+                  @for (t of selectedTasks; track t.sectionTitle + t.task) {
+                    <li><strong>{{ t.sectionTitle }}:</strong> {{ t.task }}</li>
+                  }
+                </ul>
+              }
+            </details>
+          }
+        </section>
+
         <div class="info-card">
           <h2>Why Book With Us</h2>
           <ul>
@@ -117,28 +176,6 @@
               @if (submitted && f.preferredTime.errors) {
                 <small class="error">Preferred time is required.</small>
               }
-            </div>
-
-            <div class="form-group">
-              <label for="bedrooms">Bedrooms</label>
-              <input
-                id="bedrooms"
-                type="number"
-                min="0"
-                formControlName="bedrooms"
-                placeholder="0"
-              />
-            </div>
-
-            <div class="form-group">
-              <label for="bathrooms">Bathrooms</label>
-              <input
-                id="bathrooms"
-                type="number"
-                min="0"
-                formControlName="bathrooms"
-                placeholder="0"
-              />
             </div>
 
             <div class="form-group form-group-full">

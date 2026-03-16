@@ -1,22 +1,239 @@
 <section class="services-page">
-  <div class="container">
-    <div class="section-header">
-      <span class="section-tag">Our Services</span>
-      <h2>Cleaning Solutions Built Around Your Needs</h2>
-      <p>
-        From regular house cleaning to commercial services, we offer reliable cleaning options for
-        every type of space.
-      </p>
+  <div class="container container--wide">
+    <header class="page-header">
+      <span class="section-tag">{{ sectionTag }}</span>
+      <h1 class="main-heading">{{ mainHeading }}</h1>
+      <p class="intro">{{ intro }}</p>
+    </header>
+
+    <div class="quote-layout">
+      <div class="quote-and-checklist">
+        <div class="step-1">
+          <h2 class="step-1-title">STEP 1: GET A QUOTE</h2>
+          <p class="step-1-desc">
+            Select the total number of bedrooms in your home and the number of bathrooms you would like cleaned.
+            All other rooms are included in the price shown.
+          </p>
+          <div class="step-1-dropdowns">
+            <div class="step-1-field">
+              <label for="quote-bedrooms" class="step-1-label">Bedrooms</label>
+              <select
+                id="quote-bedrooms"
+                class="step-1-select"
+                [value]="(numberOfBedrooms ?? 1).toString()"
+                (change)="onBedroomChange($event)"
+              >
+                @for (opt of bedroomOptions; track opt.value) {
+                  <option [value]="opt.value.toString()">{{ opt.label }}</option>
+                }
+              </select>
+            </div>
+            <div class="step-1-field">
+              <label for="quote-bathrooms" class="step-1-label">Bathrooms</label>
+              <select
+                id="quote-bathrooms"
+                class="step-1-select"
+                [value]="(numberOfBathrooms ?? 0).toString()"
+                (change)="onBathroomChange($event)"
+              >
+                @for (opt of bathroomOptions; track opt.value) {
+                  <option [value]="opt.value.toString()">{{ opt.label }}</option>
+                }
+              </select>
+            </div>
+          </div>
+          @if (isHourlyService) {
+            <div class="step-1-dropdowns">
+              <div class="step-1-field">
+                <label for="quote-cleaners" class="step-1-label">Cleaners</label>
+                <select
+                  id="quote-cleaners"
+                  class="step-1-select"
+                  [value]="(numberOfCleaners ?? 1).toString()"
+                  (change)="onCleanersChange($event)"
+                >
+                  @for (opt of cleanerOptions; track opt.value) {
+                    <option [value]="opt.value.toString()">{{ opt.label }}</option>
+                  }
+                </select>
+              </div>
+              <div class="step-1-field">
+                <label for="quote-hours" class="step-1-label">Hours</label>
+                <select
+                  id="quote-hours"
+                  class="step-1-select"
+                  [value]="(hourlyDurationHours ?? 7.5).toString()"
+                  (change)="onHoursChange($event)"
+                >
+                  @for (opt of hourOptions; track opt.value) {
+                    <option [value]="opt.value.toString()">{{ opt.label }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+          }
+          <p class="step-1-note">
+            The <strong>deep clean add-on</strong> includes hand washing baseboards, wood trim, and the outside of cabinets.
+            We also remove built-up soap scum and kitchen grease.
+          </p>
+        </div>
+
+        <div class="checklist-groups">
+      <div class="checklist-group">
+        <h2 class="group-title">Included in every cleaning</h2>
+        <p class="group-desc">What we do on every standard visit.</p>
+        <div class="accordion">
+          @for (section of includedSections; track trackByTitle($index, section)) {
+            <div class="accordion-item" [class.is-open]="isExpanded(section.title)">
+              <button
+                type="button"
+                class="accordion-trigger"
+                (click)="toggle(section)"
+                [attr.aria-expanded]="isExpanded(section.title)"
+                [attr.aria-controls]="'panel-' + section.title"
+                [id]="'trigger-' + section.title"
+              >
+                <span class="accordion-title">{{ section.title }}</span>
+                <span class="accordion-price">{{ section.pricePerTask }} {{ currency }}/task</span>
+                <span class="accordion-count">{{ section.items.length }} tasks</span>
+                <span class="accordion-icon" aria-hidden="true"></span>
+              </button>
+              <div
+                class="accordion-panel"
+                [id]="'panel-' + section.title"
+                role="region"
+                [attr.aria-labelledby]="'trigger-' + section.title"
+                [attr.aria-hidden]="!isExpanded(section.title)"
+              >
+                @if (section.subtitle) {
+                  <p class="panel-subtitle">{{ section.subtitle }}</p>
+                }
+                <ul class="checklist-items">
+                  @for (item of section.items; track item) {
+                    <li class="checklist-item">
+                      <input
+                        type="checkbox"
+                        [id]="'check-' + section.title + '-' + item"
+                        class="checklist-input"
+                        [checked]="isChecked(section, item)"
+                        (change)="toggleChecked(section, item)"
+                      />
+                      <label [for]="'check-' + section.title + '-' + item" class="checklist-label">{{ item }}</label>
+                    </li>
+                  }
+                </ul>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="checklist-group checklist-group-addons">
+        <h2 class="group-title">Add-on services</h2>
+        <p class="group-desc">Optional extras for deep cleans, moves, and upgrades.</p>
+        <div class="accordion">
+          @for (section of addOnSections; track trackByTitle($index, section)) {
+            <div class="accordion-item" [class.is-open]="isExpanded(section.title)">
+              <button
+                type="button"
+                class="accordion-trigger"
+                (click)="toggle(section)"
+                [attr.aria-expanded]="isExpanded(section.title)"
+                [attr.aria-controls]="'panel-' + section.title"
+                [id]="'trigger-' + section.title"
+              >
+                <span class="accordion-title">{{ section.title }}</span>
+                <span class="accordion-price">{{ section.pricePerTask }} {{ currency }}/task</span>
+                <span class="accordion-count">{{ section.items.length }} tasks</span>
+                <span class="accordion-icon" aria-hidden="true"></span>
+              </button>
+              <div
+                class="accordion-panel"
+                [id]="'panel-' + section.title"
+                role="region"
+                [attr.aria-labelledby]="'trigger-' + section.title"
+                [attr.aria-hidden]="!isExpanded(section.title)"
+              >
+                @if (section.subtitle) {
+                  <p class="panel-subtitle">{{ section.subtitle }}</p>
+                }
+                <ul class="checklist-items">
+                  @for (item of section.items; track item) {
+                    <li class="checklist-item">
+                      <input
+                        type="checkbox"
+                        [id]="'check-' + section.title + '-' + item"
+                        class="checklist-input"
+                        [checked]="isChecked(section, item)"
+                        (change)="toggleChecked(section, item)"
+                      />
+                      <label [for]="'check-' + section.title + '-' + item" class="checklist-label">{{ item }}</label>
+                    </li>
+                  }
+                </ul>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+      </div>
+
+      <aside class="booking-summary-sidebar">
+        <div class="booking-summary">
+          <h2 class="booking-summary-title">BOOKING SUMMARY</h2>
+          <div class="booking-summary-details">
+            <div class="booking-summary-row">
+              <span class="booking-summary-icon" aria-hidden="true">⌂</span>
+              <span>{{ propertyLabel }}</span>
+            </div>
+            <div class="booking-summary-row">
+              <span class="booking-summary-icon" aria-hidden="true">📅</span>
+              <span>Choose date on booking page</span>
+            </div>
+            <div class="booking-summary-row">
+              <span class="booking-summary-icon" aria-hidden="true">↻</span>
+              <span>One Time</span>
+            </div>
+          </div>
+          <div class="booking-summary-divider"></div>
+          <div class="booking-summary-cost">
+            <div class="booking-summary-cost-row">
+              <span>SUB-TOTAL</span>
+              <span>{{ subTotal | number : '1.2-2' }} {{ currency }}</span>
+            </div>
+            <div class="booking-summary-cost-row booking-summary-tax">
+              <span>SALES TAX</span>
+              <span>{{ salesTax | number : '1.2-2' }} {{ currency }}</span>
+            </div>
+            <div class="booking-summary-cost-row booking-summary-total">
+              <span>TOTAL</span>
+              <span>{{ total | number : '1.2-2' }} {{ currency }}</span>
+            </div>
+          </div>
+        </div>
+      </aside>
     </div>
 
-    <div class="services-grid">
-      @for (service of services; track service.title) {
-        <div class="service-card">
-          <h3>{{ service.title }}</h3>
-          <p>{{ service.description }}</p>
-          <a href="/contact">Book Now</a>
-        </div>
-      }
+    @if (selectedSectionsWithPrices.length > 0) {
+      <div class="booking-details">
+        <details class="selected-tasks-details">
+          <summary>Cost breakdown ({{ selectedSectionsWithPrices.length }} sections)</summary>
+          <ul class="cost-breakdown-list">
+            @for (entry of selectedSectionsWithPrices; track entry.section.title) {
+              <li>{{ entry.section.title }}: {{ entry.taskCount }} tasks × {{ entry.pricePerTask }} {{ currency }} = {{ entry.amount }} {{ currency }}</li>
+            }
+          </ul>
+          @if (numberOfRooms != null && numberOfRooms > 0) {
+            <p class="cost-breakdown-row">Rooms ({{ numberOfRooms }} × {{ pricePerRoom }} {{ currency }}): {{ numberOfRooms * pricePerRoom }} {{ currency }}</p>
+          }
+        </details>
+      </div>
+    }
+
+    <div class="cta-block">
+      <p class="cta-text">Select bedrooms and bathrooms in Step 1, choose any add-on tasks, then book. Your quote and choices will be sent with your booking.</p>
+      <button type="button" class="btn btn-book" (click)="bookNow()">Book Now</button>
     </div>
   </div>
 </section>

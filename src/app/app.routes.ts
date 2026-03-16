@@ -4,7 +4,8 @@ import { Services } from './pages/services/services';
 import { About } from './pages/about/about';
 import { Contact } from './pages/contact/contact';
 import { Booking } from './pages/booking/booking';
-
+import { Login } from './pages/login/login';
+import { Admin } from './pages/admin/admin';
 
 export const routes: Routes = [
   {
@@ -31,6 +32,16 @@ export const routes: Routes = [
     path: 'booking',
     component: Booking,
     title: 'Booking',
+  },
+  {
+    path: 'login',
+    component: Login,
+    title: 'Sign in',
+  },
+  {
+    path: 'admin',
+    component: Admin,
+    title: 'Admin – Orders',
   },
   {
     path: '**',

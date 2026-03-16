@@ -1,11 +1,6 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
-
-type ServiceItem = {
-  icon: string;
-  title: string;
-  description: string;
-};
+import { ServiceItem } from '../../models/home.models';
 
 @Component({
   selector: 'app-services',

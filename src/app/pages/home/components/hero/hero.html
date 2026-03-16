@@ -14,7 +14,7 @@
       </p>
 
       <div class="hero-buttons">
-        <a routerLink="/booking" class="btn btn-gold">Book Cleaning</a>
+        <a href="/services" class="btn btn-gold" (click)="goToBookNow(); $event.preventDefault()">Book Cleaning</a>
         <a routerLink="/services" class="btn btn-outline">View Services</a>
       </div>
 

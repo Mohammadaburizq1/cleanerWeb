@@ -1,0 +1,127 @@
+<section class="admin-page">
+  <div class="container">
+    <div class="admin-hero">
+      <span class="section-tag">ADMIN</span>
+      <h1>Orders</h1>
+      <p>Review orders: accept, reject, or refund. (Orders will come from backend e.g. CreateStripePayment.)</p>
+    </div>
+
+    <div class="admin-toolbar">
+      <div class="filter-tabs">
+        <button
+          type="button"
+          class="filter-tab"
+          [class.active]="filterStatus === 'all'"
+          (click)="setFilter('all')"
+        >
+          All
+        </button>
+        <button
+          type="button"
+          class="filter-tab"
+          [class.active]="filterStatus === 'pending'"
+          (click)="setFilter('pending')"
+        >
+          Pending
+        </button>
+        <button
+          type="button"
+          class="filter-tab"
+          [class.active]="filterStatus === 'accepted'"
+          (click)="setFilter('accepted')"
+        >
+          Accepted
+        </button>
+        <button
+          type="button"
+          class="filter-tab"
+          [class.active]="filterStatus === 'rejected'"
+          (click)="setFilter('rejected')"
+        >
+          Rejected
+        </button>
+        <button
+          type="button"
+          class="filter-tab"
+          [class.active]="filterStatus === 'refunded'"
+          (click)="setFilter('refunded')"
+        >
+          Refunded
+        </button>
+      </div>
+      <a routerLink="/" class="back-link">← Back to site</a>
+    </div>
+
+    @if (filteredOrders.length === 0) {
+      <div class="empty-state">
+        <p>No orders in this filter.</p>
+        <p class="empty-hint">Try "All" or submit a booking from the site.</p>
+      </div>
+    } @else {
+      <div class="orders-list">
+        @for (order of filteredOrders; track order.id) {
+          <article class="order-card" [class]="'order-card--' + order.status">
+            <div class="order-header">
+              <span class="order-id">{{ order.id }}</span>
+              <span class="order-date">{{ formatDate(order.createdAt) }}</span>
+              <span class="order-badge" [class]="'order-badge--' + order.status">{{ order.status }}</span>
+            </div>
+            <div class="order-body">
+              <div class="order-row">
+                <span class="order-label">Customer</span>
+                <span class="order-value">{{ order.fullName }}</span>
+              </div>
+              <div class="order-row">
+                <span class="order-label">Phone</span>
+                <span class="order-value">{{ order.phone }}</span>
+              </div>
+              <div class="order-row">
+                <span class="order-label">Email</span>
+                <span class="order-value">{{ order.email }}</span>
+              </div>
+              <div class="order-row">
+                <span class="order-label">Service</span>
+                <span class="order-value">{{ serviceLabel(order.serviceType) }}</span>
+              </div>
+              <div class="order-row">
+                <span class="order-label">Property</span>
+                <span class="order-value">{{ propertyLabel(order.propertyType) }} · {{ order.propertyLabel }}</span>
+              </div>
+              <div class="order-row">
+                <span class="order-label">Address</span>
+                <span class="order-value">{{ order.address }}</span>
+              </div>
+              <div class="order-row">
+                <span class="order-label">Date & time</span>
+                <span class="order-value">{{ order.preferredDate }} · {{ order.preferredTime }}</span>
+              </div>
+              @if (order.estimatedCost != null) {
+                <div class="order-row">
+                  <span class="order-label">Estimated total</span>
+                  <span class="order-value order-total">{{ order.estimatedCost | number : '1.2-2' }} {{ order.currency }}</span>
+                </div>
+              }
+              @if (order.notes) {
+                <div class="order-row order-notes">
+                  <span class="order-label">Notes</span>
+                  <span class="order-value">{{ order.notes }}</span>
+                </div>
+              }
+            </div>
+            @if (order.status === 'pending') {
+              <div class="order-actions">
+                <button type="button" class="btn btn-accept" (click)="accept(order)">Accept</button>
+                <button type="button" class="btn btn-reject" (click)="reject(order)">Reject</button>
+              </div>
+            }
+            @if (order.status === 'accepted') {
+              <div class="order-actions">
+                <button type="button" class="btn btn-refund" (click)="refund(order)">Refund</button>
+              </div>
+            }
+          </article>
+        }
+      </div>
+    }
+  </div>
+</section>

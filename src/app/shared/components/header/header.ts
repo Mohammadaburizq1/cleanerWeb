@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
+import { SelectedTasksService } from '../../../core/selected-tasks.service';
 
 @Component({
   selector: 'app-header',
@@ -10,6 +11,8 @@ import { RouterModule } from '@angular/router';
 })
 export class Header implements OnInit {
   isLightTheme = false;
+
+  private selectedTasksService = inject(SelectedTasksService);
 
   ngOnInit(): void {
     const savedTheme = localStorage.getItem('site-theme');
@@ -28,5 +31,9 @@ export class Header implements OnInit {
   private applyTheme(): void {
     document.body.classList.remove('theme-dark', 'theme-light');
     document.body.classList.add(this.isLightTheme ? 'theme-light' : 'theme-dark');
+  }
+
+  goToBookNow(): void {
+    this.selectedTasksService.goToBookNow();
   }
 }

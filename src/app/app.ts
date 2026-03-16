@@ -1,5 +1,5 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, inject, signal } from '@angular/core';
+import { Router, RouterOutlet } from '@angular/router';
 import { Header } from './shared/components/header/header';
 import { Footer } from './shared/components/footer/footer';
 
@@ -11,4 +11,5 @@ import { Footer } from './shared/components/footer/footer';
 })
 export class App {
   protected readonly title = signal('cleaning-site');
+  protected readonly router = inject(Router);
 }

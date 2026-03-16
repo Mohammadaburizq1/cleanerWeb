@@ -1,14 +1,17 @@
-import { Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { SelectedTasksService } from '../../../../core/selected-tasks.service';
 
 @Component({
   selector: 'app-cta',
   standalone: true,
-  imports: [RouterLink],
+  imports: [],
   templateUrl: './cta.html',
   styleUrl: './cta.scss',
 })
 export class Cta {
-  // keep RouterLink in the class so TS doesn't mark the import as unused
-  protected readonly routerLink = RouterLink;
+  private selectedTasksService = inject(SelectedTasksService);
+
+  goToBookNow(): void {
+    this.selectedTasksService.goToBookNow();
+  }
 }

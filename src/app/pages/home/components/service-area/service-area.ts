@@ -1,9 +1,5 @@
 import { Component } from '@angular/core';
-
-type ServiceAreaItem = {
-  name: string;
-  description: string;
-};
+import { ServiceAreaItem } from '../../models/home.models';
 
 @Component({
   selector: 'app-service-area',

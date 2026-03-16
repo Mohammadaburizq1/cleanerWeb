@@ -9,6 +9,8 @@
       <a routerLink="/services" routerLinkActive="active">Services</a>
       <a routerLink="/about" routerLinkActive="active">About</a>
       <a routerLink="/contact" routerLinkActive="active">Contact</a>
+      <a routerLink="/login" routerLinkActive="active">Account Login</a>
+      <a routerLink="/admin" routerLinkActive="active">Admin</a>
     </nav>
 
     <div class="actions">
@@ -16,9 +18,7 @@
         <span class="icon">{{ isLightTheme ? '☀' : '🌙' }}</span>
       </button>
 
-      <button class="btn-primary" routerLink="/booking">
-        Book Now
-      </button>
+      <button type="button" class="btn-primary" (click)="goToBookNow()">Book Now</button>
     </div>
   </div>
 </header>

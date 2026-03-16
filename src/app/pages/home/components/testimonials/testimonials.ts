@@ -1,9 +1,5 @@
 import { Component } from '@angular/core';
-
-type TestimonialItem = {
-  quote: string;
-  name: string;
-};
+import { TestimonialItem } from '../../models/home.models';
 
 @Component({
   selector: 'app-testimonials',

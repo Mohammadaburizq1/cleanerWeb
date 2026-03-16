@@ -1,0 +1,59 @@
+<section class="login-page">
+  <div class="container">
+    <div class="login-hero">
+      <span class="section-tag">ACCOUNT</span>
+      <h1>Sign in</h1>
+      <p>Sign in to manage your bookings and account.</p>
+    </div>
+
+    <div class="login-card-wrapper">
+      <div class="login-card">
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+          <div class="form-group">
+            <label for="login-email" class="form-label">Email</label>
+            <input
+              id="login-email"
+              type="email"
+              formControlName="email"
+              class="form-input"
+              placeholder="you@example.com"
+              autocomplete="email"
+            />
+            @if ((submitted || email?.touched) && email?.invalid && email?.dirty) {
+              <p class="form-error">Please enter a valid email address.</p>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="login-password" class="form-label">Password</label>
+            <input
+              id="login-password"
+              type="password"
+              formControlName="password"
+              class="form-input"
+              placeholder="••••••••"
+              autocomplete="current-password"
+            />
+            @if ((submitted || password?.touched) && password?.invalid && password?.dirty) {
+              <p class="form-error">Password must be at least 6 characters.</p>
+            }
+          </div>
+
+          @if (errorMessage) {
+            <p class="form-error form-error--global">{{ errorMessage }}</p>
+          }
+
+          <button type="submit" class="btn btn-login" [disabled]="loading">
+            {{ loading ? 'Signing in…' : 'Sign in' }}
+          </button>
+
+          <div class="login-links">
+            <a routerLink="/contact" class="login-link">Forgot password?</a>
+            <span class="login-sep">·</span>
+            <a routerLink="/contact" class="login-link">Create account</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>

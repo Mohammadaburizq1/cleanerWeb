@@ -1,8 +1,5 @@
 import { Component } from '@angular/core';
-type FaqItem = {
-  question: string;
-  answer: string;
-};
+import { FaqItem } from '../../models/home.models';
 
 @Component({
   selector: 'app-faq',

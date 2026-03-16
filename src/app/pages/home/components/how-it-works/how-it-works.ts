@@ -1,10 +1,5 @@
 import { Component } from '@angular/core';
-
-type StepItem = {
-  number: string;
-  title: string;
-  description: string;
-};
+import { StepItem } from '../../models/home.models';
 
 @Component({
   selector: 'app-how-it-works',

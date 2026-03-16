@@ -1,9 +1,5 @@
 import { Component } from '@angular/core';
-
-type TrustBadgeItem = {
-  title: string;
-  text: string;
-};
+import { TrustBadgeItem } from '../../models/home.models';
 
 @Component({
   selector: 'app-trust-badges',
