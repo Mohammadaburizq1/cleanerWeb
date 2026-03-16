@@ -1,0 +1,149 @@
+:host {
+  display: block;
+}
+
+.signup-page {
+  padding: 72px 0 88px;
+  background: var(--page-bg);
+  color: var(--text-color);
+}
+
+.container {
+  width: min(480px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+.signup-hero {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.section-tag {
+  display: inline-block;
+  margin-bottom: 14px;
+  color: var(--accent-color);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.signup-hero h1 {
+  margin: 0 0 12px;
+  font-size: 36px;
+  line-height: 1.2;
+  color: var(--text-color);
+}
+
+.signup-hero p {
+  margin: 0;
+  color: var(--muted-text);
+  line-height: 1.6;
+  font-size: 16px;
+}
+
+.signup-card-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.signup-card {
+  width: 100%;
+  padding: 36px 32px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+.signup-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.form-input {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 16px;
+  color: var(--text-color);
+  background: var(--page-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  transition: border-color 0.2s ease;
+
+  &::placeholder {
+    color: var(--muted-text);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--accent-color);
+  }
+}
+
+.form-error {
+  margin: 0;
+  font-size: 13px;
+  color: #c53030;
+
+  &--global {
+    margin-top: 4px;
+  }
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+.btn-signup {
+  margin-top: 8px;
+  color: #fff;
+  background: var(--accent-color);
+
+  &:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+}
+
+.signup-links {
+  text-align: center;
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--muted-text);
+}
+
+.signup-link {
+  margin-left: 6px;
+  color: var(--accent-color);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

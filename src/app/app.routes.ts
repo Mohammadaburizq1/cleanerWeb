@@ -5,6 +5,7 @@ import { About } from './pages/about/about';
 import { Contact } from './pages/contact/contact';
 import { Booking } from './pages/booking/booking';
 import { Login } from './pages/login/login';
+import { Signup } from './pages/signup/signup';
 import { Admin } from './pages/admin/admin';
 
 export const routes: Routes = [
@@ -37,6 +38,11 @@ export const routes: Routes = [
     path: 'login',
     component: Login,
     title: 'Sign in',
+  },
+  {
+    path: 'signup',
+    component: Signup,
+    title: 'Create account',
   },
   {
     path: 'admin',
