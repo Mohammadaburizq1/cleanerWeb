@@ -100,6 +100,62 @@ button:hover {
   color: var(--muted-text);
 }
 
+/* Feedback section */
+.feedback-section {
+  margin-top: 60px;
+  padding-top: 50px;
+  border-top: 1px solid var(--border-color);
+  text-align: center;
+}
+
+.feedback-section h2 {
+  font-size: 28px;
+  margin-bottom: 8px;
+  color: var(--text-color);
+}
+
+.feedback-section > p {
+  color: var(--muted-text);
+  margin-bottom: 24px;
+}
+
+.feedback-form {
+  max-width: 480px;
+  margin: 0 auto;
+  background: var(--card-bg);
+  padding: 28px;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
+  text-align: left;
+}
+
+.rating-stars {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 8px 0;
+}
+
+.rating-stars .star {
+  background: none;
+  border: none;
+  font-size: 32px;
+  color: var(--input-border);
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  transition: color 0.15s ease, transform 0.1s ease;
+}
+
+.rating-stars .star:hover,
+.rating-stars .star.active {
+  color: #f5a623;
+}
+
+.rating-stars .star:hover {
+  transform: scale(1.1);
+}
+
 @media (max-width: 900px) {
   .contact-grid {
     grid-template-columns: 1fr;

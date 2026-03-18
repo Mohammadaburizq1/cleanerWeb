@@ -70,5 +70,33 @@
         </div>
       </div>
     </div>
+
+    <!-- FEEDBACK -->
+    <div class="feedback-section">
+      <h2>We'd love your feedback</h2>
+      <p>Tell us how we're doing or share a suggestion.</p>
+      <form [formGroup]="feedbackForm" (ngSubmit)="submitFeedback()" class="feedback-form">
+        <div class="form-group">
+          <label>Name</label>
+          <input type="text" formControlName="name" placeholder="Your name" />
+        </div>
+        <div class="form-group">
+          <label>Your rating</label>
+          <div class="rating-stars" role="group" aria-label="Rate your experience">
+            @for (star of [1,2,3,4,5]; track star) {
+              <button type="button" class="star" [class.active]="star <= (feedbackForm.get('rating')?.value ?? 0)"
+                (click)="setRating(star)" (keydown.enter)="setRating(star)">
+                ★
+              </button>
+            }
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Feedback (optional)</label>
+          <textarea rows="3" formControlName="comment" placeholder="Share your experience or suggestions..."></textarea>
+        </div>
+        <button type="submit">Submit Feedback</button>
+      </form>
+    </div>
   </div>
 </section>
