@@ -361,6 +361,48 @@ textarea {
   margin: 6px 0 14px;
 }
 
+.booking-feedback-services {
+  margin: 0 0 8px;
+  text-align: left;
+}
+
+.booking-feedback-services h3 {
+  margin: 0 0 8px;
+  color: var(--accent-color);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.booking-feedback-services-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.booking-feedback-service-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: color-mix(in srgb, var(--card-bg) 80%, var(--accent-color) 20%);
+}
+
+.booking-feedback-service-title {
+  font-weight: 800;
+  color: var(--text-color);
+}
+
+.booking-feedback-service-meta {
+  font-size: 13px;
+  color: var(--muted-text);
+  white-space: nowrap;
+}
+
 .booking-feedback-emoji {
   font-size: 64px;
   margin-bottom: 6px;

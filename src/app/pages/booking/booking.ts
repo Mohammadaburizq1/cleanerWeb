@@ -72,6 +72,10 @@ export class Booking implements OnInit {
   bookingFeedbackPercent: number | null = null;
   bookingFeedbackSubmitted = false;
 
+  /** Snapshot of selected services shown inside the feedback dialog */
+  bookingFeedbackSelectedSectionsWithPrices: { title: string; taskCount?: number; pricePerTask?: number; amount: number }[] =
+    [];
+
   ngOnInit(): void {
     const state = history.state as {
       selectedTasks?: SelectedTask[];
@@ -101,6 +105,7 @@ export class Booking implements OnInit {
     this.showBookingFeedbackDialog = false;
     this.bookingFeedbackPercent = null;
     this.bookingFeedbackSubmitted = false;
+    this.bookingFeedbackSelectedSectionsWithPrices = [];
 
     if (this.bookingForm.invalid) {
       this.bookingForm.markAllAsTouched();
@@ -124,6 +129,7 @@ export class Booking implements OnInit {
 
     // Replace this with real API call; for now we store in OrdersService for admin
     setTimeout(() => {
+      const sectionsSnapshot = this.selectedSectionsWithPrices.map((s) => ({ ...s }));
       this.ordersService.addOrder({
         fullName: payload.fullName ?? '',
         phone: payload.phone ?? '',
@@ -148,6 +154,9 @@ export class Booking implements OnInit {
       this.numberOfBathrooms = null;
       this.estimatedCost = null;
       this.selectedSectionsWithPrices = [];
+
+      // Used by the feedback dialog after we clear the form state.
+      this.bookingFeedbackSelectedSectionsWithPrices = sectionsSnapshot;
 
       // After booking is finished, ask for quick emoji feedback.
       this.showBookingFeedbackDialog = true;

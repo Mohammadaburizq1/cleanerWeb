@@ -231,6 +231,22 @@
           <h2>How was your booking?</h2>
           <p>Slide to rate us from sad to happy.</p>
 
+          @if (bookingFeedbackSelectedSectionsWithPrices.length > 0) {
+            <div class="booking-feedback-services">
+              <h3>Your services</h3>
+              <ul class="booking-feedback-services-list">
+                @for (s of bookingFeedbackSelectedSectionsWithPrices; track s.title) {
+                  <li class="booking-feedback-service-item">
+                    <span class="booking-feedback-service-title">{{ s.title }}</span>
+                    <span class="booking-feedback-service-meta">
+                      {{ s.taskCount ?? 0 }} tasks • {{ s.amount | number : '1.2-2' }} {{ currency }}
+                    </span>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+
           <div class="booking-feedback-hero">
             <div class="booking-feedback-emoji" aria-hidden="true">{{ bookingFeedbackEmoji }}</div>
             <div class="booking-feedback-value">{{ bookingFeedbackHeadline }}</div>
