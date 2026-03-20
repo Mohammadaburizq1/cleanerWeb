@@ -66,8 +66,11 @@ export class Booking implements OnInit {
 
   submitted = false;
   sending = false;
-  successMessage = '';
   errorMessage = '';
+
+  showBookingFeedbackDialog = false;
+  bookingFeedbackPercent: number | null = null;
+  bookingFeedbackSubmitted = false;
 
   ngOnInit(): void {
     const state = history.state as {
@@ -94,8 +97,10 @@ export class Booking implements OnInit {
 
   submit(): void {
     this.submitted = true;
-    this.successMessage = '';
     this.errorMessage = '';
+    this.showBookingFeedbackDialog = false;
+    this.bookingFeedbackPercent = null;
+    this.bookingFeedbackSubmitted = false;
 
     if (this.bookingForm.invalid) {
       this.bookingForm.markAllAsTouched();
@@ -134,7 +139,6 @@ export class Booking implements OnInit {
         propertyLabel: this.propertyLabel,
       });
       this.sending = false;
-      this.successMessage = 'Your booking request has been submitted successfully.';
       this.bookingForm.reset();
       this.submitted = false;
       this.selectedTasksService.clearAll();
@@ -144,6 +148,11 @@ export class Booking implements OnInit {
       this.numberOfBathrooms = null;
       this.estimatedCost = null;
       this.selectedSectionsWithPrices = [];
+
+      // After booking is finished, ask for quick emoji feedback.
+      this.showBookingFeedbackDialog = true;
+      this.bookingFeedbackPercent = 100; // default: very happy
+      this.bookingFeedbackSubmitted = false;
     }, 800);
   }
 
@@ -180,6 +189,33 @@ export class Booking implements OnInit {
     if (beds > 0) parts.push(`${beds} Bedroom${beds === 1 ? '' : 's'}`);
     if (baths > 0) parts.push(`${baths} Bathroom${baths === 1 ? '' : 's'}`);
     return parts.join(', ') || 'Choose property...';
+  }
+
+  setBookingFeedbackPercent(value: number): void {
+    this.bookingFeedbackPercent = Math.max(0, Math.min(100, value));
+  }
+
+  confirmBookingFeedback(): void {
+    this.bookingFeedbackSubmitted = true;
+  }
+
+  closeBookingFeedbackDialog(): void {
+    this.showBookingFeedbackDialog = false;
+  }
+
+  get bookingFeedbackHeadline(): string {
+    const p = this.bookingFeedbackPercent ?? 100;
+    return p >= 50 ? `${p}% Happy` : `${100 - p}% Sad`;
+  }
+
+  get bookingFeedbackEmoji(): string {
+    const p = this.bookingFeedbackPercent ?? 100;
+    if (p >= 90) return '😄';
+    if (p >= 70) return '🙂';
+    if (p >= 50) return '😊';
+    if (p >= 30) return '😐';
+    if (p >= 10) return '🙁';
+    return '😢';
   }
 
   /** Service date for summary (formatted or placeholder) */

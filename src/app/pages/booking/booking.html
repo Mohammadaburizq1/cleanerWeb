@@ -208,10 +208,6 @@
             </div>
           </div>
 
-          @if (successMessage) {
-            <div class="alert alert-success">{{ successMessage }}</div>
-          }
-
           @if (errorMessage) {
             <div class="alert alert-error">{{ errorMessage }}</div>
           }
@@ -222,5 +218,58 @@
         </form>
       </div>
     </div>
+
+    @if (showBookingFeedbackDialog) {
+      <div class="booking-feedback-overlay" (click)="closeBookingFeedbackDialog()">
+        <div
+          class="booking-feedback-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Booking feedback"
+          (click)="$event.stopPropagation()"
+        >
+          <h2>How was your booking?</h2>
+          <p>Slide to rate us from sad to happy.</p>
+
+          <div class="booking-feedback-hero">
+            <div class="booking-feedback-emoji" aria-hidden="true">{{ bookingFeedbackEmoji }}</div>
+            <div class="booking-feedback-value">{{ bookingFeedbackHeadline }}</div>
+          </div>
+
+          <div class="booking-feedback-slider">
+            <label for="bookingFeedbackRange" class="booking-feedback-slider-label">Sad</label>
+            <input
+              id="bookingFeedbackRange"
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              [value]="bookingFeedbackPercent ?? 100"
+              (input)="setBookingFeedbackPercent(($any($event.target).valueAsNumber))"
+            />
+            <label for="bookingFeedbackRange" class="booking-feedback-slider-label booking-feedback-slider-label--right">Happy</label>
+          </div>
+
+          @if (bookingFeedbackSubmitted) {
+            <p class="booking-feedback-thanks">Thank you for your feedback!</p>
+            <button
+              type="button"
+              class="booking-feedback-close"
+              (click)="$event.stopPropagation(); closeBookingFeedbackDialog()"
+            >
+              Close
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="booking-feedback-confirm"
+              (click)="$event.stopPropagation(); confirmBookingFeedback()"
+            >
+              Submit feedback
+            </button>
+          }
+        </div>
+      </div>
+    }
   </div>
 </section>
