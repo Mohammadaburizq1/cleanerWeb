@@ -46,8 +46,14 @@
           </div>
 
           @if (selectedTasks.length > 0 || selectedSectionsWithPrices.length > 0) {
-            <details class="selected-tasks-details">
-              <summary>Selected services ({{ selectedTasks.length }} tasks)</summary>
+            <div class="selected-services" aria-label="Selected services">
+              <h3 class="selected-services-title">
+                @if (selectedTasks.length > 0) {
+                  Selected services ({{ selectedTasks.length }} tasks)
+                } @else {
+                  Selected services
+                }
+              </h3>
               @if (selectedSectionsWithPrices.length > 0) {
                 <ul class="cost-breakdown-list">
                   @for (entry of selectedSectionsWithPrices; track entry.title) {
@@ -66,7 +72,7 @@
                   }
                 </ul>
               }
-            </details>
+            </div>
           }
         </section>
 

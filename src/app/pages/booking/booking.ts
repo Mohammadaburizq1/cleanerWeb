@@ -90,16 +90,6 @@ export class Booking implements OnInit {
     this.estimatedCost = state?.estimatedCost ?? null;
     this.currency = state?.currency ?? 'JD';
     this.selectedSectionsWithPrices = state?.selectedSectionsWithPrices ?? [];
-
-    const updates: { notes?: string } = {};
-    if (this.selectedTasks.length > 0) {
-      updates.notes = this.selectedTasks
-        .map((t) => `[${t.sectionTitle}] ${t.task}`)
-        .join('\n');
-    }
-    if (Object.keys(updates).length > 0) {
-      this.bookingForm.patchValue(updates);
-    }
   }
 
   submit(): void {

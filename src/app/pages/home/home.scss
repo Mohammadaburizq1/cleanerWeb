@@ -1,3 +1,85 @@
 :host {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.home-section {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Soft gold wash — alternates top / bottom so sections feel distinct */
+.home-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+.home-section:nth-child(odd)::before {
+  background: radial-gradient(
+    ellipse 88% 52% at 50% 0%,
+    rgba(212, 175, 55, 0.075),
+    transparent 58%
+  );
+}
+
+.home-section:nth-child(even)::before {
+  background: radial-gradient(
+    ellipse 88% 52% at 50% 100%,
+    rgba(212, 175, 55, 0.065),
+    transparent 58%
+  );
+}
+
+.home-section > * {
+  position: relative;
+  z-index: 1;
+}
+
+.home-section:not(:last-child) {
+  margin-bottom: clamp(2rem, 5.5vw, 3.5rem);
+}
+
+/* Ornamental separator: glow + gradient rails + center motif */
+.home-section:not(:last-child)::after {
+  content: '';
   display: block;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  height: 64px;
+  margin-top: clamp(1.35rem, 3.75vw, 2.35rem);
+  pointer-events: none;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 32' fill='none'%3E%3Cpath stroke='%23d4af37' stroke-opacity='0.35' stroke-width='1' d='M8 16h38M74 16h38'/%3E%3Cpath fill='%23d4af37' fill-opacity='0.2' d='M52 8h16v16H52z' transform='rotate(45 60 16)'/%3E%3Cpath fill='%23d4af37' d='M56.5 10.5h7v7h-7z' transform='rotate(45 60 16)'/%3E%3C/svg%3E")
+      center 46% / 120px 32px no-repeat,
+    radial-gradient(
+      ellipse min(420px, 88vw) 36px at 50% 42%,
+      rgba(212, 175, 55, 0.18),
+      transparent 70%
+    ),
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(212, 175, 55, 0.08) 18%,
+      var(--border-color) 42%,
+      rgba(212, 175, 55, 0.45) 50%,
+      var(--border-color) 58%,
+      rgba(212, 175, 55, 0.08) 82%,
+      transparent 100%
+    )
+      center 50% / 100% 1px no-repeat,
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(212, 175, 55, 0.04) 30%,
+      rgba(212, 175, 55, 0.04) 70%,
+      transparent 100%
+    )
+      center calc(50% + 5px) / 100% 1px no-repeat;
 }

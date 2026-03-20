@@ -24,7 +24,7 @@ export class Services implements OnInit {
   readonly sectionTag = 'Get a quote';
   readonly mainHeading = 'Get A Quote and Complete Your Booking';
   readonly intro =
-    'We’re transparent about what we do. Expand any section to see every task included.';
+    'We’re transparent about what we do. Every task is listed below—collapse a section anytime if you want less on screen.';
 
     readonly bedroomOptions: { label: string; value: number }[] = [
     { label: 'One Bedroom Home', value: 1 },
@@ -174,8 +174,8 @@ export class Services implements OnInit {
   /** Add-on services (Deep Clean, Moving Clean, Upgrades) */
   readonly addOnSections = this.checklist.slice(3);
 
-  /** Which section titles are expanded (multiple can be open) */
-  expanded = new Set<string>();
+  /** Which section titles are expanded (multiple can be open); all open by default */
+  expanded = new Set<string>(this.checklist.map((s) => s.title));
 
   /** Checked items: key = "sectionTitle|task" */
   checkedItems = new Set<string>();
@@ -276,6 +276,24 @@ export class Services implements OnInit {
     const v = el.value;
     this.numberOfBathrooms = v === '' ? null : Math.max(0, parseInt(v, 10));
     this.selectedTasksService.setNumberOfBathrooms(this.numberOfBathrooms);
+    this.syncCostToService();
+  }
+
+  /** Clear task checkboxes and restore default Step 1 options */
+  resetQuote(): void {
+    this.checkedItems = new Set();
+    this.selectedTasksService.clearAll();
+    this.numberOfRooms = null;
+    this.numberOfBedrooms = 1;
+    this.numberOfBathrooms = 0;
+    this.numberOfCleaners = 1;
+    this.hourlyDurationHours = 7.5;
+    this.selectedTasksService.setNumberOfBedrooms(1);
+    this.selectedTasksService.setNumberOfBathrooms(0);
+    this.selectedTasksService.setNumberOfCleaners(1);
+    this.selectedTasksService.setHourlyDurationHours(7.5);
+    this.expanded = new Set(this.checklist.map((s) => s.title));
+    this.syncCostToService();
   }
 
   onCleanersChange(event: Event): void {

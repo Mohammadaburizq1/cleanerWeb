@@ -5,12 +5,12 @@
 }
 
 .container {
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
 .container--wide {
-  max-width: 1200px;
+  max-width: 1400px;
 }
 
 .page-header {
@@ -52,12 +52,13 @@
   align-items: start;
 
   @media (min-width: 900px) {
-    grid-template-columns: 1fr 340px;
+    grid-template-columns: minmax(0, 1fr) 380px;
   }
 }
 
 .quote-and-checklist {
   min-width: 0;
+  width: 100%;
 }
 
 // ——— STEP 1: GET A QUOTE ———
@@ -86,14 +87,24 @@
 
 .step-1-dropdowns {
   display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: flex-end;
+  gap: 16px;
   margin-bottom: 20px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .step-1-field {
-  flex: 1;
-  min-width: 180px;
+  flex: 1 1 0;
+  min-width: 140px;
+}
+
+.step-1-field--reset {
+  flex: 0 0 auto;
+  min-width: unset;
 }
 
 .step-1-label {
@@ -102,6 +113,11 @@
   font-size: 14px;
   font-weight: 600;
   color: var(--text-color);
+}
+
+.step-1-label--spacer {
+  visibility: hidden;
+  user-select: none;
 }
 
 .step-1-select {
@@ -160,6 +176,22 @@
 
 .checklist-group-addons {
   border-color: color-mix(in srgb, var(--accent-color) 35%, var(--border-color));
+}
+
+/* “Included” + “Add-on services”: cards in two columns on larger screens */
+@media (min-width: 768px) {
+  .checklist-group--included .accordion,
+  .checklist-group-addons .accordion {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    align-items: start;
+  }
+
+  .checklist-group--included .accordion-item,
+  .checklist-group-addons .accordion-item {
+    margin: 0;
+  }
 }
 
 .group-title {
@@ -326,6 +358,20 @@
   color: var(--text-color);
 
   &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+/* Make the task list itself 2 columns on desktop */
+@media (min-width: 900px) {
+  .checklist-items {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 24px;
+    row-gap: 10px;
+  }
+
+  .checklist-item {
     margin-bottom: 0;
   }
 }
@@ -576,6 +622,29 @@
   transform: translateY(-2px);
 }
 
+.btn-reset {
+  width: 100%;
+  min-width: 96px;
+  padding: 12px 18px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color);
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.btn-reset:hover {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
 // ——— Responsive ———
 @media (max-width: 640px) {
   .booking-details-grid {
@@ -625,5 +694,13 @@
 
   .checklist-item {
     font-size: 14px;
+  }
+
+  .step-1-dropdowns {
+    gap: 12px;
+  }
+
+  .step-1-field {
+    min-width: 120px;
   }
 }

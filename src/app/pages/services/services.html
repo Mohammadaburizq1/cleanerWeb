@@ -41,9 +41,7 @@
                 }
               </select>
             </div>
-          </div>
-          @if (isHourlyService) {
-            <div class="step-1-dropdowns">
+            @if (isHourlyService) {
               <div class="step-1-field">
                 <label for="quote-cleaners" class="step-1-label">Cleaners</label>
                 <select
@@ -70,8 +68,12 @@
                   }
                 </select>
               </div>
+            }
+            <div class="step-1-field step-1-field--reset">
+              <span class="step-1-label step-1-label--spacer" aria-hidden="true">&nbsp;</span>
+              <button type="button" class="btn btn-reset" (click)="resetQuote()">Reset</button>
             </div>
-          }
+          </div>
           <p class="step-1-note">
             The <strong>deep clean add-on</strong> includes hand washing baseboards, wood trim, and the outside of cabinets.
             We also remove built-up soap scum and kitchen grease.
@@ -79,7 +81,7 @@
         </div>
 
         <div class="checklist-groups">
-      <div class="checklist-group">
+      <div class="checklist-group checklist-group--included">
         <h2 class="group-title">Included in every cleaning</h2>
         <p class="group-desc">What we do on every standard visit.</p>
         <div class="accordion">
