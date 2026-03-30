@@ -32,4 +32,4 @@ jobs:
           action: "upload"
           app_location: "/"
           api_location: ""
-          output_location: "dist/cleaning-site"
+          output_location: "dist/cleaning-site/browser"
