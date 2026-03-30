@@ -10,28 +10,44 @@ import { ServiceAreaItem } from '../../models/home.models';
 export class ServiceArea {
   areas: ServiceAreaItem[] = [
     {
-      name: 'Amman',
-      description: 'Professional residential and office cleaning services across Amman.',
+      name: 'Louisville',
+      description: 'Professional residential and commercial cleaning services across Louisville.',
     },
     {
-      name: 'Khalda',
-      description: 'Reliable home cleaning services for apartments and villas in Khalda.',
+      name: 'Jeffersontown',
+      description: 'Reliable home and business cleaning services in Jeffersontown.',
     },
     {
-      name: 'Abdoun',
-      description: 'Premium cleaning services for modern homes and offices in Abdoun.',
+      name: 'St. Matthews',
+      description: 'Detail-focused cleaning for homes and offices in St. Matthews.',
     },
     {
-      name: 'Sweifieh',
-      description: 'Trusted cleaning solutions for businesses and residential properties.',
+      name: 'Shively',
+      description: 'Trusted cleaning solutions for residential and commercial properties in Shively.',
     },
     {
-      name: 'Dabouq',
-      description: 'High-quality cleaning services tailored for large homes and villas.',
+      name: 'Middletown',
+      description: 'High-quality cleaning services tailored to your schedule in Middletown.',
     },
     {
-      name: 'Shmeisani',
-      description: 'Efficient and professional cleaning services for offices and apartments.',
+      name: 'Lyndon',
+      description: 'Efficient and professional cleaning services for homes and offices in Lyndon.',
+    },
+    {
+      name: 'Prospect',
+      description: 'Premium cleaning services for modern homes and businesses in Prospect.',
+    },
+    {
+      name: 'Shepherdsville',
+      description: 'Flexible scheduling and reliable cleaning services in Shepherdsville.',
+    },
+    {
+      name: 'Hillview',
+      description: 'Fast and thorough cleaning services for homes and businesses in Hillview.',
+    },
+    {
+      name: 'New Albany',
+      description: 'Professional cleaning services available in New Albany and nearby areas.',
     },
   ];
 
