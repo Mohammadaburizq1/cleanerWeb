@@ -15,6 +15,12 @@ export class PaymentsService {
     return this.http.post<CreatePaymentResponse>(url, dto);
   }
 
+  /** POST /api/Payments/stripe/{providerPaymentId}/confirm - confirm stripe payment with payment method id */
+  confirmStripePayment(providerPaymentId: string, paymentMethodToken: string): Observable<PaymentDto> {
+    const url = joinUrl(this.apiBaseUrl, `/api/Payments/stripe/${providerPaymentId}/confirm`);
+    return this.http.post<PaymentDto>(url, { paymentMethodToken });
+  }
+
   /** GET /api/Payments/{paymentId} - load a single payment details */
   getPayment(paymentId: string): Observable<PaymentDto> {
     const url = joinUrl(this.apiBaseUrl, `/api/Payments/${paymentId}`);

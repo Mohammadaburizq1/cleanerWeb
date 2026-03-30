@@ -256,6 +256,57 @@
   grid-column: 1 / -1;
 }
 
+.payment-heading h3 {
+  margin: 4px 0 0;
+  font-size: 18px;
+  color: var(--accent-color);
+}
+
+.stripe-card-container {
+  padding: 10px 0 2px;
+}
+
+.stripe-card-element {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  background: var(--page-bg);
+  min-height: 56px;
+}
+
+.stripe-card-error {
+  margin-top: 8px;
+  color: #dc2626;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, #dc2626 28%, var(--border-color));
+  background: color-mix(in srgb, #dc2626 10%, var(--card-bg));
+  z-index: 1;
+}
+
+.stripe-card-tip {
+  margin: 10px 0 0;
+  color: var(--muted-text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.stripe-card-ok {
+  margin: 8px 0 0;
+  color: color-mix(in srgb, #16a34a 60%, var(--text-color));
+  font-weight: 900;
+  font-size: 13px;
+}
+
+.stripe-card-notok {
+  margin: 8px 0 0;
+  color: var(--muted-text);
+  font-weight: 800;
+  font-size: 13px;
+}
+
 label {
   margin-bottom: 8px;
   color: var(--text-color);
@@ -263,9 +314,9 @@ label {
   font-weight: 600;
 }
 
-input,
-select,
-textarea {
+.booking-card input:not(.__PrivateStripeElement-input),
+.booking-card select,
+.booking-card textarea {
   width: 100%;
   padding: 14px 16px;
   border-radius: 14px;
@@ -279,19 +330,19 @@ textarea {
     box-shadow 0.2s ease;
 }
 
-input::placeholder,
-textarea::placeholder {
+.booking-card input:not(.__PrivateStripeElement-input)::placeholder,
+.booking-card textarea::placeholder {
   color: var(--muted-text);
 }
 
-input:focus,
-select:focus,
-textarea:focus {
+.booking-card input:not(.__PrivateStripeElement-input):focus,
+.booking-card select:focus,
+.booking-card textarea:focus {
   border-color: var(--accent-color);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 18%, transparent);
 }
 
-textarea {
+.booking-card textarea {
   resize: vertical;
   min-height: 120px;
 }
@@ -401,6 +452,28 @@ textarea {
   font-size: 13px;
   color: var(--muted-text);
   white-space: nowrap;
+}
+
+.booking-feedback-card-info {
+  margin: 10px 0 4px;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--card-bg) 85%, var(--accent-color) 15%);
+  text-align: left;
+}
+
+.booking-feedback-card-info h3 {
+  margin: 0 0 4px;
+  color: var(--accent-color);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.booking-feedback-card-info p {
+  margin: 0;
+  color: var(--text-color);
+  font-size: 14px;
 }
 
 .booking-feedback-emoji {

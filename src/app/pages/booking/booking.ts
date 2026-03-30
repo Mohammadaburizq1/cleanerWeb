@@ -1,8 +1,11 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import { OrdersService } from '../../core/orders.service';
+import { PaymentsService } from '../../core/payments.service';
 import { SelectedTasksService } from '../../core/selected-tasks.service';
+import { loadStripe, type Stripe, type StripeCardElement, type StripeElements } from '@stripe/stripe-js';
 
 type ServiceOption = {
   value: string;
@@ -19,10 +22,25 @@ export type SelectedTask = { sectionTitle: string; task: string };
   templateUrl: './booking.html',
   styleUrl: './booking.scss',
 })
-export class Booking implements OnInit {
+export class Booking implements OnInit, AfterViewInit, OnDestroy {
   private fb = inject(FormBuilder);
   private selectedTasksService = inject(SelectedTasksService);
   private ordersService = inject(OrdersService);
+  private paymentsService = inject(PaymentsService);
+
+  // NOTE: ضع publishable key هنا (يبدأ بـ pk_...). غير آمن وضع secret key في الواجهة.
+  private readonly stripePublishableKey = 'pk_test_51T9yxTKF6Nx8oRAGg7hqMLzOpBZFZkvuYJD9F7aRPsu7X3UZbnPizpM5boNfejUC3benVJxfz5o2d0EsuAIgT83q00J7uKkPiB';
+
+  @ViewChild('stripeCardMount', { static: false })
+  private stripeCardMount?: ElementRef<HTMLDivElement>;
+
+  private stripe: Stripe | null = null;
+  private elements: StripeElements | null = null;
+  private cardElement: StripeCardElement | null = null;
+
+  cardElementError: string | null = null;
+  stripeReady = false;
+  cardComplete = false;
 
   /** Tasks chosen on the Services page (from "Book Now" with checkboxes) */
   selectedTasks: SelectedTask[] = [];
@@ -39,6 +57,8 @@ export class Booking implements OnInit {
   /** Estimated cost from Services page (from selected sections + rooms or hourly) */
   estimatedCost: number | null = null;
   currency = 'JD';
+  /** Currency code for backend/payment (ISO 3 letters). */
+  private readonly paymentCurrency = 'usd';
   /** Cost breakdown / receipt lines (from Services page) */
   selectedSectionsWithPrices: { title: string; taskCount?: number; pricePerTask?: number; amount: number }[] = [];
 
@@ -61,6 +81,7 @@ export class Booking implements OnInit {
     address: ['', Validators.required],
     preferredDate: ['', Validators.required],
     preferredTime: ['', Validators.required],
+    cardHolder: ['', [Validators.required, Validators.minLength(2)]],
     notes: [''],
   });
 
@@ -71,6 +92,7 @@ export class Booking implements OnInit {
   showBookingFeedbackDialog = false;
   bookingFeedbackPercent: number | null = null;
   bookingFeedbackSubmitted = false;
+  bookingFeedbackCardInfo: { holder: string; maskedNumber: string; expiry: string } | null = null;
 
   /** Snapshot of selected services shown inside the feedback dialog */
   bookingFeedbackSelectedSectionsWithPrices: { title: string; taskCount?: number; pricePerTask?: number; amount: number }[] =
@@ -99,38 +121,119 @@ export class Booking implements OnInit {
     this.selectedSectionsWithPrices = state?.selectedSectionsWithPrices ?? [];
   }
 
-  submit(): void {
+  async ngAfterViewInit(): Promise<void> {
+    if (!this.stripePublishableKey) return;
+    if (!this.stripeCardMount) return;
+
+    const stripe = await loadStripe(this.stripePublishableKey);
+    if (!stripe) {
+      this.cardElementError = 'Stripe failed to load. Check your publishable key.';
+      return;
+    }
+
+    this.stripe = stripe;
+    this.elements = stripe.elements();
+
+    const card = this.elements.create('card', {
+      hidePostalCode: true,
+    });
+
+    card.mount(this.stripeCardMount.nativeElement);
+
+    card.on('change', (event) => {
+      this.cardElementError = event.error?.message ?? null;
+      this.cardComplete = event.complete;
+    });
+
+    this.cardElement = card;
+    this.stripeReady = true;
+  }
+
+  ngOnDestroy(): void {
+    try {
+      this.cardElement?.unmount();
+    } catch {
+      // ignore
+    }
+  }
+
+  private async createPaymentMethod(): Promise<{
+    paymentMethodId: string;
+    last4: string;
+    expiryMMYY: string;
+  }> {
+    if (!this.stripe || !this.cardElement) {
+      throw new Error('Stripe is not ready yet.');
+    }
+
+    const cardHolder = (this.bookingForm.get('cardHolder')?.value ?? '').trim();
+
+    const result = await this.stripe.createPaymentMethod({
+      type: 'card',
+      card: this.cardElement,
+      billing_details: {
+        name: cardHolder,
+      },
+    });
+
+    if (result.error) {
+      throw new Error(result.error.message ?? 'Failed to create payment method.');
+    }
+
+    const paymentMethodId = result.paymentMethod?.id;
+    const last4 = result.paymentMethod?.card?.last4;
+    const expMonth = result.paymentMethod?.card?.exp_month;
+    const expYear = result.paymentMethod?.card?.exp_year;
+
+    if (!paymentMethodId || !last4 || !expMonth || !expYear) {
+      throw new Error('Stripe did not return card details.');
+    }
+
+    const expiryMMYY = `${String(expMonth).padStart(2, '0')}/${String(expYear).slice(-2)}`;
+
+    return { paymentMethodId, last4, expiryMMYY };
+  }
+
+  async submit(): Promise<void> {
     this.submitted = true;
     this.errorMessage = '';
     this.showBookingFeedbackDialog = false;
     this.bookingFeedbackPercent = null;
     this.bookingFeedbackSubmitted = false;
     this.bookingFeedbackSelectedSectionsWithPrices = [];
+    this.bookingFeedbackCardInfo = null;
 
     if (this.bookingForm.invalid) {
       this.bookingForm.markAllAsTouched();
       return;
     }
 
+    // لا نحاول إنشاء paymentMethod إذا بيانات البطاقة غير مكتملة.
+    if (!this.cardComplete) {
+      this.errorMessage = this.cardElementError ?? 'الرجاء إكمال بيانات البطاقة (خصوصًا Expiry).';
+      return;
+    }
+
     this.sending = true;
 
-    const payload = this.bookingForm.getRawValue() as {
-      fullName: string;
-      phone: string;
-      email: string;
-      serviceType: string;
-      propertyType: string;
-      address: string;
-      preferredDate: string;
-      preferredTime: string;
-      notes: string;
-    };
-    console.log('Booking payload:', payload);
+    try {
+      const payload = this.bookingForm.getRawValue() as {
+        fullName: string;
+        phone: string;
+        email: string;
+        serviceType: string;
+        propertyType: string;
+        address: string;
+        preferredDate: string;
+        preferredTime: string;
+        cardHolder: string;
+        notes: string;
+      };
 
-    // Replace this with real API call; for now we store in OrdersService for admin
-    setTimeout(() => {
       const sectionsSnapshot = this.selectedSectionsWithPrices.map((s) => ({ ...s }));
-      this.ordersService.addOrder({
+
+      // Create order first, then confirm payment and mark order as accepted.
+      const order = this.ordersService.addOrder({
         fullName: payload.fullName ?? '',
         phone: payload.phone ?? '',
         email: payload.email ?? '',
@@ -144,7 +247,43 @@ export class Booking implements OnInit {
         currency: this.currency,
         propertyLabel: this.propertyLabel,
       });
-      this.sending = false;
+
+      // 1) Create pm_... on frontend using Stripe Elements
+      const pm = await this.createPaymentMethod();
+
+      const bookingIdGuid = this.generateBookingGuid();
+
+      // 2) Create a Stripe payment intent on backend (backend requires `request` wrapper)
+      const createPaymentBody = {
+        provider: 'stripe',
+        currency: this.paymentCurrency,
+        amount: this.total,
+        paymentMethodToken: pm.paymentMethodId,
+        request: {
+          provider: 'stripe',
+          currency: this.paymentCurrency,
+          amount: this.total,
+          paymentMethodToken: pm.paymentMethodId,
+        },
+        bookingId: bookingIdGuid,
+      };
+      console.log('[PaymentsService.createPayment] body:', createPaymentBody);
+
+      const createPaymentResp = await firstValueFrom(
+        this.paymentsService.createPayment(createPaymentBody),
+      );
+
+      const providerPaymentId = createPaymentResp.providerPaymentId;
+      if (!providerPaymentId) throw new Error('Backend did not return providerPaymentId for Stripe.');
+
+      // 3) Confirm payment on backend using pm_...
+      console.log('[PaymentsService.confirmStripePayment] providerPaymentId:', providerPaymentId);
+      console.log('[PaymentsService.confirmStripePayment] paymentMethodId:', pm.paymentMethodId);
+      await firstValueFrom(this.paymentsService.confirmStripePayment(providerPaymentId, pm.paymentMethodId));
+
+      this.ordersService.accept(order.id);
+
+      // Clear UI state after successful payment
       this.bookingForm.reset();
       this.submitted = false;
       this.selectedTasksService.clearAll();
@@ -155,14 +294,31 @@ export class Booking implements OnInit {
       this.estimatedCost = null;
       this.selectedSectionsWithPrices = [];
 
-      // Used by the feedback dialog after we clear the form state.
       this.bookingFeedbackSelectedSectionsWithPrices = sectionsSnapshot;
+      this.bookingFeedbackCardInfo = {
+        holder: (payload.cardHolder ?? '').trim(),
+        maskedNumber: `**** **** **** ${pm.last4}`,
+        expiry: pm.expiryMMYY,
+      };
 
-      // After booking is finished, ask for quick emoji feedback.
       this.showBookingFeedbackDialog = true;
-      this.bookingFeedbackPercent = 100; // default: very happy
+      this.bookingFeedbackPercent = 100;
       this.bookingFeedbackSubmitted = false;
-    }, 800);
+    } catch (err) {
+      // HttpErrorResponse from Angular includes backend validation details in `error`
+      // so show them to user for faster debugging.
+      const anyErr = err as any;
+      console.log('[Booking.submit] error raw:', anyErr);
+      if (anyErr?.error?.errors) {
+        this.errorMessage = `Payment failed: ${JSON.stringify(anyErr.error.errors)}`;
+      } else if (anyErr?.error) {
+        this.errorMessage = `Payment failed: ${JSON.stringify(anyErr.error)}`;
+      } else {
+        this.errorMessage = err instanceof Error ? err.message : 'Payment failed. Please try again.';
+      }
+    } finally {
+      this.sending = false;
+    }
   }
 
   get f() {
@@ -210,6 +366,19 @@ export class Booking implements OnInit {
 
   closeBookingFeedbackDialog(): void {
     this.showBookingFeedbackDialog = false;
+  }
+
+  private generateBookingGuid(): string {
+    // Generates a GUID to satisfy backend validation (backend expects Guid).
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+    // Fallback for older browsers: not cryptographically strong but good enough for UI demo.
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
   }
 
   get bookingFeedbackHeadline(): string {
