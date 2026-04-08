@@ -1,3 +1,42 @@
+@if (showOffersPopup) {
+  <div
+    class="offers-popup-overlay"
+    role="presentation"
+    (click)="closeOffersPopup()"
+    aria-hidden="true"
+  ></div>
+  <div
+    class="offers-popup"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-labelledby]="'offers-popup-title'"
+    (click)="$event.stopPropagation()"
+  >
+    <button type="button" class="offers-popup-close" (click)="closeOffersPopup()" aria-label="Close offers">
+      ×
+    </button>
+    <p class="offers-popup-tag">Limited time</p>
+    <h2 id="offers-popup-title" class="offers-popup-title">{{ offersTitle }}</h2>
+    <p class="offers-popup-lead">{{ offersLead }}</p>
+    <ul class="offers-popup-list">
+      @for (line of offersBullets; track line) {
+        <li>{{ line }}</li>
+      }
+    </ul>
+    <div class="offers-popup-actions">
+      <a routerLink="/offers" class="offers-popup-btn offers-popup-btn--secondary" (click)="closeOffersPopup()">
+        View all offers
+      </a>
+      <a routerLink="/services" class="offers-popup-btn offers-popup-btn--primary" (click)="closeOffersPopup()">
+        View services &amp; pricing
+      </a>
+      <button type="button" class="offers-popup-btn offers-popup-btn--ghost" (click)="closeOffersPopup()">
+        Maybe later
+      </button>
+    </div>
+  </div>
+}
+
 <div class="home-section">
   <app-hero></app-hero>
 </div>

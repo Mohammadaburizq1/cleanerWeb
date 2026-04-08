@@ -81,7 +81,16 @@
           ></textarea>
         </div>
 
-        <button type="submit" class="btn btn-gold">Request Free Quote</button>
+        @if (submitError) {
+          <p class="error quote-submit-message" role="alert">{{ submitError }}</p>
+        }
+        @if (submitSuccess) {
+          <p class="quote-submit-success quote-submit-message">Thanks — we received your quote request.</p>
+        }
+
+        <button type="submit" class="btn btn-gold" [disabled]="submitting">
+          {{ submitting ? 'Sending…' : 'Request Free Quote' }}
+        </button>
       </form>
     </div>
   </div>

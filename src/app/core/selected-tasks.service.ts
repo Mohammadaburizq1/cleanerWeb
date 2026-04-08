@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
+import { legacySqFtToTierId } from './services-quote';
 
 export type SelectedTask = { sectionTitle: string; task: string };
 
@@ -17,6 +18,12 @@ export type BookingDetails = {
   numberOfBathrooms?: number | null;
   numberOfCleaners?: number | null;
   hourlyDurationHours?: number | null;
+  /** Household has dogs, cats, or other pets */
+  hasPets?: boolean;
+  /** @deprecated migrated to homeSqFtTierId */
+  homeAreaSqFt?: number | null;
+  /** Home size tier from Step 1 dropdown */
+  homeSqFtTierId?: string | null;
   estimatedCost?: number;
   currency?: string;
   selectedSectionsWithPrices?: ReceiptLine[];
@@ -38,6 +45,8 @@ export class SelectedTasksService {
   private bathrooms: number | null = null;
   private cleaners: number | null = null;
   private hourlyHours: number | null = null;
+  private hasPets: boolean = false;
+  private homeSqFtTierId: string | null = null;
   private estimatedCost: number = 0;
   private selectedSectionsWithPrices: ReceiptLine[] = [];
 
@@ -55,6 +64,8 @@ export class SelectedTasksService {
           numberOfBathrooms: this.getNumberOfBathrooms(),
           numberOfCleaners: this.getNumberOfCleaners(),
           hourlyDurationHours: this.getHourlyDurationHours(),
+          hasPets: this.hasPets,
+          homeSqFtTierId: this.homeSqFtTierId,
           estimatedCost: this.estimatedCost,
           currency: CURRENCY,
           selectedSectionsWithPrices: this.selectedSectionsWithPrices,
@@ -86,6 +97,8 @@ export class SelectedTasksService {
           this.bathrooms = null;
           this.cleaners = null;
           this.hourlyHours = null;
+          this.hasPets = false;
+          this.homeSqFtTierId = null;
           this.estimatedCost = 0;
           this.selectedSectionsWithPrices = [];
         } else if (parsed && Array.isArray(parsed.selectedTasks)) {
@@ -110,6 +123,14 @@ export class SelectedTasksService {
             typeof parsed.hourlyDurationHours === 'number' && parsed.hourlyDurationHours > 0
               ? parsed.hourlyDurationHours
               : null;
+          this.hasPets = parsed.hasPets === true;
+          if (typeof parsed.homeSqFtTierId === 'string' && parsed.homeSqFtTierId.length > 0) {
+            this.homeSqFtTierId = parsed.homeSqFtTierId;
+          } else if (typeof parsed.homeAreaSqFt === 'number' && parsed.homeAreaSqFt >= 0) {
+            this.homeSqFtTierId = legacySqFtToTierId(Math.floor(parsed.homeAreaSqFt));
+          } else {
+            this.homeSqFtTierId = null;
+          }
           this.estimatedCost = typeof parsed.estimatedCost === 'number' ? parsed.estimatedCost : 0;
           const stored = parsed.selectedSectionsWithPrices;
           this.selectedSectionsWithPrices = Array.isArray(stored)
@@ -129,6 +150,8 @@ export class SelectedTasksService {
       this.bathrooms = null;
       this.cleaners = null;
       this.hourlyHours = null;
+      this.hasPets = false;
+      this.homeSqFtTierId = null;
       this.estimatedCost = 0;
       this.selectedSectionsWithPrices = [];
     }
@@ -145,6 +168,8 @@ export class SelectedTasksService {
           numberOfBathrooms: this.bathrooms,
           numberOfCleaners: this.cleaners,
           hourlyDurationHours: this.hourlyHours,
+          hasPets: this.hasPets,
+          homeSqFtTierId: this.homeSqFtTierId,
           estimatedCost: this.estimatedCost,
           currency: CURRENCY,
           selectedSectionsWithPrices: this.selectedSectionsWithPrices,
@@ -213,6 +238,33 @@ export class SelectedTasksService {
     return this.hourlyHours;
   }
 
+  setHasPets(value: boolean): void {
+    this.hasPets = value;
+    this.saveToStorage();
+  }
+
+  getHasPets(): boolean {
+    return this.hasPets;
+  }
+
+  setHomeSqFtTierId(value: string | null): void {
+    this.homeSqFtTierId = value === '' ? null : value;
+    this.saveToStorage();
+  }
+
+  getHomeSqFtTierId(): string | null {
+    return this.homeSqFtTierId;
+  }
+
+  /** Last synced quote total (from Services Step 1 + tasks). */
+  getEstimatedCost(): number {
+    return this.estimatedCost;
+  }
+
+  getSelectedSectionsWithPrices(): ReceiptLine[] {
+    return [...this.selectedSectionsWithPrices];
+  }
+
   /** Clear all selected tasks, rooms, and cost details (e.g. after booking is submitted). */
   clearAll(): void {
     this.tasks = [];
@@ -221,6 +273,8 @@ export class SelectedTasksService {
     this.bathrooms = null;
     this.cleaners = null;
     this.hourlyHours = null;
+    this.hasPets = false;
+    this.homeSqFtTierId = null;
     this.estimatedCost = 0;
     this.selectedSectionsWithPrices = [];
     this.saveToStorage();

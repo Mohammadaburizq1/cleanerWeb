@@ -72,6 +72,10 @@ export class AuthService {
     this.clearAuth();
   }
 
+  getAccessToken(): string | null {
+    return this.loadAccessToken();
+  }
+
   private handleAuthResult(result: AuthResultDto): void {
     if (result && result.success && result.accessToken) {
       this.saveTokens(result.accessToken, result.refreshToken ?? null);

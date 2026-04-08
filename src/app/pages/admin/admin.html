@@ -52,6 +52,145 @@
       <a routerLink="/" class="back-link">← Back to site</a>
     </div>
 
+    <section class="api-panel" aria-label="Backend API tools">
+      <h2 class="api-panel-title">Backend API</h2>
+      <p class="api-panel-intro">
+        Base URL: <code>{{ apiBase || '(same origin)' }}</code> — use <strong>Login</strong> first if a call returns 401.
+      </p>
+      <div class="api-panel-actions">
+        <button type="button" class="btn-api" (click)="openSwagger()">GET /swagger (open UI)</button>
+        <button type="button" class="btn-api" (click)="apiRefresh()" [disabled]="apiBusy">POST /api/Auth/refresh</button>
+        <button type="button" class="btn-api" (click)="apiMe()" [disabled]="apiBusy">GET /api/Auth/me</button>
+      </div>
+
+      <h3 class="api-sub">Catalog &amp; bookings</h3>
+      <div class="api-panel-actions">
+        <button type="button" class="btn-api" (click)="apiGetServices()" [disabled]="apiBusy">GET /api/Service</button>
+        <button type="button" class="btn-api" (click)="apiListBookings()" [disabled]="apiBusy">GET /api/Booking</button>
+      </div>
+      <div class="api-field-row">
+        <input
+          type="text"
+          class="api-input"
+          [(ngModel)]="bookingIdInput"
+          placeholder="Booking id (uuid)"
+          name="bookingIdInput"
+        />
+        <button type="button" class="btn-api" (click)="apiGetBooking()" [disabled]="apiBusy">GET /api/Booking/&#123;id&#125;</button>
+      </div>
+
+      <h3 class="api-sub">Feedback</h3>
+      <div class="api-panel-actions api-panel-actions--wrap">
+        <input
+          type="text"
+          class="api-input api-input--sm"
+          [(ngModel)]="feedbackUserIdQuery"
+          placeholder="userId (query, optional)"
+          name="feedbackUserIdQuery"
+        />
+        <input
+          type="text"
+          class="api-input api-input--sm"
+          [(ngModel)]="feedbackBookingIdQuery"
+          placeholder="bookingId (query, optional)"
+          name="feedbackBookingIdQuery"
+        />
+        <button type="button" class="btn-api" (click)="apiListFeedback()" [disabled]="apiBusy">GET /api/Feedback</button>
+      </div>
+      <div class="api-field-row">
+        <input
+          type="text"
+          class="api-input"
+          [(ngModel)]="feedbackIdInput"
+          placeholder="Feedback id (uuid)"
+          name="feedbackIdInput"
+        />
+        <button type="button" class="btn-api" (click)="apiGetFeedback()" [disabled]="apiBusy">
+          GET /api/Feedback/&#123;id&#125;
+        </button>
+      </div>
+
+      <h3 class="api-sub">Payments</h3>
+      <div class="api-panel-actions">
+        <button type="button" class="btn-api" (click)="apiListPayments()" [disabled]="apiBusy">GET /api/Payments</button>
+        <input
+          type="number"
+          class="api-input api-input--xs"
+          [(ngModel)]="stripeLimit"
+          name="stripeLimit"
+          min="1"
+          max="100"
+        />
+        <button type="button" class="btn-api" (click)="apiListStripePayments()" [disabled]="apiBusy">
+          GET /api/Payments/stripe
+        </button>
+      </div>
+      <div class="api-field-row">
+        <input
+          type="text"
+          class="api-input"
+          [(ngModel)]="paymentIdInput"
+          placeholder="Payment id (uuid)"
+          name="paymentIdInput"
+        />
+        <button type="button" class="btn-api" (click)="apiGetPayment()" [disabled]="apiBusy">GET</button>
+        <button type="button" class="btn-api btn-api--accept" (click)="apiAcceptPayment()" [disabled]="apiBusy">
+          Accept
+        </button>
+        <button type="button" class="btn-api btn-api--reject" (click)="apiRejectPayment()" [disabled]="apiBusy">
+          Reject
+        </button>
+        <button type="button" class="btn-api btn-api--refund" (click)="apiRefundPayment()" [disabled]="apiBusy">
+          Refund
+        </button>
+      </div>
+      <p class="api-hint">Stripe by provider id:</p>
+      <div class="api-field-row api-field-row--stack">
+        <input
+          type="text"
+          class="api-input"
+          [(ngModel)]="stripeProviderIdInput"
+          placeholder="providerPaymentId (e.g. pi_...)"
+          name="stripeProviderIdInput"
+        />
+        <div class="api-panel-actions">
+          <button type="button" class="btn-api" (click)="apiStripeAccept()" [disabled]="apiBusy">
+            POST …/stripe/&#123;id&#125;/accept
+          </button>
+        </div>
+        <input
+          type="text"
+          class="api-input"
+          [(ngModel)]="stripeConfirmPmInput"
+          placeholder="paymentMethodToken for confirm (pm_...)"
+          name="stripeConfirmPmInput"
+        />
+        <button type="button" class="btn-api" (click)="apiStripeConfirm()" [disabled]="apiBusy">
+          POST …/stripe/&#123;id&#125;/confirm
+        </button>
+      </div>
+
+      <h3 class="api-sub">Quotes</h3>
+      <div class="api-panel-actions">
+        <button type="button" class="btn-api" (click)="apiListQuotes()" [disabled]="apiBusy">GET /api/Quote</button>
+      </div>
+      <div class="api-field-row">
+        <input type="text" class="api-input" [(ngModel)]="quoteIdInput" placeholder="Quote id (uuid)" name="quoteIdInput" />
+        <button type="button" class="btn-api" (click)="apiGetQuote()" [disabled]="apiBusy">GET /api/Quote/&#123;id&#125;</button>
+      </div>
+
+      <p class="api-hint">
+        POST /api/Payments and POST /api/Quote are used from the <strong>Booking</strong> and home quote forms. Use Swagger for custom bodies.
+      </p>
+
+      @if (apiBusy) {
+        <p class="api-loading">Loading…</p>
+      }
+      @if (apiOutput) {
+        <pre class="api-output">{{ apiOutput }}</pre>
+      }
+    </section>
+
     @if (filteredOrders.length === 0) {
       <div class="empty-state">
         <p>No orders in this filter.</p>

@@ -113,6 +113,13 @@ select {
     border-color 0.3s ease;
 }
 
+/* Checkboxes/radios must stay compact; avoid inheriting full-width from other input styles */
+input[type='checkbox'],
+input[type='radio'] {
+  width: auto;
+  max-width: none;
+}
+
 button {
   font: inherit;
 }
@@ -147,4 +154,27 @@ button {
   --border: #475569;
   --primary: #3b82f6;
   --primary-hover: #2563eb;
+}
+
+/* Booking checkout: hide site chrome when printing / saving as PDF */
+@media print {
+  app-header,
+  app-footer {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+  }
+
+  body.theme-dark,
+  body.theme-light {
+    --page-bg: #ffffff;
+    --section-bg: #ffffff;
+    --card-bg: #ffffff;
+    --text-color: #111111;
+    --muted-text: #444444;
+    --border-color: #cccccc;
+    --accent-color: #1a1a1a;
+  }
 }

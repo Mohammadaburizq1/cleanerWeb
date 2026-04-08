@@ -1,0 +1,30 @@
+<section class="offers-page">
+  <div class="container">
+    <header class="offers-hero">
+      <span class="offers-tag">All offers</span>
+      <h1 class="offers-title">Special offers &amp; promotions</h1>
+      <p class="offers-intro">
+        Everything we are running right now — from first-time savings to bundles and seasonal deals. Tap
+        <strong>Get a quote</strong> to build your price on the Services page.
+      </p>
+    </header>
+
+    <ul class="offers-grid">
+      @for (offer of offers; track offer.id) {
+        <li class="offer-card">
+          @if (offer.badge) {
+            <span class="offer-card__badge">{{ offer.badge }}</span>
+          }
+          <h2 class="offer-card__title">{{ offer.title }}</h2>
+          <p class="offer-card__summary">{{ offer.summary }}</p>
+          <p class="offer-card__detail">{{ offer.detail }}</p>
+        </li>
+      }
+    </ul>
+
+    <div class="offers-cta">
+      <a routerLink="/services" class="offers-cta__btn">Get a quote</a>
+      <a routerLink="/contact" class="offers-cta__link">Questions or custom offer? Contact us</a>
+    </div>
+  </div>
+</section>

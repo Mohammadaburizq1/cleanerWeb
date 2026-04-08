@@ -136,6 +136,94 @@
   }
 }
 
+.step-1-input {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 16px;
+  color: var(--text-color);
+  background: var(--page-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-sizing: border-box;
+
+  &:focus {
+    outline: none;
+    border-color: var(--accent-color);
+  }
+
+  &::placeholder {
+    color: var(--muted-text);
+  }
+}
+
+.step-1-extra-fields {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 20px 24px;
+  margin-bottom: 20px;
+}
+
+.step-1-field--sqft {
+  flex: 1 1 180px;
+  min-width: 160px;
+  max-width: 280px;
+}
+
+.step-1-field--pets {
+  flex: 1 1 280px;
+  min-width: min(100%, 260px);
+}
+
+.step-1-checkbox {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 14px;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--page-bg);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-color);
+  line-height: 1.45;
+  box-sizing: border-box;
+
+  input[type='checkbox'] {
+    flex: 0 0 auto;
+    width: 1.375rem;
+    height: 1.375rem;
+    min-width: 1.375rem;
+    min-height: 1.375rem;
+    max-width: 1.375rem;
+    max-height: 1.375rem;
+    margin: 0.15em 0 0 0;
+    padding: 0;
+    border-radius: 4px;
+    accent-color: var(--accent-color);
+    cursor: pointer;
+    box-sizing: border-box;
+    /* Keep native control size stable (some resets stretch inputs to 100% width) */
+    align-self: flex-start;
+  }
+
+  > span {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.step-1-hint {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--muted-text);
+}
+
 .step-1-note {
   margin: 0;
   font-size: 14px;
@@ -481,6 +569,7 @@
 
 // ——— Booking details (rooms input + optional breakdown) ———
 .booking-details {
+  margin-top: 15px;
   margin-bottom: 28px;
   padding: 28px;
   background: var(--card-bg);

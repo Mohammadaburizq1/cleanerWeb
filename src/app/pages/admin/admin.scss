@@ -258,6 +258,144 @@
   background: #f59e0b;
 }
 
+.api-panel {
+  margin-bottom: 40px;
+  padding: 24px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+}
+
+.api-panel-title {
+  margin: 0 0 8px;
+  font-size: 22px;
+  color: var(--text-color);
+}
+
+.api-panel-intro {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: var(--muted-text);
+  line-height: 1.5;
+}
+
+.api-panel-intro code {
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.api-sub {
+  margin: 20px 0 10px;
+  font-size: 15px;
+  color: var(--accent-color);
+}
+
+.api-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.api-panel-actions--wrap {
+  align-items: flex-end;
+}
+
+.api-field-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.api-field-row--stack {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.api-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--page-bg);
+  color: var(--text-color);
+  font-size: 14px;
+}
+
+.api-input--sm {
+  min-width: 160px;
+  flex: 0 1 200px;
+}
+
+.api-input--xs {
+  flex: 0 0 72px;
+  min-width: 72px;
+}
+
+.btn-api {
+  padding: 9px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--page-bg);
+  color: var(--text-color);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-api:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-api--accept {
+  background: #166534;
+  color: #fff;
+  border-color: transparent;
+}
+
+.btn-api--reject {
+  background: #991b1b;
+  color: #fff;
+  border-color: transparent;
+}
+
+.btn-api--refund {
+  background: #b45309;
+  color: #fff;
+  border-color: transparent;
+}
+
+.api-hint {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--muted-text);
+}
+
+.api-loading {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: var(--muted-text);
+}
+
+.api-output {
+  margin-top: 16px;
+  padding: 14px;
+  max-height: 320px;
+  overflow: auto;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text-color);
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 @media (max-width: 600px) {
   .order-row {
     grid-template-columns: 1fr;

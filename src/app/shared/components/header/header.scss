@@ -27,15 +27,31 @@
   font-weight: 700;
   color: var(--text-color);
   cursor: pointer;
+  flex-shrink: 0;
 }
 
-nav {
+.nav-desktop {
   display: flex;
   align-items: center;
   gap: 24px;
+  flex-wrap: wrap;
 }
 
-nav a {
+.navbar-actions-desktop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.navbar-mobile-bar {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.nav-desktop a {
   color: var(--text-color);
   text-decoration: none;
   font-size: 16px;
@@ -43,15 +59,61 @@ nav a {
   transition: color 0.3s ease;
 }
 
-nav a:hover,
-nav a.active {
+.nav-desktop a:hover,
+.nav-desktop a.active {
   color: var(--accent-color);
 }
 
-.actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+/* Offers — red & blue gradient pill + gentle jump (see prefers-reduced-motion below) */
+.nav-desktop a.nav-link-offers {
+  position: relative;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-weight: 800;
+  color: #fff !important;
+  background: linear-gradient(125deg, #dc2626 0%, #4f46e5 45%, #2563eb 100%);
+  background-size: 140% 140%;
+  box-shadow:
+    0 2px 10px rgba(37, 99, 235, 0.45),
+    0 1px 0 rgba(255, 255, 255, 0.12) inset;
+  animation: nav-offers-jump 1.15s ease-in-out infinite;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.nav-desktop a.nav-link-offers:hover {
+  color: #fff !important;
+  filter: brightness(1.08);
+  animation-duration: 0.85s;
+}
+
+.nav-desktop a.nav-link-offers.active {
+  color: #fff !important;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, #fff 55%, transparent),
+    0 4px 14px rgba(220, 38, 38, 0.45);
+}
+
+@keyframes nav-offers-jump {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  35% {
+    transform: translateY(-5px);
+  }
+  55% {
+    transform: translateY(0);
+  }
+  70% {
+    transform: translateY(-3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-desktop a.nav-link-offers,
+  .navbar-mobile-bar a.nav-link-offers--mobile {
+    animation: none;
+  }
 }
 
 .theme-toggle {
@@ -88,24 +150,220 @@ nav a.active {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  white-space: nowrap;
 }
 
 .btn-primary:hover {
   transform: translateY(-1px);
 }
 
+.btn-primary--mobile {
+  padding: 10px 14px;
+  font-size: 14px;
+}
+
+.navbar-mobile-bar a.nav-link-offers--mobile {
+  padding: 6px 12px;
+  font-size: 14px;
+  text-decoration: none;
+  white-space: nowrap;
+  position: relative;
+  border-radius: 999px;
+  font-weight: 800;
+  color: #fff !important;
+  background: linear-gradient(125deg, #dc2626 0%, #4f46e5 45%, #2563eb 100%);
+  background-size: 140% 140%;
+  box-shadow:
+    0 2px 10px rgba(37, 99, 235, 0.45),
+    0 1px 0 rgba(255, 255, 255, 0.12) inset;
+  animation: nav-offers-jump 1.15s ease-in-out infinite;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.navbar-mobile-bar a.nav-link-offers--mobile:hover {
+  filter: brightness(1.08);
+  animation-duration: 0.85s;
+}
+
+.navbar-mobile-bar a.nav-link-offers--mobile.active {
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, #fff 55%, transparent),
+    0 4px 14px rgba(220, 38, 38, 0.45);
+}
+
+.nav-menu-toggle {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--card-bg);
+  color: var(--text-color);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.nav-menu-toggle:hover {
+  border-color: var(--accent-color);
+}
+
+.nav-menu-toggle__bars {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: currentColor;
+  border-radius: 1px;
+  position: relative;
+  box-shadow:
+    0 -6px 0 currentColor,
+    0 6px 0 currentColor;
+}
+
+.mobile-nav-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 998;
+  background: rgba(0, 0, 0, 0.4);
+  animation: mobile-backdrop-in 0.2s ease forwards;
+}
+
+@keyframes mobile-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.mobile-nav-panel {
+  display: none;
+}
+
+.mobile-nav-panel__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 24px 20px;
+}
+
+.mobile-nav-panel__inner a {
+  color: var(--text-color);
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 12px 12px;
+  border-radius: 8px;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.mobile-nav-panel__inner a:hover,
+.mobile-nav-panel__inner a.active {
+  color: var(--accent-color);
+  background: color-mix(in srgb, var(--accent-color) 12%, transparent);
+}
+
+.mobile-nav-panel__theme {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 12px 4px;
+  margin-top: 8px;
+  border-top: 1px solid var(--border-color);
+}
+
+.mobile-nav-panel__theme-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color);
+  opacity: 0.85;
+}
+
+.theme-toggle--panel {
+  width: 44px;
+  height: 44px;
+}
+
 @media (max-width: 768px) {
   .container {
-    flex-wrap: wrap;
-    justify-content: center;
+    flex-wrap: nowrap;
+    padding: 14px 16px;
+    gap: 12px;
   }
 
-  nav {
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 16px;
+  .logo {
+    font-size: 20px;
+    min-width: 0;
+    flex: 1;
+    line-height: 1.2;
   }
 
+  .nav-desktop,
+  .navbar-actions-desktop {
+    display: none !important;
+  }
+
+  .navbar-mobile-bar {
+    display: flex;
+  }
+
+  .navbar {
+    position: sticky;
+    z-index: 1000;
+  }
+
+  .mobile-nav-panel {
+    display: block;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    visibility: hidden;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--header-bg);
+    transition:
+      max-height 0.32s ease,
+      opacity 0.22s ease,
+      visibility 0s linear 0.32s;
+  }
+
+  .mobile-nav-panel--open {
+    max-height: min(70vh, 520px);
+    opacity: 1;
+    visibility: visible;
+    overflow-y: auto;
+    transition:
+      max-height 0.32s ease,
+      opacity 0.22s ease,
+      visibility 0s linear 0s;
+  }
+
+  .mobile-nav-panel--open .mobile-nav-panel__inner {
+    overscroll-behavior: contain;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-nav-backdrop {
+    display: none !important;
+  }
+}
+
+/* Legacy class kept if used elsewhere */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
   .actions {
     width: 100%;
     justify-content: center;

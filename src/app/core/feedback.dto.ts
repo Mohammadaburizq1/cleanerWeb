@@ -1,7 +1,9 @@
 export interface CreateFeedbackDto {
-  bookingId: string | null;
+  userId?: string | null;
+  guestUserName?: string | null;
+  bookingId?: string | null;
   rating: number | string;
-  comment: string | null;
+  comment?: string | null;
 }
 
 export interface FeedbackDto {
@@ -11,6 +13,5 @@ export interface FeedbackDto {
   bookingId: string | null;
   rating: number | string;
   comment: string | null;
-  createdAt: string; // ISO date-time
+  createdAt: string;
 }
-

@@ -123,10 +123,10 @@ export class OrdersService {
 
   /** Add a new order (e.g. when booking form is submitted). */
   /** Add a new order (e.g. from booking form or backend CreateStripePayment). */
-  addOrder(data: Omit<Order, 'id' | 'createdAt' | 'status'>): Order {
+  addOrder(data: Omit<Order, 'id' | 'createdAt' | 'status'>, backendId?: string): Order {
     const order: Order = {
       ...data,
-      id: `order-${this.idCounter++}`,
+      id: backendId ?? `order-${this.idCounter++}`,
       createdAt: new Date().toISOString(),
       status: 'pending',
     };

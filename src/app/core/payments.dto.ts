@@ -1,27 +1,9 @@
+/** POST /api/Payments — OpenAPI CreatePaymentRequest (flat body). */
 export interface CreatePaymentRequest {
-  /**
-   * backend متطلب (Required): جسم إنشاء الدفع داخل حقل اسمه `request`.
-   * */
-  request: {
-    provider: string;
-    currency: string;
-    amount?: number | string;
-    paymentMethodToken?: string | null;
-  };
-
-  /**
-   * backend متطلب: bookingId كـ Guid (في حال عدم وجوده نرسل null).
-   */
-  bookingId?: string | null;
-
-  /**
-   * ملاحظة: حسب Validation Errors في الـ backend،
-   * يبدو أنه يتوقع أيضًا provider/currency على مستوى الجذر.
-   * لذلك نرسلها أيضًا لتوافق الـ model.
-   */
-  provider?: string;
-  currency?: string;
+  provider: string;
+  currency: string;
   amount?: number | string;
+  bookingId?: string | null;
   paymentMethodToken?: string | null;
 }
 
@@ -30,7 +12,7 @@ export interface CreatePaymentResponse {
   providerPaymentId: string | null;
   clientSecret: string | null;
   status: string;
-  createdAt: string; // ISO date-time
+  createdAt: string;
 }
 
 export interface PaymentDto {
@@ -41,6 +23,10 @@ export interface PaymentDto {
   currency: string;
   amount: number | string;
   status: string;
-  createdAt: string; // ISO date-time
+  createdAt: string;
 }
 
+/** POST /api/Payments/stripe/{providerPaymentId}/confirm */
+export interface ConfirmStripePaymentRequest {
+  paymentMethodToken: string;
+}

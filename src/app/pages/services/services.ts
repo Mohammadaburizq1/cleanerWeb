@@ -1,17 +1,21 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { type ReceiptLine, SelectedTasksService } from '../../core/selected-tasks.service';
-
-export type SelectedTask = { sectionTitle: string; task: string };
-
-export type ChecklistSection = {
-  title: string;
-  items: string[];
-  /** Amount (e.g. in JD) added per checked task in this section */
-  pricePerTask: number;
-  subtitle?: string;
-};
+import {
+  CLEANING_CHECKLIST_SECTIONS,
+  type ChecklistSection,
+} from '../../core/cleaning-checklist.data';
+import {
+  computeServicesQuote,
+  HOME_SQ_FT_TIERS,
+  homeSqFtTierById,
+  QUOTE_HOURLY_RATE_PER_CLEANER,
+  QUOTE_PET_SURCHARGE_JD,
+  QUOTE_PRICE_PER_BATHROOM,
+  QUOTE_PRICE_PER_BEDROOM,
+} from '../../core/services-quote';
+import type { ReceiptLine } from '../../core/selected-tasks.service';
+import { type SelectedTask, SelectedTasksService } from '../../core/selected-tasks.service';
 
 @Component({
   selector: 'app-services',
@@ -24,7 +28,7 @@ export class Services implements OnInit {
   readonly sectionTag = 'Get a quote';
   readonly mainHeading = 'Get A Quote and Complete Your Booking';
   readonly intro =
-    'We’re transparent about what we do. Every task is listed below—collapse a section anytime if you want less on screen.';
+    'We’re transparent about what we do. Standard cleaning tasks live on the Checklist page in the menu; here you can get a quote and add optional upgrades.';
 
     readonly bedroomOptions: { label: string; value: number }[] = [
     { label: 'One Bedroom Home', value: 1 },
@@ -67,110 +71,7 @@ export class Services implements OnInit {
     { label: '8 Hours', value: 8 },
   ];
 
-  readonly checklist: ChecklistSection[] = [
-    {
-      title: 'Kitchen',
-      pricePerTask: 1,
-      items: [
-        'Empty Trash',
-        'Dust from Top to Bottom',
-        'Dust Light Fixtures and Fans',
-        'Dust Baseboards',
-        'Dust Blinds and Window Sills',
-        'Sinks',
-        'Backsplash',
-        'Cabinets — Dusted and Spot Checked',
-        'All Countertops',
-        'Small Appliances',
-        'Glass Doors',
-        'Microwave',
-        'Polish Stainless Steel',
-        'Dishwasher (Outside Only)',
-        'Stovetop and Stove Fan',
-        'Oven (Outside Only)',
-        'Outside Fridge',
-        'Floors Vacuumed',
-        'Floors Mopped',
-      ],
-    },
-    {
-      title: 'Living Areas & Bedroom',
-      pricePerTask: 1,
-      items: [
-        'Dust from Top to Bottom',
-        'Dust Light Fixtures and Fans',
-        'Dust Baseboards',
-        'Dust Blinds & Window Sills',
-        'Throw Rugs Vacuumed',
-        'Empty Trash',
-        'Clean All Mirrors',
-        'Dust Furniture and Decorations',
-        'Clean All Glass Surfaces',
-        'Remove Fingerprints / Smudges',
-        'Straighten and Make Presentable',
-        'Make Beds',
-        'Vacuum All Floors',
-        'Mop Hard Surface Flooring',
-        'Vacuum Stairs',
-      ],
-    },
-    {
-      title: 'Bathrooms',
-      pricePerTask: 1,
-      items: [
-        'Dust from Top to Bottom',
-        'Dust Light Fixtures and Fans',
-        'Dust Baseboards',
-        'Dust Blinds and Window Sills',
-        'Sinks',
-        'Countertops',
-        'Mirrors',
-        'Faucets (also polished)',
-        'Toilet',
-        'Empty Trash',
-        'Shower Stall',
-        'Remove Soap Scum',
-        'Bathtub',
-        'Shower Racks (as able)',
-        'Towels Folded and Hung',
-        'Straighten and Make Presentable',
-        'Floors Vacuumed',
-        'Floors Mopped',
-      ],
-    },
-    {
-      title: 'Deep Clean',
-      pricePerTask: 3,
-      items: [
-        'Hand Wash Baseboards',
-        'Hand Wash Wood Trim',
-        'Hand Wash Outsides of Cabinets',
-        'Full Soap Scum Buildup Removal',
-        'Kitchen Grease & Buildup Removal',
-      ],
-    },
-    {
-      title: 'Moving Clean',
-      pricePerTask: 5,
-      subtitle: 'Everything in a Deep Clean, plus',
-      items: ['Inside Empty Cabinets'],
-    },
-    {
-      title: 'Upgrades',
-      pricePerTask: 2,
-      items: [
-        'Changing Linens',
-        'Interior of Fridge & Freezer',
-        'Interior of Oven',
-        'Interior Windows',
-        'Vacuum Sectional / Large Couch',
-        'Vacuum Small Couch',
-      ],
-    },
-  ];
-
-  /** Sections included in every standard cleaning */
-  readonly includedSections = this.checklist.slice(0, 3);
+  readonly checklist: ChecklistSection[] = CLEANING_CHECKLIST_SECTIONS;
   /** Add-on services (Deep Clean, Moving Clean, Upgrades) */
   readonly addOnSections = this.checklist.slice(3);
 
@@ -190,11 +91,19 @@ export class Services implements OnInit {
   numberOfCleaners: number | null = null;
   /** Duration in hours (for hourly service; persisted) */
   hourlyDurationHours: number | null = null;
+  /** Pets in the household (persisted) */
+  hasPets = false;
+  /** Home size tier id from Step 1 dropdown (persisted) */
+  homeSqFtTierId: string | null = null;
 
-  /** Extra amount per room (added on top of selected-section total) */
-  readonly pricePerRoom = 5;
+  readonly homeSqFtTierOptions = HOME_SQ_FT_TIERS;
+  readonly petSurchargeJd = QUOTE_PET_SURCHARGE_JD;
+
+  /** Base quote: per bedroom and per bathroom (Step 1 drives the total). */
+  readonly pricePerBedroom = QUOTE_PRICE_PER_BEDROOM;
+  readonly pricePerBathroom = QUOTE_PRICE_PER_BATHROOM;
   /** Hourly rate per cleaner (used when Hourly Service is selected) */
-  readonly hourlyRatePerCleaner = 20;
+  readonly hourlyRatePerCleaner = QUOTE_HOURLY_RATE_PER_CLEANER;
   readonly currency = 'JD';
 
   /** Sales tax rate (e.g. 0.06 = 6%). Set to 0 if no tax. */
@@ -228,6 +137,8 @@ export class Services implements OnInit {
       this.hourlyDurationHours = 7.5;
       this.selectedTasksService.setHourlyDurationHours(7.5);
     }
+    this.hasPets = this.selectedTasksService.getHasPets();
+    this.homeSqFtTierId = this.selectedTasksService.getHomeSqFtTierId();
     this.syncCostToService();
   }
 
@@ -237,17 +148,22 @@ export class Services implements OnInit {
   }
 
   private syncCostToService(): void {
-    const lines: ReceiptLine[] = this.selectedSectionsWithPrices.map(
-      ({ section, taskCount, pricePerTask, amount }) => ({
-        title: section.title,
-        taskCount,
-        pricePerTask,
-        amount,
-      }),
-    );
+    const { estimatedCost, selectedSectionsWithPrices } = this.computeQuote();
     this.selectedTasksService.setCostDetails({
-      estimatedCost: this.estimatedCost,
-      selectedSectionsWithPrices: lines,
+      estimatedCost,
+      selectedSectionsWithPrices,
+    });
+  }
+
+  private computeQuote() {
+    return computeServicesQuote({
+      numberOfBedrooms: this.numberOfBedrooms,
+      numberOfBathrooms: this.numberOfBathrooms,
+      numberOfCleaners: this.numberOfCleaners,
+      hourlyDurationHours: this.hourlyDurationHours,
+      checkedItemKeys: this.checkedItems,
+      hasPets: this.hasPets,
+      homeSqFtTierId: this.homeSqFtTierId,
     });
   }
 
@@ -292,6 +208,8 @@ export class Services implements OnInit {
     this.selectedTasksService.setNumberOfBathrooms(0);
     this.selectedTasksService.setNumberOfCleaners(1);
     this.selectedTasksService.setHourlyDurationHours(7.5);
+    this.hasPets = false;
+    this.homeSqFtTierId = null;
     this.expanded = new Set(this.checklist.map((s) => s.title));
     this.syncCostToService();
   }
@@ -312,6 +230,21 @@ export class Services implements OnInit {
     this.syncCostToService();
   }
 
+  onHomeSqFtTierChange(event: Event): void {
+    const el = event.target as HTMLSelectElement;
+    const v = el.value.trim();
+    this.homeSqFtTierId = v === '' ? null : v;
+    this.selectedTasksService.setHomeSqFtTierId(this.homeSqFtTierId);
+    this.syncCostToService();
+  }
+
+  onHasPetsChange(event: Event): void {
+    const el = event.target as HTMLInputElement;
+    this.hasPets = el.checked;
+    this.selectedTasksService.setHasPets(this.hasPets);
+    this.syncCostToService();
+  }
+
   /** Number of checked items in a section */
   checkedCountInSection(section: ChecklistSection): number {
     return section.items.filter((item) => this.checkedItems.has(this.itemKey(section, item))).length;
@@ -322,25 +255,30 @@ export class Services implements OnInit {
     return this.checkedCountInSection(section) > 0;
   }
 
-  /** Sum of (checked count × price per task) for all sections */
-  get selectedSectionsTotal(): number {
-    return this.checklist
-      .filter((s) => this.hasSectionAnyChecked(s))
-      .reduce(
-        (sum, s) => sum + this.checkedCountInSection(s) * s.pricePerTask,
-        0,
-      );
+  /** Home size line item for standard (non-hourly) quotes — bedrooms + bathrooms from Step 1 */
+  get homeBaseTotal(): number {
+    if (this.isHourlyService) return 0;
+    const beds = Math.max(0, this.numberOfBedrooms ?? 0);
+    const baths = Math.max(0, this.numberOfBathrooms ?? 0);
+    return beds * this.pricePerBedroom + baths * this.pricePerBathroom;
   }
 
-  /** Estimated cost: for hourly = rate × hours × cleaners; else tasks + rooms × price per room */
+  /** Hourly subtotal before home-size / pet surcharges */
+  get hourlyBaseSubtotal(): number {
+    if (!this.isHourlyService) return 0;
+    const cleaners = this.numberOfCleaners ?? 1;
+    const hours = this.hourlyDurationHours ?? 0;
+    return this.hourlyRatePerCleaner * cleaners * hours;
+  }
+
+  /** Estimated cost (includes home size tier + pets when selected). */
   get estimatedCost(): number {
-    if (this.isHourlyService) {
-      const cleaners = this.numberOfCleaners ?? 1;
-      const hours = this.hourlyDurationHours ?? 0;
-      return this.hourlyRatePerCleaner * cleaners * hours;
-    }
-    const rooms = this.numberOfRooms != null && this.numberOfRooms >= 0 ? this.numberOfRooms : 0;
-    return this.selectedSectionsTotal + rooms * this.pricePerRoom;
+    return this.computeQuote().estimatedCost;
+  }
+
+  /** Receipt lines for breakdown and booking (tasks + home size + pets). */
+  get receiptLines(): ReceiptLine[] {
+    return this.computeQuote().selectedSectionsWithPrices;
   }
 
   /** Sub-total (same as estimatedCost before tax) */
@@ -361,36 +299,27 @@ export class Services implements OnInit {
   /** Property label for summary (e.g. "Two Bedroom Home · 2 Bathrooms" or "Hourly Service · 1 Cleaner · 7.5 Hours") */
   get propertyLabel(): string {
     const beds = this.numberOfBedrooms ?? 0;
+    let base: string;
     if (beds <= 0) {
       const cleaners = this.numberOfCleaners ?? 1;
       const hours = this.hourlyDurationHours ?? 0;
       const cleanerLabel = this.cleanerOptions.find((o) => o.value === cleaners)?.label ?? `${cleaners} Cleaner${cleaners === 1 ? '' : 's'}`;
       const hourLabel = this.hourOptions.find((o) => o.value === hours)?.label ?? `${hours} Hours`;
-      return `Hourly Service · ${cleanerLabel} · ${hourLabel}`;
+      base = `Hourly Service · ${cleanerLabel} · ${hourLabel}`;
+    } else {
+      const baths = this.numberOfBathrooms ?? 0;
+      const bedLabel = this.bedroomOptions.find((o) => o.value === beds)?.label ?? `${beds} Bedroom${beds === 1 ? '' : 's'}`;
+      const bathLabel =
+        baths <= 0
+          ? '0 Bathrooms'
+          : this.bathroomOptions.find((o) => o.value === baths)?.label ?? `${baths} Bathroom${baths === 1 ? '' : 's'}`;
+      base = `${bedLabel} · ${bathLabel}`;
     }
-    const baths = this.numberOfBathrooms ?? 0;
-    const bedLabel = this.bedroomOptions.find((o) => o.value === beds)?.label ?? `${beds} Bedroom${beds === 1 ? '' : 's'}`;
-    const bathLabel =
-      baths <= 0
-        ? '0 Bathrooms'
-        : this.bathroomOptions.find((o) => o.value === baths)?.label ?? `${baths} Bathroom${baths === 1 ? '' : 's'}`;
-    return `${bedLabel} · ${bathLabel}`;
-  }
-
-  /** Receipt line: section, task count, price per task, amount (for breakdown) */
-  get selectedSectionsWithPrices(): {
-    section: ChecklistSection;
-    taskCount: number;
-    pricePerTask: number;
-    amount: number;
-  }[] {
-    return this.checklist
-      .filter((s) => this.hasSectionAnyChecked(s))
-      .map((section) => {
-        const taskCount = this.checkedCountInSection(section);
-        const amount = taskCount * section.pricePerTask;
-        return { section, taskCount, pricePerTask: section.pricePerTask, amount };
-      });
+    const extra: string[] = [];
+    const tier = homeSqFtTierById(this.homeSqFtTierId);
+    if (tier) extra.push(tier.label);
+    if (this.hasPets) extra.push('Pets in home');
+    return extra.length ? `${base} · ${extra.join(' · ')}` : base;
   }
 
   itemKey(section: ChecklistSection, item: string): string {
@@ -427,6 +356,9 @@ export class Services implements OnInit {
     this.selectedTasksService.setNumberOfBathrooms(this.numberOfBathrooms);
     this.selectedTasksService.setNumberOfCleaners(this.numberOfCleaners);
     this.selectedTasksService.setHourlyDurationHours(this.hourlyDurationHours);
+    this.selectedTasksService.setHasPets(this.hasPets);
+    this.selectedTasksService.setHomeSqFtTierId(this.homeSqFtTierId);
+    this.syncCostToService();
     this.router.navigate(['/booking'], {
       state: {
         selectedTasks,
@@ -435,16 +367,11 @@ export class Services implements OnInit {
         numberOfBathrooms: this.numberOfBathrooms,
         numberOfCleaners: this.numberOfCleaners,
         hourlyDurationHours: this.hourlyDurationHours,
+        hasPets: this.hasPets,
+        homeSqFtTierId: this.homeSqFtTierId,
         estimatedCost: this.estimatedCost,
         currency: this.currency,
-        selectedSectionsWithPrices: this.selectedSectionsWithPrices.map(
-          ({ section, taskCount, pricePerTask, amount }) => ({
-            title: section.title,
-            taskCount,
-            pricePerTask,
-            amount,
-          }),
-        ),
+        selectedSectionsWithPrices: this.receiptLines.map((line) => ({ ...line })),
       },
     });
   }

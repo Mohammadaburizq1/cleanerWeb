@@ -100,6 +100,60 @@ button:hover {
   color: var(--muted-text);
 }
 
+.feedback-section {
+  margin-top: 56px;
+  padding-top: 40px;
+  border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+}
+
+.feedback-section h2 {
+  margin: 0 0 8px;
+  color: var(--text-color);
+}
+
+.feedback-section > p {
+  margin: 0 0 20px;
+  color: var(--muted-text);
+}
+
+.feedback-form {
+  max-width: 520px;
+}
+
+.rating-stars {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.rating-stars .star {
+  background: none;
+  border: none;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--muted-text);
+  opacity: 0.45;
+  padding: 0 2px;
+}
+
+.rating-stars .star.active {
+  color: var(--accent-color);
+  opacity: 1;
+}
+
+.feedback-success {
+  color: var(--accent-color);
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.error {
+  color: #ff9c9c;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
 @media (max-width: 900px) {
   .contact-grid {
     grid-template-columns: 1fr;

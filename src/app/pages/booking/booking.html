@@ -142,19 +142,6 @@
             </div>
 
             <div class="form-group">
-              <label for="serviceType">Service Type</label>
-              <select id="serviceType" formControlName="serviceType">
-                <option value="">Select service</option>
-                @for (service of serviceOptions; track service.value) {
-                  <option [value]="service.value">{{ service.label }}</option>
-                }
-              </select>
-              @if (submitted && f.serviceType.errors) {
-                <small class="error">Service type is required.</small>
-              }
-            </div>
-
-            <div class="form-group">
               <label for="propertyType">Property Type</label>
               <select id="propertyType" formControlName="propertyType">
                 <option value="">Select property type</option>
@@ -168,19 +155,80 @@
               }
             </div>
 
-            <div class="form-group">
-              <label for="preferredDate">Preferred Date</label>
-              <input id="preferredDate" type="date" formControlName="preferredDate" />
+            <div class="form-group form-group-full booking-datetime-field">
+              <label for="fpDateTime">Preferred date &amp; time</label>
+              <input
+                #fpDateTime
+                id="fpDateTime"
+                type="text"
+                readonly
+                class="booking-datetime-input"
+                placeholder="Select date and time"
+                autocomplete="off"
+              />
+              <input type="hidden" formControlName="preferredDate" />
+              <input type="hidden" formControlName="preferredTime" />
+              @if (takenDatesUnavailable) {
+                <small class="booking-datetime-note">
+                  Could not load existing bookings. Days that are already full may still appear — the server may reject
+                  conflicts.
+                </small>
+              } @else {
+                <small class="booking-datetime-note">
+                  Up to {{ maxBookingsPerDay }} bookings per day. Unavailable days are grayed out — hover (or long-press on
+                  mobile) for “Fully booked today”.
+                </small>
+              }
               @if (submitted && f.preferredDate.errors) {
                 <small class="error">Preferred date is required.</small>
               }
-            </div>
-
-            <div class="form-group">
-              <label for="preferredTime">Preferred Time</label>
-              <input id="preferredTime" type="time" formControlName="preferredTime" />
               @if (submitted && f.preferredTime.errors) {
                 <small class="error">Preferred time is required.</small>
+              }
+            </div>
+
+            <div class="form-group form-group-full booking-location-block">
+              <span class="booking-location-label">Service location (OpenStreetMap — no API key)</span>
+              <div class="booking-map-toolbar">
+                <button type="button" class="btn-map" (click)="useMyLocation()" [disabled]="!mapReady || geoLoading">
+                  {{ geoLoading ? 'Getting location…' : 'Use my location' }}
+                </button>
+                <button
+                  type="button"
+                  class="btn-map btn-map-primary"
+                  (click)="confirmLocation()"
+                  [disabled]="!mapReady || reverseGeocodeLoading"
+                >
+                  {{ reverseGeocodeLoading ? 'Looking up address…' : 'Confirm location' }}
+                </button>
+              </div>
+              <div #mapContainer class="booking-map" role="application" aria-label="Map to pick service location"></div>
+              @if (pinPreviewLabel) {
+                <p class="booking-map-coords booking-map-coords--preview" aria-live="polite">
+                  Pin: {{ pinPreviewLabel }}
+                </p>
+              }
+              @if (locationConfirmed && mapPinLabel) {
+                <p class="booking-map-coords" aria-live="polite">Confirmed: {{ mapPinLabel }}</p>
+              }
+              @if (geoError) {
+                <p class="booking-map-hint booking-map-hint--error">{{ geoError }}</p>
+              }
+              @if (geocodeError) {
+                <p class="booking-map-hint booking-map-hint--error">{{ geocodeError }}</p>
+              }
+              @if (mapError) {
+                <p class="booking-map-hint booking-map-hint--error">{{ mapError }}</p>
+              } @else if (mapReady) {
+                <p class="booking-map-hint">
+                  Use your location or click the map to move the pin, then press Confirm location. The address field
+                  fills with the nearest street name (English) when possible. You can edit it below.
+                </p>
+              }
+              @if (submitted && bookingForm.hasError('locationRequired')) {
+                <small class="error">
+                  Confirm your location on the map, or enter an address (at least 3 characters).
+                </small>
               }
             </div>
 
@@ -190,11 +238,8 @@
                 id="address"
                 type="text"
                 formControlName="address"
-                placeholder="Enter full address"
+                placeholder="Street and area (filled automatically when you confirm the pin, or type here)"
               />
-              @if (submitted && f.address.errors) {
-                <small class="error">Address is required.</small>
-              }
             </div>
 
             <div class="form-group form-group-full payment-heading">
@@ -219,13 +264,14 @@
               </div>
 
               <p class="stripe-card-tip">
-                أدخل Expiry بالشكل <strong>MM/YY</strong> مثل <strong>12/34</strong>. اضغط داخل خانة الـ Expiry في Card Element واكتب الرقمين كاملين.
+                Enter the expiry as <strong>MM/YY</strong> (e.g. <strong>12/34</strong>). Click inside the Expiry field in
+                the card box and type both digits.
               </p>
 
               @if (cardComplete) {
-                <p class="stripe-card-ok">بيانات البطاقة مكتملة ✅</p>
+                <p class="stripe-card-ok">Card details complete.</p>
               } @else {
-                <p class="stripe-card-notok">البيانات غير مكتملة بعد.</p>
+                <p class="stripe-card-notok">Card details are not complete yet.</p>
               }
             </div>
 

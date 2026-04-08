@@ -1,28 +1,79 @@
 <header class="navbar">
   <div class="container">
-    <div class="logo" routerLink="/">
-      Super Magic Mop
-    </div>
+    <div class="logo" routerLink="/" (click)="closeMobileMenu()">Super Magic Mop</div>
 
-    <nav>
-      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
-      <a routerLink="/services" routerLinkActive="active">Services</a>
-      <a routerLink="/about" routerLinkActive="active">About</a>
-      <a routerLink="/contact" routerLinkActive="active">Contact</a>
+    <nav class="nav-desktop" aria-label="Main">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMobileMenu()"
+        >Home</a
+      >
+      <a routerLink="/offers" routerLinkActive="active" class="nav-link-offers" (click)="closeMobileMenu()">Offers</a>
+      <a routerLink="/services" routerLinkActive="active" (click)="closeMobileMenu()">Services</a>
+      <a routerLink="/checklist" routerLinkActive="active" (click)="closeMobileMenu()">Checklist</a>
+      <a routerLink="/about" routerLinkActive="active" (click)="closeMobileMenu()">About</a>
+      <a routerLink="/contact" routerLinkActive="active" (click)="closeMobileMenu()">Contact</a>
       @if (!isLoggedIn()) {
-        <a routerLink="/login" routerLinkActive="active">Account Login</a>
+        <a routerLink="/login" routerLinkActive="active" (click)="closeMobileMenu()">Account Login</a>
       }
       @if (isAdmin()) {
-        <a routerLink="/admin" routerLinkActive="active">Admin</a>
+        <a routerLink="/admin" routerLinkActive="active" (click)="closeMobileMenu()">Admin</a>
       }
     </nav>
 
-    <div class="actions">
-      <button class="theme-toggle" type="button" (click)="toggleTheme()">
+    <div class="navbar-actions-desktop">
+      <button class="theme-toggle" type="button" (click)="toggleTheme()" aria-label="Toggle light or dark theme">
         <span class="icon">{{ isLightTheme ? '☀' : '🌙' }}</span>
       </button>
-
       <button type="button" class="btn-primary" (click)="goToBookNow()">Book Now</button>
     </div>
+
+    <div class="navbar-mobile-bar">
+      <a routerLink="/offers" routerLinkActive="active" class="nav-link-offers nav-link-offers--mobile" (click)="closeMobileMenu()"
+        >Offers</a
+      >
+      <button type="button" class="btn-primary btn-primary--mobile" (click)="goToBookNow()">Book Now</button>
+      <button
+        type="button"
+        class="nav-menu-toggle"
+        (click)="toggleMobileMenu()"
+        [attr.aria-expanded]="mobileMenuOpen"
+        aria-controls="mobile-nav-panel"
+        [attr.aria-label]="mobileMenuOpen ? 'Close menu' : 'Open menu'"
+      >
+        <span class="nav-menu-toggle__bars" aria-hidden="true"></span>
+      </button>
+    </div>
+  </div>
+
+  @if (mobileMenuOpen) {
+    <div class="mobile-nav-backdrop" (click)="closeMobileMenu()" aria-hidden="true"></div>
+  }
+
+  <div
+    id="mobile-nav-panel"
+    class="mobile-nav-panel"
+    [class.mobile-nav-panel--open]="mobileMenuOpen"
+    [attr.aria-hidden]="!mobileMenuOpen"
+  >
+    <nav class="mobile-nav-panel__inner" aria-label="Mobile menu">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMobileMenu()"
+        >Home</a
+      >
+      <a routerLink="/services" routerLinkActive="active" (click)="closeMobileMenu()">Services</a>
+      <a routerLink="/checklist" routerLinkActive="active" (click)="closeMobileMenu()">Checklist</a>
+      <a routerLink="/about" routerLinkActive="active" (click)="closeMobileMenu()">About</a>
+      <a routerLink="/contact" routerLinkActive="active" (click)="closeMobileMenu()">Contact</a>
+      @if (!isLoggedIn()) {
+        <a routerLink="/login" routerLinkActive="active" (click)="closeMobileMenu()">Account Login</a>
+      }
+      @if (isAdmin()) {
+        <a routerLink="/admin" routerLinkActive="active" (click)="closeMobileMenu()">Admin</a>
+      }
+      <div class="mobile-nav-panel__theme">
+        <span class="mobile-nav-panel__theme-label">Theme</span>
+        <button class="theme-toggle theme-toggle--panel" type="button" (click)="toggleTheme()" aria-label="Toggle theme">
+          <span class="icon">{{ isLightTheme ? '☀' : '🌙' }}</span>
+        </button>
+      </div>
+    </nav>
   </div>
 </header>

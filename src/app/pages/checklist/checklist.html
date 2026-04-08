@@ -1,0 +1,68 @@
+<section class="checklist-page">
+  <div class="container container--wide">
+    <header class="page-header">
+      <span class="section-tag">{{ sectionTag }}</span>
+      <h1 class="main-heading">{{ mainHeading }}</h1>
+      <p class="intro">{{ intro }}</p>
+      <div class="checklist-actions no-print">
+        <button type="button" class="btn-print-checklist" (click)="printChecklist()">
+          Print / Save as PDF
+        </button>
+        <p class="checklist-to-quote">
+          <a routerLink="/services" class="link-to-services">Get a quote and add-ons →</a>
+        </p>
+      </div>
+    </header>
+
+    <div class="checklist-groups">
+      <div class="checklist-group checklist-group--included">
+        <h2 class="group-title">Room-by-room tasks</h2>
+        <p class="group-desc">What we do on every standard visit.</p>
+        <div class="accordion">
+          @for (section of sections; track trackByTitle($index, section)) {
+            <div class="accordion-item" [class.is-open]="isExpanded(section.title)">
+              <button
+                type="button"
+                class="accordion-trigger"
+                (click)="toggle(section)"
+                [attr.aria-expanded]="isExpanded(section.title)"
+                [attr.aria-controls]="'panel-' + section.title"
+                [id]="'trigger-' + section.title"
+              >
+                <span class="accordion-title">{{ section.title }}</span>
+                <span class="accordion-price">{{ section.pricePerTask }} {{ currency }}/task</span>
+                <span class="accordion-count">{{ section.items.length }} tasks</span>
+                <span class="accordion-icon" aria-hidden="true"></span>
+              </button>
+              <div
+                class="accordion-panel"
+                [id]="'panel-' + section.title"
+                role="region"
+                [attr.aria-labelledby]="'trigger-' + section.title"
+                [attr.aria-hidden]="!isExpanded(section.title)"
+              >
+                @if (section.subtitle) {
+                  <p class="panel-subtitle">{{ section.subtitle }}</p>
+                }
+                <ul class="checklist-items">
+                  @for (item of section.items; track item) {
+                    <li class="checklist-item">
+                      <input
+                        type="checkbox"
+                        [id]="'check-' + section.title + '-' + item"
+                        class="checklist-input"
+                        [checked]="isChecked(section, item)"
+                        (change)="toggleChecked(section, item)"
+                      />
+                      <label [for]="'check-' + section.title + '-' + item" class="checklist-label">{{ item }}</label>
+                    </li>
+                  }
+                </ul>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
