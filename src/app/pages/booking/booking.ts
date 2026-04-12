@@ -27,7 +27,13 @@ import { homeSqFtTierById, legacySqFtToTierId } from '../../core/services-quote'
 import type { ServiceDto } from '../../core/booking.dto';
 import { OfferService } from '../../core/offer.service';
 import type { OfferDto } from '../../core/offer.dto';
-import { loadStripe, type Stripe, type StripeCardElement, type StripeElements } from '@stripe/stripe-js';
+import {
+  loadStripe,
+  type Stripe,
+  type StripeCardElement,
+  type StripeCardElementOptions,
+  type StripeElements,
+} from '@stripe/stripe-js';
 import * as L from 'leaflet';
 import flatpickr from 'flatpickr';
 import type { Instance as FlatpickrInstance } from 'flatpickr/dist/types/instance';
@@ -112,6 +118,8 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   private stripe: Stripe | null = null;
   private elements: StripeElements | null = null;
   private cardElement: StripeCardElement | null = null;
+  /** Sync Stripe iframe text/icon colors when header toggles light/dark theme. */
+  private bodyThemeObserver: MutationObserver | null = null;
 
   cardElementError: string | null = null;
   stripeReady = false;
@@ -434,6 +442,49 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  /** Stripe Card Element reads colors from JS options, not CSS. */
+  private stripeCardStyle(dark: boolean): NonNullable<StripeCardElementOptions['style']> {
+    if (dark) {
+      return {
+        base: {
+          color: '#ffffff',
+          fontFamily: 'system-ui, -apple-system, Segoe UI, sans-serif',
+          fontSize: '16px',
+          fontSmoothing: 'antialiased',
+          '::placeholder': { color: '#94a3b8' },
+          iconColor: '#e2e8f0',
+        },
+        invalid: {
+          color: '#fca5a5',
+          iconColor: '#fca5a5',
+        },
+      };
+    }
+    return {
+      base: {
+        color: '#32325d',
+        fontFamily: 'system-ui, -apple-system, Segoe UI, sans-serif',
+        fontSize: '16px',
+        fontSmoothing: 'antialiased',
+        '::placeholder': { color: '#aab7c4' },
+        iconColor: '#424770',
+      },
+      invalid: {
+        color: '#fa755a',
+        iconColor: '#fa755a',
+      },
+    };
+  }
+
+  private isDarkTheme(): boolean {
+    return document.body.classList.contains('theme-dark');
+  }
+
+  private syncStripeCardTheme(): void {
+    if (!this.cardElement) return;
+    this.cardElement.update({ style: this.stripeCardStyle(this.isDarkTheme()) });
+  }
+
   private async initStripe(): Promise<void> {
     if (!this.stripePublishableKey) return;
     if (!this.stripeCardMount) return;
@@ -449,6 +500,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
 
     const card = this.elements.create('card', {
       hidePostalCode: true,
+      style: this.stripeCardStyle(this.isDarkTheme()),
     });
 
     card.mount(this.stripeCardMount.nativeElement);
@@ -460,6 +512,14 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
 
     this.cardElement = card;
     this.stripeReady = true;
+
+    this.bodyThemeObserver = new MutationObserver(() => {
+      this.ngZone.run(() => this.syncStripeCardTheme());
+    });
+    this.bodyThemeObserver.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
   }
 
   private initLeafletMap(): void {
@@ -658,6 +718,8 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.bodyThemeObserver?.disconnect();
+    this.bodyThemeObserver = null;
     try {
       this.cardElement?.unmount();
     } catch {
