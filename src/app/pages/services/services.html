@@ -6,6 +6,15 @@
       <p class="intro">{{ intro }}</p>
     </header>
 
+    @if (bookingRedirectNotice) {
+      <div class="booking-redirect-notice" role="status">
+        <p class="booking-redirect-notice__text">{{ bookingRedirectNotice }}</p>
+        <button type="button" class="booking-redirect-notice__dismiss" (click)="dismissBookingRedirectNotice()">
+          Dismiss
+        </button>
+      </div>
+    }
+
     <div class="quote-layout">
       <div class="quote-and-checklist">
         <div class="step-1">
@@ -240,7 +249,7 @@
 
     <div class="cta-block">
       <p class="cta-text">
-        Select bedrooms and bathrooms in Step 1, choose any add-on tasks, then book. Use the Checklist page for standard cleaning tasks. Your quote and choices will be sent with your booking.
+        Set Step 1 (bedrooms / bathrooms or hourly, home size, pets). Add-on tasks in Step 2 are optional — you can book without checking any boxes. Use the Checklist page for standard cleaning tasks. Your quote and choices will be sent with your booking.
       </p>
       <button type="button" class="btn btn-book" (click)="bookNow()">Book Now</button>
     </div>

@@ -8,6 +8,7 @@ import { Booking } from './pages/booking/booking';
 import { Login } from './pages/login/login';
 import { Signup } from './pages/signup/signup';
 import { Admin } from './pages/admin/admin';
+import { AdminOffers } from './pages/admin-offers/admin-offers';
 import { Offers } from './pages/offers/offers';
 
 export const routes: Routes = [
@@ -59,7 +60,12 @@ export const routes: Routes = [
   {
     path: 'admin',
     component: Admin,
-    title: 'Admin – Orders',
+    title: 'Admin – Bookings',
+  },
+  {
+    path: 'admin/offers',
+    component: AdminOffers,
+    title: 'Admin – Offers',
   },
   {
     path: '**',

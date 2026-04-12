@@ -7,20 +7,35 @@
         Everything we are running right now — from first-time savings to bundles and seasonal deals. Tap
         <strong>Get a quote</strong> to build your price on the Services page.
       </p>
+      @if (loadError) {
+        <p class="offers-api-note offers-api-note--error" role="alert">{{ loadError }}</p>
+      }
     </header>
 
-    <ul class="offers-grid">
-      @for (offer of offers; track offer.id) {
-        <li class="offer-card">
-          @if (offer.badge) {
-            <span class="offer-card__badge">{{ offer.badge }}</span>
-          }
-          <h2 class="offer-card__title">{{ offer.title }}</h2>
-          <p class="offer-card__summary">{{ offer.summary }}</p>
-          <p class="offer-card__detail">{{ offer.detail }}</p>
-        </li>
-      }
-    </ul>
+    @if (loading) {
+      <p class="offers-loading" aria-live="polite">Loading offers…</p>
+    } @else if (offers.length === 0) {
+      <p class="offers-empty">No active offers right now. Check back soon.</p>
+    } @else {
+      <ul class="offers-grid">
+        @for (offer of offers; track offer.id) {
+          <li class="offer-card">
+            @if (offer.badge) {
+              <span class="offer-card__badge">{{ offer.badge }}</span>
+            }
+            @if (offer.discountPercent != null && offer.discountPercent > 0) {
+              <span class="offer-card__pct" aria-label="Discount percentage">{{ offer.discountPercent }}% off</span>
+            }
+            <h2 class="offer-card__title">{{ offer.title }}</h2>
+            <p class="offer-card__summary">{{ offer.summary }}</p>
+            <p class="offer-card__detail">{{ offer.detail }}</p>
+            <a class="offer-card__book" routerLink="/booking" [queryParams]="{ offer: offer.id }">
+              Book with this offer
+            </a>
+          </li>
+        }
+      </ul>
+    }
 
     <div class="offers-cta">
       <a routerLink="/services" class="offers-cta__btn">Get a quote</a>

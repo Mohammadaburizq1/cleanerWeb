@@ -109,10 +109,18 @@ export class Services implements OnInit {
   /** Sales tax rate (e.g. 0.06 = 6%). Set to 0 if no tax. */
   readonly salesTaxRate = 0.06;
 
+  /** Set when redirected from Booking because quote total was zero */
+  bookingRedirectNotice: string | null = null;
+
   private router = inject(Router);
   private selectedTasksService = inject(SelectedTasksService);
 
   ngOnInit(): void {
+    const st = history.state as { bookingRedirectReason?: string } | null;
+    if (st && typeof st.bookingRedirectReason === 'string' && st.bookingRedirectReason.trim().length > 0) {
+      this.bookingRedirectNotice = st.bookingRedirectReason.trim();
+    }
+
     const saved = this.selectedTasksService.getSelectedTasks();
     this.checkedItems = new Set(saved.map((t) => `${t.sectionTitle}|${t.task}`));
     this.numberOfRooms = this.selectedTasksService.getNumberOfRooms();
@@ -391,5 +399,9 @@ export class Services implements OnInit {
 
   trackByTitle(_index: number, section: ChecklistSection): string {
     return section.title;
+  }
+
+  dismissBookingRedirectNotice(): void {
+    this.bookingRedirectNotice = null;
   }
 }

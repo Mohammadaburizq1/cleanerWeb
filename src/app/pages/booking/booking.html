@@ -27,6 +27,32 @@
                 <span class="booking-summary-icon" aria-hidden="true">↻</span>
                 <span>One Time</span>
               </div>
+              @if (availableOffers.length > 0) {
+                <div class="booking-summary-row booking-offer-row">
+                  <span class="booking-summary-icon" aria-hidden="true">%</span>
+                  <div class="booking-offer-field">
+                    <label for="booking-offer-select">Promotional offer</label>
+                    <select
+                      id="booking-offer-select"
+                      class="booking-offer-select"
+                      [value]="selectedOfferId ?? ''"
+                      (change)="onOfferSelectChange($event)"
+                    >
+                      <option value="">None</option>
+                      @for (o of availableOffers; track o.id) {
+                        <option [value]="o.id">
+                          {{ o.title
+                          }}{{
+                            o.discountPercent != null && o.discountPercent > 0
+                              ? ' (' + o.discountPercent + '% off)'
+                              : ''
+                          }}
+                        </option>
+                      }
+                    </select>
+                  </div>
+                </div>
+              }
             </div>
             <div class="booking-summary-divider"></div>
             <div class="booking-summary-cost">
@@ -34,14 +60,32 @@
                 <span>SUB-TOTAL</span>
                 <span>{{ subTotal | number : '1.2-2' }} {{ currency }}</span>
               </div>
+              @if (discountAmount > 0) {
+                <div class="booking-summary-cost-row booking-summary-discount">
+                  <span>PROMO ({{ offerDiscountPercent }}%)</span>
+                  <span>-{{ discountAmount | number : '1.2-2' }} {{ currency }}</span>
+                </div>
+              }
               <div class="booking-summary-cost-row booking-summary-tax">
                 <span>SALES TAX</span>
                 <span>{{ salesTax | number : '1.2-2' }} {{ currency }}</span>
               </div>
               <div class="booking-summary-cost-row booking-summary-total">
-                <span>TOTAL</span>
+                <span>{{ totalLineLabel }}</span>
                 <span>{{ total | number : '1.2-2' }} {{ currency }}</span>
               </div>
+              @if (offerDiscountPercent > 0) {
+                <p class="booking-total-discount-meta">
+                  <strong>DiscountPercent</strong> applied to sub-total: <strong>{{ offerDiscountPercent }}%</strong>
+                  (sub-total after discount: {{ subTotalAfterDiscount | number : '1.2-2' }} {{ currency }}).
+                </p>
+              }
+              @if (selectedOfferDescription) {
+                <div class="booking-offer-description-block">
+                  <span class="booking-offer-description-label">Offer description</span>
+                  <p class="booking-offer-description-text">{{ selectedOfferDescription }}</p>
+                </div>
+              }
             </div>
           </div>
 
@@ -296,64 +340,128 @@
         </form>
       </div>
     </div>
+  </div>
 
-    @if (showBookingFeedbackDialog) {
-      <div class="booking-feedback-overlay" (click)="closeBookingFeedbackDialog()">
-        <div
-          class="booking-feedback-dialog"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Booking feedback"
-          (click)="$event.stopPropagation()"
-        >
-          <h2>How was your booking?</h2>
-          <p>Slide to rate us from sad to happy.</p>
+  @if (sending) {
+    <div class="booking-submit-overlay" aria-live="polite" aria-busy="true">
+      <div class="booking-submit-panel" role="status">
+        <span class="booking-submit-spinner" aria-hidden="true"></span>
+        <span class="visually-hidden">Submitting your booking, please wait.</span>
+        <p class="booking-submit-text">Submitting your booking…</p>
+        <p class="booking-submit-hint">Payment and confirmation can take a few seconds.</p>
+      </div>
+    </div>
+  }
 
-          @if (bookingFeedbackSelectedSectionsWithPrices.length > 0) {
-            <div class="booking-feedback-services">
-              <h3>Your services</h3>
-              <ul class="booking-feedback-services-list">
-                @for (s of bookingFeedbackSelectedSectionsWithPrices; track s.title) {
-                  <li class="booking-feedback-service-item">
-                    <span class="booking-feedback-service-title">{{ s.title }}</span>
-                    <span class="booking-feedback-service-meta">
-                      {{ s.taskCount ?? 0 }} tasks • {{ s.amount | number : '1.2-2' }} {{ currency }}
-                    </span>
-                  </li>
-                }
-              </ul>
-            </div>
-          }
+  @if (showBookingFeedbackDialog) {
+    <div class="booking-feedback-overlay" (click)="closeBookingFeedbackDialog()">
+      <div
+        class="booking-feedback-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Booking feedback"
+        (click)="$event.stopPropagation()"
+      >
+        <h2>How was your booking?</h2>
+        <p>Slide to rate us from sad to happy.</p>
 
-          @if (bookingFeedbackCardInfo) {
-            <div class="booking-feedback-card-info">
-              <h3>Card</h3>
-              <p>{{ bookingFeedbackCardInfo.holder }}</p>
-              <p>{{ bookingFeedbackCardInfo.maskedNumber }} · {{ bookingFeedbackCardInfo.expiry }}</p>
-            </div>
-          }
-
-          <div class="booking-feedback-hero">
-            <div class="booking-feedback-emoji" aria-hidden="true">{{ bookingFeedbackEmoji }}</div>
-            <div class="booking-feedback-value">{{ bookingFeedbackHeadline }}</div>
+        @if (bookingFeedbackSelectedSectionsWithPrices.length > 0) {
+          <div class="booking-feedback-services">
+            <h3>Your services</h3>
+            <ul class="booking-feedback-services-list">
+              @for (s of bookingFeedbackSelectedSectionsWithPrices; track s.title) {
+                <li class="booking-feedback-service-item">
+                  <span class="booking-feedback-service-title">{{ s.title }}</span>
+                  <span class="booking-feedback-service-meta">
+                    {{ s.taskCount ?? 0 }} tasks • {{ s.amount | number : '1.2-2' }} {{ currency }}
+                  </span>
+                </li>
+              }
+            </ul>
           </div>
+        }
 
-          <div class="booking-feedback-slider">
-            <label for="bookingFeedbackRange" class="booking-feedback-slider-label">Sad</label>
-            <input
-              id="bookingFeedbackRange"
-              type="range"
-              min="0"
-              max="100"
-              step="1"
-              [value]="bookingFeedbackPercent ?? 100"
-              (input)="setBookingFeedbackPercent(($any($event.target).valueAsNumber))"
-            />
-            <label for="bookingFeedbackRange" class="booking-feedback-slider-label booking-feedback-slider-label--right">Happy</label>
+        @if (bookingFeedbackProperty) {
+          <div class="booking-feedback-property">
+            <h3>Your home</h3>
+            <ul class="booking-feedback-property-list">
+              @if (bookingFeedbackProperty.propertyType) {
+                <li>
+                  <span class="booking-feedback-property-label">Property</span>
+                  <span class="booking-feedback-property-value">{{ bookingFeedbackProperty.propertyType | titlecase }}</span>
+                </li>
+              }
+              @if (bookingFeedbackProperty.isHourly) {
+                <li>
+                  <span class="booking-feedback-property-label">Schedule</span>
+                  <span class="booking-feedback-property-value">
+                    Hourly · {{ bookingFeedbackProperty.cleaners ?? 1 }} cleaner(s) ·
+                    {{ bookingFeedbackProperty.hours ?? 0 }} hour(s)
+                  </span>
+                </li>
+              } @else {
+                <li>
+                  <span class="booking-feedback-property-label">Bedrooms</span>
+                  <span class="booking-feedback-property-value">{{ bookingFeedbackProperty.bedrooms ?? 0 }}</span>
+                </li>
+                <li>
+                  <span class="booking-feedback-property-label">Bathrooms</span>
+                  <span class="booking-feedback-property-value">{{ bookingFeedbackProperty.bathrooms ?? 0 }}</span>
+                </li>
+              }
+              @if (bookingFeedbackProperty.homeSizeLabel) {
+                <li>
+                  <span class="booking-feedback-property-label">Home size</span>
+                  <span class="booking-feedback-property-value">{{ bookingFeedbackProperty.homeSizeLabel }}</span>
+                </li>
+              }
+              @if (bookingFeedbackProperty.hasPets) {
+                <li class="booking-feedback-property-pets">Pets in home</li>
+              }
+            </ul>
           </div>
+        }
 
+        @if (bookingFeedbackCardInfo) {
+          <div class="booking-feedback-card-info">
+            <h3>Card</h3>
+            <p>{{ bookingFeedbackCardInfo.holder }}</p>
+            <p>{{ bookingFeedbackCardInfo.maskedNumber }} · {{ bookingFeedbackCardInfo.expiry }}</p>
+          </div>
+        }
+
+        <div class="booking-feedback-hero">
+          <div class="booking-feedback-emoji" aria-hidden="true">{{ bookingFeedbackEmoji }}</div>
+          <div class="booking-feedback-value">{{ bookingFeedbackHeadline }}</div>
+        </div>
+
+        <div class="booking-feedback-slider">
+          <label for="bookingFeedbackRange" class="booking-feedback-slider-label">Sad</label>
+          <input
+            id="bookingFeedbackRange"
+            type="range"
+            min="0"
+            max="100"
+            step="1"
+            [value]="bookingFeedbackPercent ?? 100"
+            (input)="setBookingFeedbackPercent(($any($event.target).valueAsNumber))"
+          />
+          <label for="bookingFeedbackRange" class="booking-feedback-slider-label booking-feedback-slider-label--right">Happy</label>
+        </div>
+
+        @if (bookingFeedbackSubmitted) {
+          <p class="booking-feedback-thanks">Thank you for your feedback!</p>
+        }
+
+        <div class="booking-feedback-footer">
+          <button
+            type="button"
+            class="booking-feedback-services-btn"
+            (click)="$event.stopPropagation(); goToServicesFromFeedback()"
+          >
+            Back to Services
+          </button>
           @if (bookingFeedbackSubmitted) {
-            <p class="booking-feedback-thanks">Thank you for your feedback!</p>
             <button
               type="button"
               class="booking-feedback-close"
@@ -372,6 +480,6 @@
           }
         </div>
       </div>
-    }
-  </div>
+    </div>
+  }
 </section>

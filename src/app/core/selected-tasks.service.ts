@@ -55,25 +55,21 @@ export class SelectedTasksService {
   }
 
   goToBookNow(): void {
-    if (this.hasSelectedTasks()) {
-      this.router.navigate(['/booking'], {
-        state: {
-          selectedTasks: this.getSelectedTasks(),
-          numberOfRooms: this.getNumberOfRooms(),
-          numberOfBedrooms: this.getNumberOfBedrooms(),
-          numberOfBathrooms: this.getNumberOfBathrooms(),
-          numberOfCleaners: this.getNumberOfCleaners(),
-          hourlyDurationHours: this.getHourlyDurationHours(),
-          hasPets: this.hasPets,
-          homeSqFtTierId: this.homeSqFtTierId,
-          estimatedCost: this.estimatedCost,
-          currency: CURRENCY,
-          selectedSectionsWithPrices: this.selectedSectionsWithPrices,
-        },
-      });
-    } else {
-      this.router.navigate(['/services']);
-    }
+    this.router.navigate(['/booking'], {
+      state: {
+        selectedTasks: this.getSelectedTasks(),
+        numberOfRooms: this.getNumberOfRooms(),
+        numberOfBedrooms: this.getNumberOfBedrooms(),
+        numberOfBathrooms: this.getNumberOfBathrooms(),
+        numberOfCleaners: this.getNumberOfCleaners(),
+        hourlyDurationHours: this.getHourlyDurationHours(),
+        hasPets: this.hasPets,
+        homeSqFtTierId: this.homeSqFtTierId,
+        estimatedCost: this.estimatedCost,
+        currency: CURRENCY,
+        selectedSectionsWithPrices: this.selectedSectionsWithPrices,
+      },
+    });
   }
 
   setCostDetails(details: {

@@ -34,8 +34,7 @@ export class Contact {
 
   submit() {
     if (this.contactForm.invalid) return;
-    console.log(this.contactForm.value);
-    // TODO: contact/inquiry endpoint if added to API
+    // Contact inquiry: add a backend route if you expose one; feedback below uses POST /api/Feedback.
   }
 
   setRating(value: number): void {

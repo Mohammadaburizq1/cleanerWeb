@@ -17,14 +17,16 @@ import {
   Validators,
 } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
-import { OrdersService } from '../../core/orders.service';
+import { ActivatedRoute, Router } from '@angular/router';
+import { catchError, firstValueFrom, of } from 'rxjs';
 import { PaymentsService } from '../../core/payments.service';
 import { BookingService } from '../../core/booking.service';
 import { CleaningCatalogService } from '../../core/cleaning-catalog.service';
 import { SelectedTasksService } from '../../core/selected-tasks.service';
 import { homeSqFtTierById, legacySqFtToTierId } from '../../core/services-quote';
 import type { ServiceDto } from '../../core/booking.dto';
+import { OfferService } from '../../core/offer.service';
+import type { OfferDto } from '../../core/offer.dto';
 import { loadStripe, type Stripe, type StripeCardElement, type StripeElements } from '@stripe/stripe-js';
 import * as L from 'leaflet';
 import flatpickr from 'flatpickr';
@@ -32,6 +34,18 @@ import type { Instance as FlatpickrInstance } from 'flatpickr/dist/types/instanc
 
 /** Tasks selected on the Services checklist and passed via router state */
 export type SelectedTask = { sectionTitle: string; task: string };
+
+/** Shown in the post-booking feedback dialog (snapshot before form reset). */
+export type BookingFeedbackPropertySnapshot = {
+  bedrooms: number | null;
+  bathrooms: number | null;
+  propertyType: string;
+  isHourly: boolean;
+  cleaners: number | null;
+  hours: number | null;
+  hasPets: boolean;
+  homeSizeLabel: string | null;
+};
 
 /** Nominatim reverse JSON (subset). https://nominatim.org/release-docs/develop/api/Reverse/ */
 interface NominatimReverseAddress {
@@ -74,15 +88,17 @@ function bookingLocationValidator(group: AbstractControl): ValidationErrors | nu
 })
 export class Booking implements OnInit, AfterViewInit, OnDestroy {
   private fb = inject(FormBuilder);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private offerService = inject(OfferService);
   private selectedTasksService = inject(SelectedTasksService);
-  private ordersService = inject(OrdersService);
   private paymentsService = inject(PaymentsService);
   private bookingService = inject(BookingService);
   private catalogService = inject(CleaningCatalogService);
   private ngZone = inject(NgZone);
 
   // NOTE: Put your Stripe publishable key here (pk_...). Never put the secret key in the frontend.
-  private readonly stripePublishableKey = 'pk_test_51T9yxTKF6Nx8oRAGg7hqMLzOpBZFZkvuYJD9F7aRPsu7X3UZbnPizpM5boNfejUC3benVJxfz5o2d0EsuAIgT83q00J7uKkPiB';
+  private readonly stripePublishableKey = 'pk_test_51TK1xVRykzBb9Zc11JSb6OI928pjU6S6MGEbL0XTA2VRDrlXYs7kR4t5rEVv8SSdLHQuv3l2cpCkP9isqlQku4dp00UhF9fQxg';
 
   @ViewChild('stripeCardMount', { static: false })
   private stripeCardMount?: ElementRef<HTMLDivElement>;
@@ -150,6 +166,11 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   /** Cost breakdown / receipt lines (from Services page) */
   selectedSectionsWithPrices: { title: string; taskCount?: number; pricePerTask?: number; amount: number }[] = [];
 
+  /** Active offers from GET /api/Offer — optional promo on this booking */
+  availableOffers: OfferDto[] = [];
+  /** Selected offer id, or null for no promo */
+  selectedOfferId: string | null = null;
+
   /** Sales tax rate (e.g. 0.06 = 6%). Set to 0 if no tax. */
   readonly salesTaxRate = 0.06;
 
@@ -182,6 +203,9 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   /** Snapshot of selected services shown inside the feedback dialog */
   bookingFeedbackSelectedSectionsWithPrices: { title: string; taskCount?: number; pricePerTask?: number; amount: number }[] =
     [];
+
+  /** Snapshot of home / property details for the feedback dialog */
+  bookingFeedbackProperty: BookingFeedbackPropertySnapshot | null = null;
 
   ngOnInit(): void {
     const state = history.state as {
@@ -249,6 +273,60 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
         ? nav.selectedSectionsWithPrices
         : this.selectedTasksService.getSelectedSectionsWithPrices();
     this.takenDatesLoadPromise = this.loadTakenBookingDates();
+
+    this.offerService
+      .listPublicOffers()
+      .pipe(catchError(() => of([])))
+      .subscribe((rows) => {
+        this.availableOffers = rows;
+        const q = this.route.snapshot.queryParamMap.get('offer');
+        if (q && rows.some((r) => r.id === q)) {
+          this.selectedOfferId = q;
+        }
+      });
+  }
+
+  /** Currently selected promotional offer (if any). */
+  get selectedOffer(): OfferDto | null {
+    if (!this.selectedOfferId) return null;
+    return this.availableOffers.find((o) => o.id === this.selectedOfferId) ?? null;
+  }
+
+  /** Discount rate 0–100 from selected offer. */
+  get offerDiscountPercent(): number {
+    const o = this.selectedOffer;
+    const p = o?.discountPercent;
+    if (p == null || p <= 0) return 0;
+    return Math.min(100, p);
+  }
+
+  /** Discount amount applied to sub-total (before tax). */
+  get discountAmount(): number {
+    if (this.offerDiscountPercent <= 0) return 0;
+    const raw = this.subTotal * (this.offerDiscountPercent / 100);
+    return Math.round(raw * 100) / 100;
+  }
+
+  /** Sub-total after promo discount (before tax). */
+  get subTotalAfterDiscount(): number {
+    return Math.max(0, Math.round((this.subTotal - this.discountAmount) * 100) / 100);
+  }
+
+  onOfferSelectChange(event: Event): void {
+    const v = (event.target as HTMLSelectElement).value;
+    this.selectedOfferId = v ? v : null;
+  }
+
+  /** Total row label — shows DiscountPercent when a promo applies. */
+  get totalLineLabel(): string {
+    if (this.offerDiscountPercent <= 0) return 'TOTAL';
+    return `TOTAL (includes ${this.offerDiscountPercent}% DiscountPercent)`;
+  }
+
+  /** Selected offer full description (`detail`) for the booking summary. */
+  get selectedOfferDescription(): string {
+    const d = this.selectedOffer?.detail?.trim();
+    return d ?? '';
   }
 
   async ngAfterViewInit(): Promise<void> {
@@ -435,6 +513,16 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
 
     this.mapReady = true;
     queueMicrotask(() => map.invalidateSize());
+  }
+
+  /** Move pin to the same default as init; clear confirmation flags (after successful booking). */
+  private resetMapToDefaultState(): void {
+    this.locationConfirmed = false;
+    this.addressFromGeocode = false;
+    const defaultCenter = L.latLng(38.2527, -85.7585);
+    this.leafletMarker?.setLatLng(defaultCenter);
+    this.leafletMap?.setView(defaultCenter, 13);
+    queueMicrotask(() => this.leafletMap?.invalidateSize());
   }
 
   useMyLocation(): void {
@@ -627,10 +715,21 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     this.bookingFeedbackSubmitted = false;
     this.bookingFeedbackSelectedSectionsWithPrices = [];
     this.bookingFeedbackCardInfo = null;
+    this.bookingFeedbackProperty = null;
 
     if (this.bookingForm.invalid) {
       this.bookingForm.markAllAsTouched();
       this.scrollToFirstFormError();
+      return;
+    }
+
+    if (this.total <= 0) {
+      void this.router.navigate(['/services'], {
+        state: {
+          bookingRedirectReason:
+            'Your booking total must be greater than zero. Build a quote on Services (Step 1 and any add-ons), then tap Book again.',
+        },
+      });
       return;
     }
 
@@ -683,24 +782,6 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
       }
       console.log('[Booking] created booking id:', createdBooking.id);
 
-      this.ordersService.addOrder(
-        {
-          fullName: payload.fullName ?? '',
-          phone: payload.phone ?? '',
-          email: payload.email ?? '',
-          serviceType: '',
-          propertyType: payload.propertyType ?? '',
-          address: addressLine,
-          preferredDate: payload.preferredDate ?? '',
-          preferredTime: payload.preferredTime ?? '',
-          notes: payload.notes ?? '',
-          estimatedCost: this.estimatedCost ?? null,
-          currency: this.currency,
-          propertyLabel: this.propertyLabel,
-        },
-        createdBooking.id,
-      );
-
       // 1) Create pm_... on frontend using Stripe Elements
       const pm = await this.createPaymentMethod();
 
@@ -726,37 +807,71 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
       console.log('[PaymentsService.confirmStripePayment] paymentMethodId:', pm.paymentMethodId);
       await firstValueFrom(this.paymentsService.confirmStripePayment(providerPaymentId, pm.paymentMethodId));
 
-      this.ordersService.accept(createdBooking.id);
-
-      // Clear UI state after successful payment
       const bookedDay = (payload.preferredDate ?? '').trim();
-      this.bookingForm.reset();
-      if (bookedDay) {
-        this.bookingsCountByDay.set(bookedDay, (this.bookingsCountByDay.get(bookedDay) ?? 0) + 1);
-      }
-      this.fpInstance?.clear();
-      this.fpInstance?.destroy();
-      this.fpInstance = null;
-      this.initFlatpickr();
-      this.submitted = false;
-      this.selectedTasksService.clearAll();
-      this.selectedTasks = [];
-      this.numberOfRooms = null;
-      this.numberOfBedrooms = null;
-      this.numberOfBathrooms = null;
-      this.estimatedCost = null;
-      this.selectedSectionsWithPrices = [];
 
-      this.bookingFeedbackSelectedSectionsWithPrices = sectionsSnapshot;
-      this.bookingFeedbackCardInfo = {
-        holder: (payload.cardHolder ?? '').trim(),
-        maskedNumber: `**** **** **** ${pm.last4}`,
-        expiry: pm.expiryMMYY,
+      const tier = homeSqFtTierById(this.homeSqFtTierId);
+      const bedsSnap = this.numberOfBedrooms;
+      const feedbackPropertySnapshot: BookingFeedbackPropertySnapshot = {
+        bedrooms: bedsSnap,
+        bathrooms: this.numberOfBathrooms,
+        propertyType: (payload.propertyType ?? '').trim(),
+        isHourly: (bedsSnap ?? 0) <= 0,
+        cleaners: this.numberOfCleaners,
+        hours: this.hourlyDurationHours,
+        hasPets: this.hasPets,
+        homeSizeLabel: tier?.label ?? null,
       };
 
-      this.showBookingFeedbackDialog = true;
-      this.bookingFeedbackPercent = 100;
-      this.bookingFeedbackSubmitted = false;
+      // Stripe / HTTP callbacks can run outside NgZone — run UI updates inside the zone so the feedback dialog renders.
+      this.ngZone.run(() => {
+        this.bookingForm.reset();
+        this.bookingForm.updateValueAndValidity({ emitEvent: false });
+        if (bookedDay) {
+          this.bookingsCountByDay.set(bookedDay, (this.bookingsCountByDay.get(bookedDay) ?? 0) + 1);
+        }
+        this.fpInstance?.clear();
+        this.fpInstance?.destroy();
+        this.fpInstance = null;
+        this.initFlatpickr();
+        this.submitted = false;
+        this.selectedTasksService.clearAll();
+        this.selectedTasks = [];
+        this.numberOfRooms = null;
+        this.numberOfBedrooms = null;
+        this.numberOfBathrooms = null;
+        this.numberOfCleaners = null;
+        this.hourlyDurationHours = null;
+        this.hasPets = false;
+        this.homeSqFtTierId = null;
+        this.estimatedCost = null;
+        this.selectedSectionsWithPrices = [];
+
+        try {
+          this.cardElement?.clear();
+        } catch {
+          /* ignore */
+        }
+        this.cardComplete = false;
+        this.cardElementError = null;
+        this.geoLoading = false;
+        this.geoError = null;
+        this.reverseGeocodeLoading = false;
+        this.geocodeError = null;
+        this.mapError = null;
+        this.resetMapToDefaultState();
+
+        this.bookingFeedbackSelectedSectionsWithPrices = sectionsSnapshot;
+        this.bookingFeedbackProperty = feedbackPropertySnapshot;
+        this.bookingFeedbackCardInfo = {
+          holder: (payload.cardHolder ?? '').trim(),
+          maskedNumber: `**** **** **** ${pm.last4}`,
+          expiry: pm.expiryMMYY,
+        };
+
+        this.showBookingFeedbackDialog = true;
+        this.bookingFeedbackPercent = 100;
+        this.bookingFeedbackSubmitted = false;
+      });
     } catch (err) {
       console.log('[Booking.submit] phase:', phase, 'error:', err);
       let detail = this.httpErrorDetail(err);
@@ -817,14 +932,14 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     return this.estimatedCost ?? 0;
   }
 
-  /** Sales tax amount */
+  /** Sales tax on discounted sub-total */
   get salesTax(): number {
-    return Math.round(this.subTotal * this.salesTaxRate * 100) / 100;
+    return Math.round(this.subTotalAfterDiscount * this.salesTaxRate * 100) / 100;
   }
 
-  /** Total (sub-total + tax) */
+  /** Total after discount and tax */
   get total(): number {
-    return Math.round((this.subTotal + this.salesTax) * 100) / 100;
+    return Math.round((this.subTotalAfterDiscount + this.salesTax) * 100) / 100;
   }
 
   /** Label for property/rooms (e.g. "2 Bedrooms, 1 Bathroom") */
@@ -862,6 +977,14 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
 
   closeBookingFeedbackDialog(): void {
     this.showBookingFeedbackDialog = false;
+    this.bookingFeedbackProperty = null;
+  }
+
+  /** Close the success dialog and open the Services page (e.g. book again). */
+  goToServicesFromFeedback(): void {
+    this.showBookingFeedbackDialog = false;
+    this.bookingFeedbackProperty = null;
+    void this.router.navigate(['/services']);
   }
 
   /** Backend booking uses one catalog row; default to first service from GET /api/Service. */
@@ -924,6 +1047,19 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     }
     if (this.hasPets) {
       lines.push('Pets in home: yes');
+    }
+    const offer = this.selectedOffer;
+    if (offer && this.offerDiscountPercent > 0) {
+      lines.push(`DiscountPercent: ${this.offerDiscountPercent}`);
+      lines.push(`Promotional offer: ${offer.title} (offerId=${offer.id})`);
+      lines.push(
+        `Discount amount on sub-total: -${this.discountAmount.toFixed(2)} ${this.currency}; sub-total after discount: ${this.subTotalAfterDiscount.toFixed(2)} ${this.currency}`,
+      );
+      lines.push(`Total due (incl. tax): ${this.total.toFixed(2)} ${this.currency}`);
+      const desc = offer.detail?.trim();
+      if (desc) {
+        lines.push(`Offer description: ${desc}`);
+      }
     }
     const extra = (payload.notes ?? '').trim();
     if (extra) lines.push(`Notes: ${extra}`);

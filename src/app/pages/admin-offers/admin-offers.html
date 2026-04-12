@@ -1,0 +1,129 @@
+<section class="admin-offers-page" [class.admin-offers-page--embedded]="embedded">
+  <div class="container">
+    @if (!embedded) {
+      <header class="admin-offers-hero">
+        <a routerLink="/admin" class="back-link">← Orders admin</a>
+        <span class="section-tag">ADMIN</span>
+        <h1>Offers</h1>
+        <p>Add, edit, or remove promotional offers. API: <code>GET/POST/PUT/DELETE /api/Offer</code> (auth required for writes).</p>
+      </header>
+    } @else {
+      <header class="admin-offers-embedded-head">
+        <h2 class="admin-offers-embedded-title">Offers &amp; promotions</h2>
+        <p class="admin-offers-embedded-desc">
+          Create, edit, or delete offers shown on the public <a routerLink="/offers">Offers</a> page (requires API + admin login for writes).
+        </p>
+      </header>
+    }
+
+    @if (loadError) {
+      <div class="banner banner--error" role="alert">
+        {{ loadError }}
+      </div>
+    }
+
+    <div class="offers-editor card">
+      <h2 class="offers-editor-title">{{ editingId ? 'Edit offer' : 'New offer' }}</h2>
+      @if (formError) {
+        <p class="form-error" role="alert">{{ formError }}</p>
+      }
+      <div class="field-grid">
+        <label class="field">
+          <span class="field-label">Title</span>
+          <input type="text" class="field-input" [(ngModel)]="title" name="title" autocomplete="off" />
+        </label>
+        <label class="field">
+          <span class="field-label">Badge (optional)</span>
+          <input type="text" class="field-input" [(ngModel)]="badge" name="badge" placeholder="e.g. New customers" />
+        </label>
+        <label class="field">
+          <span class="field-label">Discount % (optional)</span>
+          <input
+            type="number"
+            class="field-input"
+            [(ngModel)]="discountPercent"
+            name="discountPercent"
+            min="0"
+            max="100"
+            step="0.5"
+            placeholder="e.g. 15"
+          />
+        </label>
+        <label class="field field--full">
+          <span class="field-label">Summary (one line)</span>
+          <input type="text" class="field-input" [(ngModel)]="summary" name="summary" />
+        </label>
+        <label class="field field--full">
+          <span class="field-label">Detail</span>
+          <textarea class="field-textarea" rows="4" [(ngModel)]="detail" name="detail"></textarea>
+        </label>
+        <label class="field">
+          <span class="field-label">Sort order</span>
+          <input type="number" class="field-input" [(ngModel)]="sortOrder" name="sortOrder" />
+        </label>
+        <label class="field field--checkbox">
+          <input type="checkbox" [(ngModel)]="isActive" name="isActive" />
+          <span class="field-label">Active (shown on public offers page)</span>
+        </label>
+      </div>
+      <div class="offers-editor-actions">
+        <button type="button" class="btn btn-primary" (click)="save()" [disabled]="busy">
+          {{ editingId ? 'Save changes' : 'Create offer' }}
+        </button>
+        @if (editingId) {
+          <button type="button" class="btn btn-ghost" (click)="cancelEdit()" [disabled]="busy">Cancel</button>
+        }
+      </div>
+    </div>
+
+    <div class="offers-list-head">
+      <h2 class="offers-list-title">All offers</h2>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="loadOffers()" [disabled]="busy">Refresh</button>
+    </div>
+
+    @if (busy && offers.length === 0) {
+      <p class="muted">Loading…</p>
+    } @else if (offers.length === 0) {
+      <div class="empty-state">
+        <p>No offers returned from the API.</p>
+        <p class="empty-hint">Create one above, or verify the backend exposes <code>/api/Offer</code>.</p>
+      </div>
+    } @else {
+      <ul class="offers-admin-list">
+        @for (o of offers; track o.id) {
+          <li class="offers-admin-item">
+            <div class="offers-admin-item-main">
+              <div class="offers-admin-item-top">
+                @if (o.badge) {
+                  <span class="offers-admin-badge">{{ o.badge }}</span>
+                }
+                @if (o.discountPercent != null && o.discountPercent > 0) {
+                  <span class="offers-admin-pct">{{ o.discountPercent }}% off</span>
+                }
+                <span class="offers-admin-status" [class.offers-admin-status--off]="!o.isActive">
+                  {{ o.isActive ? 'Active' : 'Inactive' }}
+                </span>
+                <span class="offers-admin-order">#{{ o.sortOrder }}</span>
+              </div>
+              <h3 class="offers-admin-heading">{{ o.title }}</h3>
+              <p class="offers-admin-summary">{{ o.summary }}</p>
+              <p class="offers-admin-id">{{ o.id }}</p>
+            </div>
+            <div class="offers-admin-item-actions">
+              <button type="button" class="btn btn-sm btn-primary" (click)="startEdit(o)" [disabled]="busy">Edit</button>
+              <button type="button" class="btn btn-sm btn-danger" (click)="remove(o)" [disabled]="busy">Delete</button>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+
+    @if (!embedded) {
+      <p class="footer-hint">
+        <a routerLink="/offers" class="back-link">View public offers page</a>
+        ·
+        <a routerLink="/" class="back-link">Home</a>
+      </p>
+    }
+  </div>
+</section>

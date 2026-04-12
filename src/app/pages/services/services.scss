@@ -44,6 +44,44 @@
   margin: 0;
 }
 
+.booking-redirect-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin: -32px 0 40px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--accent-color) 35%, var(--border-color));
+  background: color-mix(in srgb, var(--accent-color) 12%, var(--card-bg));
+}
+
+.booking-redirect-notice__text {
+  margin: 0;
+  flex: 1;
+  min-width: 200px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text-color);
+}
+
+.booking-redirect-notice__dismiss {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--accent-color);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.booking-redirect-notice__dismiss:hover {
+  border-color: var(--accent-color);
+}
+
 // ——— Quote layout: left = STEP 1 + checklist, right = BOOKING SUMMARY ———
 .quote-layout {
   display: grid;
