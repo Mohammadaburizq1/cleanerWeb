@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, computed, HostListener } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { SelectedTasksService } from '../../../core/selected-tasks.service';
 import { AuthService } from '../../../core/auth.service';
 
@@ -16,12 +16,16 @@ export class Header implements OnInit {
 
   private selectedTasksService = inject(SelectedTasksService);
   private auth = inject(AuthService);
+  private router = inject(Router);
 
   readonly isLoggedIn = this.auth.isLoggedIn;
   readonly me = this.auth.me;
   readonly isAdmin = computed(() => {
-    const user = this.me();
-    return !!user && user.role?.toLowerCase() === 'admin';
+    const role = this.me()?.role?.toLowerCase().trim();
+    return (
+      !!role &&
+      (role === 'admin' || role === 'administrator' || role === 'superadmin')
+    );
   });
 
   ngOnInit(): void {
@@ -50,6 +54,12 @@ export class Header implements OnInit {
   goToBookNow(): void {
     this.closeMobileMenu();
     this.selectedTasksService.goToBookNow();
+  }
+
+  logout(): void {
+    this.closeMobileMenu();
+    this.auth.logout();
+    void this.router.navigate(['/']);
   }
 
   toggleMobileMenu(): void {

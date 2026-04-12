@@ -64,6 +64,24 @@
   color: var(--accent-color);
 }
 
+.nav-desktop .nav-logout {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-color);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.nav-desktop .nav-logout:hover {
+  color: var(--accent-color);
+}
+
 /* Offers — red & blue gradient pill + gentle jump (see prefers-reduced-motion below) */
 .nav-desktop a.nav-link-offers {
   position: relative;
@@ -267,6 +285,30 @@
 
 .mobile-nav-panel__inner a:hover,
 .mobile-nav-panel__inner a.active {
+  color: var(--accent-color);
+  background: color-mix(in srgb, var(--accent-color) 12%, transparent);
+}
+
+.mobile-nav-panel__inner .nav-logout--mobile {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 12px 12px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-color);
+  text-align: left;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.mobile-nav-panel__inner .nav-logout--mobile:hover {
   color: var(--accent-color);
   background: color-mix(in srgb, var(--accent-color) 12%, transparent);
 }

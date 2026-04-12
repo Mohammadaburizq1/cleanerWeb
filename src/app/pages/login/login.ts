@@ -51,14 +51,21 @@ export class Login {
 
     this.auth.login(payload).subscribe({
       next: (result) => {
-        this.loading = false;
-        if (result.success) {
-          this.auth.loadMe().subscribe();  
-          console.log(this.auth.me());
-          this.router.navigate(['/']);
-        } else {
+        if (!result.success) {
+          this.loading = false;
           this.errorMessage = result.errors?.join(', ') || 'Login failed.';
+          return;
         }
+        this.auth.loadMe().subscribe({
+          next: () => {
+            this.loading = false;
+            this.router.navigate(['/']);
+          },
+          error: () => {
+            this.loading = false;
+            this.errorMessage = 'Could not load your profile. Please try again.';
+          },
+        });
       },
       error: () => {
         this.loading = false;

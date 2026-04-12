@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { API_BASE_URL, joinUrl } from './api-base-url';
+import { jsonStr } from './aspnet-json.util';
 import { AuthResultDto, LoginDto, MeDto, RefreshTokenRequestDto, RegisterDto } from './auth.dto';
 
 const ACCESS_TOKEN_KEY = 'auth-access-token';
@@ -56,12 +57,17 @@ export class AuthService {
     const token = this.loadAccessToken();
 
     return this.http
-      .get<MeDto>(url, {
+      .get<unknown>(url, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
       .pipe(
-        map((me) => {
-          console.log(me,"---------me");
+        map((raw) => {
+          const me: MeDto = {
+            id: jsonStr(raw, 'id', 'Id'),
+            email: jsonStr(raw, 'email', 'Email'),
+            fullName: jsonStr(raw, 'fullName', 'FullName'),
+            role: jsonStr(raw, 'role', 'Role'),
+          };
           this._me.set(me);
           return me;
         })
