@@ -21,10 +21,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, firstValueFrom, of } from 'rxjs';
 import { PaymentsService } from '../../core/payments.service';
 import { BookingService } from '../../core/booking.service';
-import { CleaningCatalogService } from '../../core/cleaning-catalog.service';
 import { SelectedTasksService } from '../../core/selected-tasks.service';
 import { homeSqFtTierById, legacySqFtToTierId } from '../../core/services-quote';
-import type { ServiceDto } from '../../core/booking.dto';
 import { OfferService } from '../../core/offer.service';
 import type { OfferDto } from '../../core/offer.dto';
 import {
@@ -100,7 +98,6 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   private selectedTasksService = inject(SelectedTasksService);
   private paymentsService = inject(PaymentsService);
   private bookingService = inject(BookingService);
-  private catalogService = inject(CleaningCatalogService);
   private ngZone = inject(NgZone);
 
   // NOTE: Put your Stripe publishable key here (pk_...). Never put the secret key in the frontend.
@@ -108,6 +105,9 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
 
   @ViewChild('stripeCardMount', { static: false })
   private stripeCardMount?: ElementRef<HTMLDivElement>;
+
+  @ViewChild('emailInput', { static: false })
+  private emailInput?: ElementRef<HTMLInputElement>;
 
   @ViewChild('mapContainer', { static: false })
   private mapContainer?: ElementRef<HTMLDivElement>;
@@ -186,7 +186,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     {
       fullName: ['', [Validators.required, Validators.minLength(2)]],
       phone: ['', [Validators.required, Validators.minLength(8)]],
-      email: ['', [Validators.email]],
+      email: ['', [Validators.required, Validators.email]],
       propertyType: ['', Validators.required],
       address: [''],
       mapLat: [''],
@@ -779,6 +779,14 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     this.bookingFeedbackCardInfo = null;
     this.bookingFeedbackProperty = null;
 
+    // Some browsers autofill inputs without firing input events; sync email before validate/submit.
+    const emailControl = this.bookingForm.get('email');
+    const domEmail = (this.emailInput?.nativeElement?.value ?? '').trim();
+    if (emailControl && (!String(emailControl.value ?? '').trim()) && domEmail) {
+      emailControl.setValue(domEmail);
+    }
+    this.bookingForm.updateValueAndValidity({ emitEvent: false });
+
     if (this.bookingForm.invalid) {
       this.bookingForm.markAllAsTouched();
       this.scrollToFirstFormError();
@@ -805,7 +813,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
 
     this.sending = true;
 
-    let phase = 'Loading services';
+    let phase = 'Preparing booking';
 
     try {
       const payload = this.bookingForm.getRawValue() as {
@@ -824,8 +832,6 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
 
       const sectionsSnapshot = this.selectedSectionsWithPrices.map((s) => ({ ...s }));
 
-      const services = await firstValueFrom(this.catalogService.getServices());
-      const serviceId = this.defaultServiceId(services);
       const bookingDateIso = this.toBookingDateIso(payload.preferredDate ?? '', payload.preferredTime ?? '');
       const bookingNotes = this.buildBookingNotes(payload);
       const addressLine = this.resolveServiceAddress(payload);
@@ -833,7 +839,9 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
       phase = 'Creating booking';
       const createdBooking = await firstValueFrom(
         this.bookingService.createBooking({
-          serviceId,
+          customerFullName: (payload.fullName ?? '').trim(),
+          customerEmail: (payload.email ?? '').trim(),
+          customerPhone: (payload.phone ?? '').trim() || null,
           date: bookingDateIso,
           address: addressLine,
           notes: bookingNotes,
@@ -1047,14 +1055,6 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     this.showBookingFeedbackDialog = false;
     this.bookingFeedbackProperty = null;
     void this.router.navigate(['/services']);
-  }
-
-  /** Backend booking uses one catalog row; default to first service from GET /api/Service. */
-  private defaultServiceId(services: ServiceDto[]): string {
-    if (!services.length) {
-      throw new Error('No services from GET /api/Service. Seed services in the backend.');
-    }
-    return services[0].id;
   }
 
   private toBookingDateIso(date: string, time: string): string {

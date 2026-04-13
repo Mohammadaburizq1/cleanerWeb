@@ -175,13 +175,22 @@
             <div class="form-group">
               <label for="email">Email Address</label>
               <input
+                #emailInput
                 id="email"
                 type="email"
                 formControlName="email"
                 placeholder="Enter your email"
+                name="email"
+                autocomplete="email"
               />
               @if (submitted && f.email.errors) {
-                <small class="error">Email format is invalid.</small>
+                <small class="error">
+                  @if (f.email.errors['required']) {
+                    Email is required.
+                  } @else {
+                    Email format is invalid.
+                  }
+                </small>
               }
             </div>
 

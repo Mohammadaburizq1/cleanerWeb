@@ -1,6 +1,11 @@
 /** POST /api/Booking — OpenAPI CreateBookingDto (no userId; guest-friendly). */
 export interface CreateBookingDto {
-  serviceId: string;
+  /** Required by backend validation (maps to CustomerFullName). */
+  customerFullName: string;
+  /** Required by backend validation (maps to CustomerEmail). */
+  customerEmail: string;
+  /** Optional in backend model (maps to CustomerPhone). */
+  customerPhone: string | null;
   date: string;
   address: string;
   notes: string | null;
@@ -8,11 +13,13 @@ export interface CreateBookingDto {
 
 export interface BookingDto {
   id: string;
-  serviceId: string;
   date: string;
   address: string;
   notes: string | null;
   status: string;
+  customerFullName: string;
+  customerEmail: string;
+  customerPhone: string | null;
 }
 
 export interface ServiceDto {

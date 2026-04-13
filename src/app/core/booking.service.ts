@@ -43,9 +43,11 @@ export class BookingService {
   private normalizeBooking(raw: unknown): BookingDto {
     return {
       id: jsonStr(raw, 'id', 'Id'),
-      serviceId: jsonStr(raw, 'serviceId', 'ServiceId'),
       date: jsonStr(raw, 'date', 'Date'),
       address: jsonStr(raw, 'address', 'Address'),
+      customerFullName: jsonStr(raw, 'customerFullName', 'CustomerFullName'),
+      customerEmail: jsonStr(raw, 'customerEmail', 'CustomerEmail'),
+      customerPhone: jsonStrNull(raw, 'customerPhone', 'CustomerPhone'),
       notes: jsonStrNull(raw, 'notes', 'Notes'),
       status: jsonStr(raw, 'status', 'Status'),
     };
