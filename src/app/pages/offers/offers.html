@@ -29,8 +29,8 @@
             <h2 class="offer-card__title">{{ offer.title }}</h2>
             <p class="offer-card__summary">{{ offer.summary }}</p>
             <p class="offer-card__detail">{{ offer.detail }}</p>
-            <a class="offer-card__book" routerLink="/booking" [queryParams]="{ offer: offer.id }">
-              Book with this offer
+            <a class="offer-card__book" routerLink="/services" [queryParams]="{ offer: offer.id }">
+              Get a quote with this offer
             </a>
           </li>
         }

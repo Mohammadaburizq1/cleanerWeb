@@ -91,6 +91,8 @@ function bookingLocationValidator(group: AbstractControl): ValidationErrors | nu
   styleUrl: './booking.scss',
 })
 export class Booking implements OnInit, AfterViewInit, OnDestroy {
+  private readonly OFFER_STORAGE_KEY = 'selected-offer-id';
+  showTermsModal = false;
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -168,7 +170,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   homeSqFtTierId: string | null = null;
   /** Estimated cost from Services page (from selected sections + rooms or hourly) */
   estimatedCost: number | null = null;
-  currency = 'JD';
+  currency = 'USD';
   /** Currency code for backend/payment (ISO 3 letters). */
   private readonly paymentCurrency = 'usd';
   /** Cost breakdown / receipt lines (from Services page) */
@@ -179,8 +181,8 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   /** Selected offer id, or null for no promo */
   selectedOfferId: string | null = null;
 
-  /** Sales tax rate (e.g. 0.06 = 6%). Set to 0 if no tax. */
-  readonly salesTaxRate = 0.06;
+  /** Sales tax rate. Set to 0 to disable tax. */
+  readonly salesTaxRate = 0;
 
   bookingForm = this.fb.group(
     {
@@ -188,6 +190,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
       phone: ['', [Validators.required, Validators.minLength(8)]],
       email: ['', [Validators.required, Validators.email]],
       propertyType: ['', Validators.required],
+      schedule: ['one_time', Validators.required],
       address: [''],
       mapLat: [''],
       mapLng: [''],
@@ -195,6 +198,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
       preferredTime: ['', Validators.required],
       cardHolder: ['', [Validators.required, Validators.minLength(2)]],
       notes: [''],
+      acceptTerms: [false, Validators.requiredTrue],
     },
     { validators: bookingLocationValidator },
   );
@@ -228,6 +232,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
       homeAreaSqFt?: number | null;
       estimatedCost?: number | null;
       currency?: string;
+      offerId?: string | null;
       selectedSectionsWithPrices?: { title: string; taskCount?: number; pricePerTask?: number; amount: number }[];
     } | undefined;
     const nav = history.state as typeof state | undefined;
@@ -275,23 +280,52 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
       fromRouter && typeof nav.estimatedCost === 'number'
         ? nav.estimatedCost
         : this.selectedTasksService.getEstimatedCost();
-    this.currency = fromRouter && nav.currency ? nav.currency : 'JD';
+    this.currency = fromRouter && nav.currency ? nav.currency : 'USD';
     this.selectedSectionsWithPrices =
       fromRouter && Array.isArray(nav.selectedSectionsWithPrices)
         ? nav.selectedSectionsWithPrices
         : this.selectedTasksService.getSelectedSectionsWithPrices();
     this.takenDatesLoadPromise = this.loadTakenBookingDates();
 
+    const storedOffer = (localStorage.getItem(this.OFFER_STORAGE_KEY) ?? '').trim();
+
+    // Keep selectedOfferId in sync with query params (so it updates even if component stays mounted).
+    this.route.queryParamMap.subscribe((qp) => {
+      const offerFromQuery = (qp.get('offer') ?? '').trim();
+      if (offerFromQuery) {
+        this.selectedOfferId = offerFromQuery;
+        localStorage.setItem(this.OFFER_STORAGE_KEY, offerFromQuery);
+      }
+    });
+
+    // Initial default (query param wins, then router state, then storage)
+    const offerFromQueryNow = (this.route.snapshot.queryParamMap.get('offer') ?? '').trim();
+    const offerFromState = (fromRouter ? (nav.offerId ?? '') : '').toString().trim();
+    const initial = offerFromQueryNow || offerFromState || storedOffer;
+    if (initial) {
+      this.selectedOfferId = initial;
+      localStorage.setItem(this.OFFER_STORAGE_KEY, initial);
+    }
+
     this.offerService
       .listPublicOffers()
       .pipe(catchError(() => of([])))
       .subscribe((rows) => {
         this.availableOffers = rows;
-        const q = this.route.snapshot.queryParamMap.get('offer');
-        if (q && rows.some((r) => r.id === q)) {
-          this.selectedOfferId = q;
+        // If the query param is invalid (or offer inactive), reset to "None".
+        if (this.selectedOfferId && !rows.some((r) => r.id === this.selectedOfferId)) {
+          this.selectedOfferId = null;
+          localStorage.removeItem(this.OFFER_STORAGE_KEY);
         }
       });
+  }
+
+  openTermsModal(): void {
+    this.showTermsModal = true;
+  }
+
+  closeTermsModal(): void {
+    this.showTermsModal = false;
   }
 
   /** Currently selected promotional offer (if any). */
@@ -323,6 +357,8 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   onOfferSelectChange(event: Event): void {
     const v = (event.target as HTMLSelectElement).value;
     this.selectedOfferId = v ? v : null;
+    if (this.selectedOfferId) localStorage.setItem(this.OFFER_STORAGE_KEY, this.selectedOfferId);
+    else localStorage.removeItem(this.OFFER_STORAGE_KEY);
   }
 
   /** Total row label — shows DiscountPercent when a promo applies. */
@@ -1037,17 +1073,27 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     return extra.length ? `${base} · ${extra.join(' · ')}` : base;
   }
 
+  get scheduleLabel(): string {
+    const v = (this.bookingForm.get('schedule')?.value ?? 'one_time').toString();
+    if (v === 'weekly') return 'Weekly';
+    if (v === 'biweekly') return 'Biweekly';
+    if (v === 'monthly') return 'Monthly';
+    return 'One Time';
+  }
+
   setBookingFeedbackPercent(value: number): void {
     this.bookingFeedbackPercent = Math.max(0, Math.min(100, value));
   }
 
   confirmBookingFeedback(): void {
     this.bookingFeedbackSubmitted = true;
+    void this.router.navigate(['/services']);
   }
 
   closeBookingFeedbackDialog(): void {
     this.showBookingFeedbackDialog = false;
     this.bookingFeedbackProperty = null;
+    void this.router.navigate(['/services']);
   }
 
   /** Close the success dialog and open the Services page (e.g. book again). */
@@ -1085,6 +1131,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     phone: string;
     email: string;
     propertyType: string;
+    schedule?: string;
     notes: string;
     mapLat?: string;
     mapLng?: string;
@@ -1095,6 +1142,18 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
       (payload.email ?? '').trim() ? `Email: ${(payload.email ?? '').trim()}` : '',
       `Property type: ${payload.propertyType ?? ''}`,
     ];
+    const sched = (payload.schedule ?? '').toString().trim();
+    if (sched) {
+      const label =
+        sched === 'weekly'
+          ? 'Weekly'
+          : sched === 'biweekly'
+            ? 'Biweekly'
+            : sched === 'monthly'
+              ? 'Monthly'
+              : 'One Time';
+      lines.push(`Schedule: ${label}`);
+    }
     const lat = (payload.mapLat ?? '').trim();
     const lng = (payload.mapLng ?? '').trim();
     if (lat && lng) lines.push(`Map pin (lat, lng): ${lat}, ${lng}`);

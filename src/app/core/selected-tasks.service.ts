@@ -30,7 +30,7 @@ export type BookingDetails = {
 };
 
 const STORAGE_KEY = 'cleanhome-booking-details';
-const CURRENCY = 'JD';
+const CURRENCY = 'USD';
 
 /**
  * Persists tasks and booking details (e.g. number of rooms) so any "Book Now"

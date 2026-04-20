@@ -302,6 +302,7 @@
 
 .checklist-group-addons {
   border-color: color-mix(in srgb, var(--accent-color) 35%, var(--border-color));
+  background: color-mix(in srgb, var(--accent-color) 6%, var(--card-bg));
 }
 
 /* “Included” + “Add-on services”: cards in two columns on larger screens */
@@ -348,15 +349,23 @@
   border-radius: 14px;
   overflow: hidden;
   background: var(--page-bg);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.18s ease,
+    background-color 0.2s ease;
 
   &:hover {
     border-color: color-mix(in srgb, var(--accent-color) 40%, var(--border-color));
+    transform: translateY(-1px);
   }
 
   &.is-open {
     border-color: var(--accent-color);
-    box-shadow: 0 0 0 1px var(--accent-color);
+    box-shadow:
+      0 0 0 1px var(--accent-color),
+      0 10px 24px rgba(0, 0, 0, 0.10);
+    background: color-mix(in srgb, var(--accent-color) 5%, var(--page-bg));
   }
 }
 
@@ -392,9 +401,15 @@
 }
 
 .accordion-price {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--accent-color);
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--accent-color) 88%, #ffffff 12%);
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent-color) 35%, var(--border-color));
+  background: color-mix(in srgb, var(--accent-color) 14%, var(--page-bg));
 }
 
 .accordion-count {
@@ -488,6 +503,17 @@
   }
 }
 
+/* Add-on cards are single-item most of the time: reduce visual noise */
+.checklist-group-addons {
+  .accordion-count {
+    display: none;
+  }
+
+  .checklist-items {
+    padding-top: 14px;
+  }
+}
+
 /* Make the task list itself 2 columns on desktop */
 @media (min-width: 900px) {
   .checklist-items {
@@ -515,6 +541,29 @@
   flex: 1;
   cursor: pointer;
   user-select: none;
+}
+
+.checklist-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.checklist-label__text {
+  min-width: 0;
+}
+
+.checklist-label__price {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  padding: 5px 10px;
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--accent-color) 88%, #ffffff 12%);
+  border: 1px solid color-mix(in srgb, var(--accent-color) 30%, var(--border-color));
+  background: color-mix(in srgb, var(--accent-color) 14%, var(--page-bg));
 }
 
 // ——— BOOKING SUMMARY (same as booking page) ———

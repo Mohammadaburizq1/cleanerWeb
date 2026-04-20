@@ -3,6 +3,11 @@ export type ChecklistSection = {
   items: string[];
   /** Amount (e.g. in JD) added per checked task in this section */
   pricePerTask: number;
+  /**
+   * Optional per-item pricing (used for add-ons where each item has a different price).
+   * Key must match the item string in `items`.
+   */
+  itemPrices?: Record<string, number>;
   subtitle?: string;
 };
 
@@ -99,7 +104,15 @@ export const CLEANING_CHECKLIST_SECTIONS: ChecklistSection[] = [
   },
   {
     title: 'Upgrades',
-    pricePerTask: 2,
+    pricePerTask: 0,
+    itemPrices: {
+      'Changing Linens': 5,
+      'Interior of Fridge & Freezer': 50,
+      'Interior of Oven': 70,
+      'Interior Windows': 5,
+      'Vacuum Sectional / Large Couch': 10,
+      'Vacuum Small Couch': 7,
+    },
     items: [
       'Changing Linens',
       'Interior of Fridge & Freezer',

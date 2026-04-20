@@ -463,6 +463,122 @@
   line-height: 1.5;
 }
 
+.booking-terms-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  user-select: none;
+  cursor: pointer;
+  flex-wrap: wrap;
+}
+
+.booking-terms-check input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  margin: 0;
+  accent-color: var(--accent-color);
+}
+
+.booking-payment-hold-note {
+  margin: 10px 0 0;
+  color: var(--muted-text);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.booking-terms-link {
+  display: inline;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--accent-color);
+  font: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.booking-terms-link:hover {
+  filter: brightness(1.08);
+}
+
+.booking-terms-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.booking-terms-modal {
+  position: fixed;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  width: min(760px, calc(100vw - 28px));
+  max-height: min(78vh, 720px);
+  z-index: 2001;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.booking-terms-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-color);
+  background: color-mix(in srgb, var(--card-bg) 85%, transparent);
+}
+
+.booking-terms-modal__title {
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}
+
+.booking-terms-modal__close {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--page-bg);
+  color: var(--text-color);
+  cursor: pointer;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.booking-terms-modal__close:hover {
+  border-color: var(--accent-color);
+}
+
+.booking-terms-modal__body {
+  padding: 14px 16px;
+  overflow: auto;
+  line-height: 1.55;
+  font-size: 14px;
+  color: var(--text-color);
+}
+
+.booking-terms-modal__body ul {
+  margin: 8px 0 8px 18px;
+}
+
+.booking-terms-modal__footer {
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.booking-terms-modal__ok {
+  width: auto;
+}
+
 .stripe-card-ok {
   margin: 8px 0 0;
   color: color-mix(in srgb, #16a34a 60%, var(--text-color));
@@ -484,7 +600,7 @@ label {
   font-weight: 600;
 }
 
-.booking-card input:not(.__PrivateStripeElement-input),
+.booking-card input:not([type='checkbox']):not([type='radio']):not(.__PrivateStripeElement-input),
 .booking-card select,
 .booking-card textarea {
   width: 100%;
@@ -500,12 +616,12 @@ label {
     box-shadow 0.2s ease;
 }
 
-.booking-card input:not(.__PrivateStripeElement-input)::placeholder,
+.booking-card input:not([type='checkbox']):not([type='radio']):not(.__PrivateStripeElement-input)::placeholder,
 .booking-card textarea::placeholder {
   color: var(--muted-text);
 }
 
-.booking-card input:not(.__PrivateStripeElement-input):focus,
+.booking-card input:not([type='checkbox']):not([type='radio']):not(.__PrivateStripeElement-input):focus,
 .booking-card select:focus,
 .booking-card textarea:focus {
   border-color: var(--accent-color);

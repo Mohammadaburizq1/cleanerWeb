@@ -25,7 +25,7 @@
               </div>
               <div class="booking-summary-row">
                 <span class="booking-summary-icon" aria-hidden="true">↻</span>
-                <span>One Time</span>
+                <span>{{ scheduleLabel }}</span>
               </div>
               @if (availableOffers.length > 0) {
                 <div class="booking-summary-row booking-offer-row">
@@ -38,9 +38,9 @@
                       [value]="selectedOfferId ?? ''"
                       (change)="onOfferSelectChange($event)"
                     >
-                      <option value="">None</option>
+                      <option value="" [selected]="!selectedOfferId">None</option>
                       @for (o of availableOffers; track o.id) {
-                        <option [value]="o.id">
+                        <option [value]="o.id" [selected]="o.id === selectedOfferId">
                           {{ o.title
                           }}{{
                             o.discountPercent != null && o.discountPercent > 0
@@ -66,10 +66,12 @@
                   <span>-{{ discountAmount | number : '1.2-2' }} {{ currency }}</span>
                 </div>
               }
-              <div class="booking-summary-cost-row booking-summary-tax">
-                <span>SALES TAX</span>
-                <span>{{ salesTax | number : '1.2-2' }} {{ currency }}</span>
-              </div>
+              @if (salesTax > 0) {
+                <div class="booking-summary-cost-row booking-summary-tax">
+                  <span>SALES TAX</span>
+                  <span>{{ salesTax | number : '1.2-2' }} {{ currency }}</span>
+                </div>
+              }
               <div class="booking-summary-cost-row booking-summary-total">
                 <span>{{ totalLineLabel }}</span>
                 <span>{{ total | number : '1.2-2' }} {{ currency }}</span>
@@ -208,6 +210,16 @@
               }
             </div>
 
+            <div class="form-group">
+              <label for="schedule">Schedule</label>
+              <select id="schedule" formControlName="schedule">
+                <option value="one_time">One Time</option>
+                <option value="weekly">Weekly</option>
+                <option value="biweekly">Biweekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </div>
+
             <div class="form-group form-group-full booking-datetime-field">
               <label for="fpDateTime">Preferred date &amp; time</label>
               <input
@@ -343,9 +355,31 @@
             <div class="alert alert-error">{{ errorMessage }}</div>
           }
 
+          <div class="form-group form-group-full">
+            <label class="booking-terms-check">
+              <input type="checkbox" formControlName="acceptTerms" />
+              <span>
+                I agree to
+                <button type="button" class="booking-terms-link" (click)="openTermsModal()">
+                  Terms of Service
+                </button>
+                for <strong>SUPER MAGIC MOP CLEAN L.L.C</strong>
+              </span>
+            </label>
+            <!-- Terms content is shown in a popup (modal) when user clicks the link. -->
+            @if (submitted && f.acceptTerms.errors) {
+              <small class="error">You must accept the Terms of Service to submit.</small>
+            }
+          </div>
+
           <button type="submit" class="btn-submit" [disabled]="sending">
             {{ sending ? 'Submitting...' : 'Submit Booking Request' }}
           </button>
+          <p class="booking-payment-hold-note">
+            By booking, you agree that a temporary authorization hold will be placed on your card before your
+            appointment. This is not an immediate charge. Final payment will be processed after the service is
+            completed.
+          </p>
         </form>
       </div>
     </div>
@@ -358,6 +392,120 @@
         <span class="visually-hidden">Submitting your booking, please wait.</span>
         <p class="booking-submit-text">Submitting your booking…</p>
         <p class="booking-submit-hint">Payment and confirmation can take a few seconds.</p>
+      </div>
+    </div>
+  }
+
+  @if (showTermsModal) {
+    <div class="booking-terms-modal-backdrop" (click)="closeTermsModal()" aria-hidden="true"></div>
+    <div
+      class="booking-terms-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Terms of Service"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="booking-terms-modal__header">
+        <div class="booking-terms-modal__title">Terms of Service</div>
+        <button type="button" class="booking-terms-modal__close" (click)="closeTermsModal()" aria-label="Close">
+          ×
+        </button>
+      </div>
+      <div class="booking-terms-modal__body">
+        <strong>SUPER MAGIC MOP CLEAN L.L.C</strong><br />
+        <strong>Terms of Service (“Terms”)</strong>
+        <br /><br />
+        <strong>1. Acceptance of Terms</strong><br />
+        Please read these Terms of Service (“Terms”, “Terms of Service”) carefully before using our website and services operated by SUPER MAGIC MOP CLEAN L.L.C (“us”, “we”, or “our”).<br />
+        By accessing or using our Service, you agree to be bound by these Terms. If you disagree with any part of the Terms, you may not access or use our Service.
+        <br /><br />
+        <strong>2. Services</strong><br />
+        We provide residential and commercial cleaning services. However, we do not offer the following:
+        <ul>
+          <li>Wet wiping of light bulbs</li>
+          <li>Resurfacing, waxing, or refinishing of floors</li>
+          <li>Upholstery cleaning</li>
+          <li>Removal of biohazards (including insects, human or animal waste, mold)</li>
+          <li>Large furniture moving</li>
+          <li>Large-scale trash disposal</li>
+        </ul>
+        We do not perform cleaning at heights. Our cleaners do not carry or use ladders.<br />
+        We reserve the right to refuse service if the property is unsafe or beyond our scope of work.
+        <br /><br />
+        <strong>3. Minimum Service Fee</strong><br />
+        A minimum service fee of $99 applies to all bookings. If a booking is made below this amount or with incorrect property details, we reserve the right to adjust pricing accordingly.
+        <br /><br />
+        <strong>4. Pricing &amp; Service Adjustments</strong><br />
+        Service duration and pricing may vary depending on the size and condition of the property.<br />
+        If additional charges are required:
+        <ul>
+          <li>We will notify you before proceeding</li>
+          <li>No additional charges will be applied without your approval</li>
+        </ul>
+        <strong>5. Payment Terms</strong><br />
+        To secure your booking, we place a temporary authorization hold on your card for the full service amount prior to your appointment.<br />
+        This hold is not an immediate charge.<br />
+        Final payment will be processed after the service is completed.<br />
+        If no issues are reported, the charge will typically be completed the following day.<br />
+        If the service is canceled or rescheduled, the hold may take 2–5 business days to be released, depending on your bank.
+        <br /><br />
+        <strong>6. Cancellation &amp; Rescheduling Policy</strong><br />
+        Because we reserve time specifically for your service:
+        <ul>
+          <li>Cancellations or rescheduling must be made at least 24 hours in advance</li>
+          <li>Late cancellations (within 24 hours) will incur a $60 fee</li>
+          <li>No access to the property at the time of service will also result in a $60 fee</li>
+        </ul>
+        We will attempt to contact you via call, text, and email before canceling the appointment.
+        <br /><br />
+        <strong>7. Access to Property</strong><br />
+        Clients must ensure access to the property at the scheduled time. Failure to provide access will be treated as a cancellation.
+        <br /><br />
+        <strong>8. Condition of Property</strong><br />
+        Clients must provide a safe and workable environment. We may refuse service or skip areas if there is excessive clutter, hazardous conditions, or biohazards.
+        <br /><br />
+        <strong>9. Satisfaction Guarantee</strong><br />
+        We will follow up after your service to ensure satisfaction.
+        <ul>
+          <li>Re-clean is offered within 5 days for missed areas</li>
+          <li>Partial refunds or discounts may be offered for minor issues</li>
+        </ul>
+        If no response is received, the service will be considered completed and payment will be processed.
+        <br /><br />
+        <strong>10. Damage &amp; Liability</strong><br />
+        Any damage must be reported within 24 hours. We are not responsible for pre-existing damage or improperly secured items.
+        <br /><br />
+        <strong>11. Personal Belongings</strong><br />
+        Clients are responsible for securing valuables and fragile items prior to service.
+        <br /><br />
+        <strong>12. Pets Policy</strong><br />
+        All pets must be secured during the service. We are not responsible for injuries or incidents involving unsecured animals.
+        <br /><br />
+        <strong>13. Photo Documentation Policy</strong><br />
+        Our team may take photos before, during, or after service for documentation and quality control. Photos are for internal use only, will not be shared without consent, and can be deleted upon request.
+        <br /><br />
+        <strong>14. Accounts</strong><br />
+        If you create an account with us, you are responsible for maintaining accurate information and safeguarding your login details.
+        <br /><br />
+        <strong>15. Third-Party Links</strong><br />
+        Our Service may include links to third-party websites. We are not responsible for their content or policies.
+        <br /><br />
+        <strong>16. Governing Law</strong><br />
+        These Terms are governed by the laws of the United States.
+        <br /><br />
+        <strong>17. Changes to Terms</strong><br />
+        We reserve the right to update or modify these Terms at any time.
+        <br /><br />
+        <strong>18. Termination</strong><br />
+        We reserve the right to refuse service or terminate access to our Service at our discretion.
+        <br /><br />
+        <strong>19. Contact Us</strong><br />
+        If you have any questions about these Terms, please contact us.
+        <br /><br />
+        <strong>By booking a service with SUPER MAGIC MOP CLEAN L.L.C, you agree to all Terms listed above.</strong>
+      </div>
+      <div class="booking-terms-modal__footer">
+        <button type="button" class="btn-submit booking-terms-modal__ok" (click)="closeTermsModal()">Close</button>
       </div>
     </div>
   }

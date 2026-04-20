@@ -22,7 +22,7 @@ export class Checklist implements OnInit {
     'These are the tasks we cover on a standard visit. Check boxes to match what you want emphasized; your selections stay in sync with your quote on the Services page.';
 
   readonly sections = STANDARD_INCLUDED_SECTIONS;
-  readonly currency = 'JD';
+  readonly currency = 'USD';
 
   expanded = new Set<string>(this.sections.map((s) => s.title));
   checkedItems = new Set<string>();

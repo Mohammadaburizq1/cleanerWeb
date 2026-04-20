@@ -339,13 +339,21 @@
     flex-wrap: nowrap;
     padding: 14px 16px;
     gap: 12px;
+    justify-content: flex-start;
   }
 
   .logo {
-    font-size: 20px;
-    min-width: 0;
-    flex: 1;
-    line-height: 1.2;
+    display: block;
+    font-size: 16px;
+    line-height: 1.1;
+    max-width: 40vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 0 1 auto;
+    order: 2;
+    margin-left: auto;
+    margin-right: 0;
   }
 
   .nav-desktop,
@@ -355,6 +363,10 @@
 
   .navbar-mobile-bar {
     display: flex;
+    order: 1;
+    flex: 0 0 auto;
+    justify-content: flex-start;
+    gap: 10px;
   }
 
   .navbar {

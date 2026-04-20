@@ -1,21 +1,23 @@
 import { CLEANING_CHECKLIST_SECTIONS, type ChecklistSection } from './cleaning-checklist.data';
 import type { ReceiptLine } from './selected-tasks.service';
 
-export const QUOTE_PRICE_PER_BEDROOM = 5;
-export const QUOTE_PRICE_PER_BATHROOM = 5;
+export const QUOTE_PRICE_PER_BEDROOM = 20;
+export const QUOTE_PRICE_PER_BATHROOM = 25;
 export const QUOTE_HOURLY_RATE_PER_CLEANER = 20;
 /** Extra JD when pets are in the home */
 export const QUOTE_PET_SURCHARGE_JD = 8;
 
-/** Home size buckets for Step 1 (surcharge in JD added to every quote). */
+/** Home size buckets for Step 1 (base price in USD for the home size). */
 export const HOME_SQ_FT_TIERS: readonly { readonly id: string; readonly label: string; readonly surchargeJd: number }[] =
   [
-    { id: 'sqft_u1000', label: 'Up to 1,000 sq ft', surchargeJd: 6 },
-    { id: 'sqft_1001_1500', label: '1,001 – 1,500 sq ft', surchargeJd: 12 },
-    { id: 'sqft_1501_2000', label: '1,501 – 2,000 sq ft', surchargeJd: 18 },
-    { id: 'sqft_2001_2500', label: '2,001 – 2,500 sq ft', surchargeJd: 24 },
-    { id: 'sqft_2501_3500', label: '2,501 – 3,500 sq ft', surchargeJd: 32 },
-    { id: 'sqft_o3500', label: 'Over 3,500 sq ft', surchargeJd: 42 },
+    { id: 'sqft_1_999', label: '1 – 999 sq ft', surchargeJd: 199 },
+    { id: 'sqft_1000_1499', label: '1,000 – 1,499 sq ft', surchargeJd: 209 },
+    { id: 'sqft_1500_1999', label: '1,500 – 1,999 sq ft', surchargeJd: 239 },
+    { id: 'sqft_2000_2499', label: '2,000 – 2,499 sq ft', surchargeJd: 249 },
+    { id: 'sqft_2500_2999', label: '2,500 – 2,999 sq ft', surchargeJd: 259 },
+    { id: 'sqft_3000_3499', label: '3,000 – 3,499 sq ft', surchargeJd: 275 },
+    { id: 'sqft_3500_3999', label: '3,500 – 3,999 sq ft', surchargeJd: 279 },
+    { id: 'sqft_4000_4499', label: '4,000 – 4,499 sq ft', surchargeJd: 289 },
   ];
 
 export function homeSqFtTierById(id: string | null | undefined) {
@@ -26,12 +28,15 @@ export function homeSqFtTierById(id: string | null | undefined) {
 /** Migrate old numeric sq ft from storage to a tier id. */
 export function legacySqFtToTierId(sqft: number): string | null {
   if (!(typeof sqft === 'number') || sqft < 0) return null;
-  if (sqft <= 1000) return 'sqft_u1000';
-  if (sqft <= 1500) return 'sqft_1001_1500';
-  if (sqft <= 2000) return 'sqft_1501_2000';
-  if (sqft <= 2500) return 'sqft_2001_2500';
-  if (sqft <= 3500) return 'sqft_2501_3500';
-  return 'sqft_o3500';
+  if (sqft <= 999) return 'sqft_1_999';
+  if (sqft <= 1499) return 'sqft_1000_1499';
+  if (sqft <= 1999) return 'sqft_1500_1999';
+  if (sqft <= 2499) return 'sqft_2000_2499';
+  if (sqft <= 2999) return 'sqft_2500_2999';
+  if (sqft <= 3499) return 'sqft_3000_3499';
+  if (sqft <= 3999) return 'sqft_3500_3999';
+  if (sqft <= 4499) return 'sqft_4000_4499';
+  return 'sqft_4000_4499';
 }
 
 function itemKey(section: ChecklistSection, item: string): string {
@@ -44,6 +49,16 @@ function checkedCountInSection(section: ChecklistSection, checked: Set<string>):
 
 function hasSectionAnyChecked(section: ChecklistSection, checked: Set<string>): boolean {
   return checkedCountInSection(section, checked) > 0;
+}
+
+function checkedTotalInSection(section: ChecklistSection, checked: Set<string>): number {
+  let sum = 0;
+  for (const item of section.items) {
+    if (!checked.has(itemKey(section, item))) continue;
+    const perItem = section.itemPrices?.[item];
+    sum += typeof perItem === 'number' ? perItem : section.pricePerTask;
+  }
+  return sum;
 }
 
 /** Matches Services page pricing: hourly ignores per-task add-ons in the total; receipt still lists checked tasks. Home size tier and pets always add to the total. */
@@ -63,37 +78,64 @@ export function computeServicesQuote(input: {
     .filter((s) => hasSectionAnyChecked(s, checked))
     .map((section) => {
       const taskCount = checkedCountInSection(section, checked);
-      const pricePerTask = section.pricePerTask;
-      const amount = taskCount * pricePerTask;
-      return { title: section.title, taskCount, pricePerTask, amount };
+      const amount = checkedTotalInSection(section, checked);
+      const isVariable = !!section.itemPrices && Object.keys(section.itemPrices).length > 0;
+      return isVariable
+        ? { title: section.title, amount }
+        : { title: section.title, taskCount, pricePerTask: section.pricePerTask, amount };
     });
 
   const isHourly = (input.numberOfBedrooms ?? 0) === 0;
 
-  let baseCost: number;
+  const tier = homeSqFtTierById(input.homeSqFtTierId);
+  const tierAmount = tier?.surchargeJd ?? 0;
+  const petAmount = input.hasPets ? QUOTE_PET_SURCHARGE_JD : 0;
+
+  // Add-ons (Step 2) always add on top of the base.
+  const selectedSectionsTotal = checklist
+    .filter((s) => hasSectionAnyChecked(s, checked))
+    .reduce((sum, s) => sum + checkedTotalInSection(s, checked), 0);
+
+  // Pricing rule:
+  // - Standard service (non-hourly): base price comes from home size tier (e.g. 1–999 sq ft => 199)
+  //   PLUS $20 for each additional bedroom above 1, and $25 for each additional bathroom above 1.
+  // - Hourly service: base price is hourlyRate * cleaners * hours (home size tier can still add as a line item if selected)
+  let baseCost = 0;
   if (isHourly) {
     const cleaners = input.numberOfCleaners ?? 1;
     const hours = input.hourlyDurationHours ?? 0;
     baseCost = QUOTE_HOURLY_RATE_PER_CLEANER * cleaners * hours;
   } else {
-    const selectedSectionsTotal = checklist
-      .filter((s) => hasSectionAnyChecked(s, checked))
-      .reduce((sum, s) => sum + checkedCountInSection(s, checked) * s.pricePerTask, 0);
-    const beds = Math.max(0, input.numberOfBedrooms ?? 0);
-    const baths = Math.max(0, input.numberOfBathrooms ?? 0);
-    baseCost =
-      selectedSectionsTotal + beds * QUOTE_PRICE_PER_BEDROOM + baths * QUOTE_PRICE_PER_BATHROOM;
+    const beds = Math.max(1, input.numberOfBedrooms ?? 1);
+    const baths = Math.max(1, input.numberOfBathrooms ?? 1);
+    const extraBeds = Math.max(0, beds - 1);
+    const extraBaths = Math.max(0, baths - 1);
+    baseCost = tierAmount + extraBeds * QUOTE_PRICE_PER_BEDROOM + extraBaths * QUOTE_PRICE_PER_BATHROOM;
   }
-
-  const tier = homeSqFtTierById(input.homeSqFtTierId);
-  const tierAmount = tier?.surchargeJd ?? 0;
-  const petAmount = input.hasPets ? QUOTE_PET_SURCHARGE_JD : 0;
 
   if (tierAmount > 0) {
     selectedSectionsWithPrices.push({
       title: `Home size: ${tier!.label}`,
       amount: tierAmount,
     });
+  }
+  if (!isHourly) {
+    const beds = Math.max(1, input.numberOfBedrooms ?? 1);
+    const baths = Math.max(1, input.numberOfBathrooms ?? 1);
+    const extraBeds = Math.max(0, beds - 1);
+    const extraBaths = Math.max(0, baths - 1);
+    if (extraBeds > 0) {
+      selectedSectionsWithPrices.push({
+        title: `Extra bedrooms (${extraBeds} × ${QUOTE_PRICE_PER_BEDROOM})`,
+        amount: extraBeds * QUOTE_PRICE_PER_BEDROOM,
+      });
+    }
+    if (extraBaths > 0) {
+      selectedSectionsWithPrices.push({
+        title: `Extra bathrooms (${extraBaths} × ${QUOTE_PRICE_PER_BATHROOM})`,
+        amount: extraBaths * QUOTE_PRICE_PER_BATHROOM,
+      });
+    }
   }
   if (petAmount > 0) {
     selectedSectionsWithPrices.push({
@@ -102,7 +144,7 @@ export function computeServicesQuote(input: {
     });
   }
 
-  const estimatedCost = baseCost + tierAmount + petAmount;
+  const estimatedCost = baseCost + selectedSectionsTotal + petAmount;
 
   return { estimatedCost, selectedSectionsWithPrices };
 }

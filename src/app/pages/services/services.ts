@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   CLEANING_CHECKLIST_SECTIONS,
   type ChecklistSection,
@@ -16,6 +16,9 @@ import {
 } from '../../core/services-quote';
 import type { ReceiptLine } from '../../core/selected-tasks.service';
 import { type SelectedTask, SelectedTasksService } from '../../core/selected-tasks.service';
+import { OfferService } from '../../core/offer.service';
+import type { OfferDto } from '../../core/offer.dto';
+import { catchError, of } from 'rxjs';
 
 @Component({
   selector: 'app-services',
@@ -25,6 +28,7 @@ import { type SelectedTask, SelectedTasksService } from '../../core/selected-tas
   styleUrl: './services.scss',
 })
 export class Services implements OnInit {
+  private readonly OFFER_STORAGE_KEY = 'selected-offer-id';
   readonly sectionTag = 'Get a quote';
   readonly mainHeading = 'Get A Quote and Complete Your Booking';
   readonly intro =
@@ -41,7 +45,6 @@ export class Services implements OnInit {
   ];
 
   readonly bathroomOptions: { label: string; value: number }[] = [
-    { label: '0 Bathrooms', value: 0 },
     { label: '1 Bathroom', value: 1 },
     { label: '2 Bathrooms', value: 2 },
     { label: '3 Bathrooms', value: 3 },
@@ -75,8 +78,8 @@ export class Services implements OnInit {
   /** Add-on services (Deep Clean, Moving Clean, Upgrades) */
   readonly addOnSections = this.checklist.slice(3);
 
-  /** Which section titles are expanded (multiple can be open); all open by default */
-  expanded = new Set<string>(this.checklist.map((s) => s.title));
+  /** Which section titles are expanded (multiple can be open); collapsed by default */
+  expanded = new Set<string>();
 
   /** Checked items: key = "sectionTitle|task" */
   checkedItems = new Set<string>();
@@ -104,16 +107,22 @@ export class Services implements OnInit {
   readonly pricePerBathroom = QUOTE_PRICE_PER_BATHROOM;
   /** Hourly rate per cleaner (used when Hourly Service is selected) */
   readonly hourlyRatePerCleaner = QUOTE_HOURLY_RATE_PER_CLEANER;
-  readonly currency = 'JD';
+  readonly currency = 'USD';
 
-  /** Sales tax rate (e.g. 0.06 = 6%). Set to 0 if no tax. */
-  readonly salesTaxRate = 0.06;
+  /** Sales tax rate. Set to 0 to disable tax. */
+  readonly salesTaxRate = 0;
+
+  /** Active offers from GET /api/Offer — optional promo on this booking/quote */
+  availableOffers: OfferDto[] = [];
+  selectedOfferId: string | null = null;
 
   /** Set when redirected from Booking because quote total was zero */
   bookingRedirectNotice: string | null = null;
 
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private selectedTasksService = inject(SelectedTasksService);
+  private offerService = inject(OfferService);
 
   ngOnInit(): void {
     const st = history.state as { bookingRedirectReason?: string } | null;
@@ -126,14 +135,15 @@ export class Services implements OnInit {
     this.numberOfRooms = this.selectedTasksService.getNumberOfRooms();
     this.numberOfBedrooms = this.selectedTasksService.getNumberOfBedrooms();
     this.numberOfBathrooms = this.selectedTasksService.getNumberOfBathrooms();
-    // Default quote step like reference: One Bedroom Home, 0 Bathrooms
-    if (this.numberOfBedrooms == null) {
+    // Default quote step: 1 Bedroom, 1 Bathroom
+    if (this.numberOfBedrooms == null || this.numberOfBedrooms < 0) {
       this.numberOfBedrooms = 1;
       this.selectedTasksService.setNumberOfBedrooms(1);
     }
-    if (this.numberOfBathrooms == null) {
-      this.numberOfBathrooms = 0;
-      this.selectedTasksService.setNumberOfBathrooms(0);
+    // Force at least 1 bathroom (even if old storage had 0)
+    if (this.numberOfBathrooms == null || this.numberOfBathrooms < 1) {
+      this.numberOfBathrooms = 1;
+      this.selectedTasksService.setNumberOfBathrooms(1);
     }
     this.numberOfCleaners = this.selectedTasksService.getNumberOfCleaners();
     this.hourlyDurationHours = this.selectedTasksService.getHourlyDurationHours();
@@ -147,7 +157,59 @@ export class Services implements OnInit {
     }
     this.hasPets = this.selectedTasksService.getHasPets();
     this.homeSqFtTierId = this.selectedTasksService.getHomeSqFtTierId();
+    // Force default home size tier (even if old storage had none)
+    if (this.homeSqFtTierId == null || this.homeSqFtTierId === '') {
+      this.homeSqFtTierId = 'sqft_1_999';
+      this.selectedTasksService.setHomeSqFtTierId(this.homeSqFtTierId);
+    }
+
+    // Load offers + read offer id from query param (?offer=...)
+    this.offerService
+      .listPublicOffers()
+      .pipe(catchError(() => of([])))
+      .subscribe((rows) => {
+        this.availableOffers = rows;
+        const q = (this.route.snapshot.queryParamMap.get('offer') ?? '').trim();
+        const stored = (localStorage.getItem(this.OFFER_STORAGE_KEY) ?? '').trim();
+        const candidate = q || stored;
+
+        if (candidate && rows.some((r) => r.id === candidate)) {
+          this.selectedOfferId = candidate;
+          localStorage.setItem(this.OFFER_STORAGE_KEY, candidate);
+        } else {
+          this.selectedOfferId = null;
+          localStorage.removeItem(this.OFFER_STORAGE_KEY);
+        }
+      });
+
     this.syncCostToService();
+  }
+
+  get selectedOffer(): OfferDto | null {
+    if (!this.selectedOfferId) return null;
+    return this.availableOffers.find((o) => o.id === this.selectedOfferId) ?? null;
+  }
+
+  get offerDiscountPercent(): number {
+    const p = this.selectedOffer?.discountPercent;
+    if (p == null || p <= 0) return 0;
+    return Math.min(100, p);
+  }
+
+  get discountAmount(): number {
+    if (this.offerDiscountPercent <= 0) return 0;
+    const raw = this.subTotal * (this.offerDiscountPercent / 100);
+    return Math.round(raw * 100) / 100;
+  }
+
+  get subTotalAfterDiscount(): number {
+    return Math.max(0, Math.round((this.subTotal - this.discountAmount) * 100) / 100);
+  }
+
+  get totalAfterDiscount(): number {
+    // salesTaxRate is 0, but keep consistent formula
+    const tax = Math.round(this.subTotalAfterDiscount * this.salesTaxRate * 100) / 100;
+    return Math.round((this.subTotalAfterDiscount + tax) * 100) / 100;
   }
 
   /** True when user selected "Hourly Service" (bedrooms = 0) */
@@ -198,7 +260,7 @@ export class Services implements OnInit {
   onBathroomChange(event: Event): void {
     const el = event.target as HTMLSelectElement;
     const v = el.value;
-    this.numberOfBathrooms = v === '' ? null : Math.max(0, parseInt(v, 10));
+    this.numberOfBathrooms = v === '' ? null : Math.max(1, parseInt(v, 10));
     this.selectedTasksService.setNumberOfBathrooms(this.numberOfBathrooms);
     this.syncCostToService();
   }
@@ -209,15 +271,16 @@ export class Services implements OnInit {
     this.selectedTasksService.clearAll();
     this.numberOfRooms = null;
     this.numberOfBedrooms = 1;
-    this.numberOfBathrooms = 0;
+    this.numberOfBathrooms = 1;
     this.numberOfCleaners = 1;
     this.hourlyDurationHours = 7.5;
     this.selectedTasksService.setNumberOfBedrooms(1);
-    this.selectedTasksService.setNumberOfBathrooms(0);
+    this.selectedTasksService.setNumberOfBathrooms(1);
     this.selectedTasksService.setNumberOfCleaners(1);
     this.selectedTasksService.setHourlyDurationHours(7.5);
     this.hasPets = false;
-    this.homeSqFtTierId = null;
+    this.homeSqFtTierId = 'sqft_1_999';
+    this.selectedTasksService.setHomeSqFtTierId(this.homeSqFtTierId);
     this.expanded = new Set(this.checklist.map((s) => s.title));
     this.syncCostToService();
   }
@@ -266,9 +329,39 @@ export class Services implements OnInit {
   /** Home size line item for standard (non-hourly) quotes — bedrooms + bathrooms from Step 1 */
   get homeBaseTotal(): number {
     if (this.isHourlyService) return 0;
-    const beds = Math.max(0, this.numberOfBedrooms ?? 0);
-    const baths = Math.max(0, this.numberOfBathrooms ?? 0);
-    return beds * this.pricePerBedroom + baths * this.pricePerBathroom;
+    const tier = homeSqFtTierById(this.homeSqFtTierId);
+    const base = tier?.surchargeJd ?? 0;
+    const beds = Math.max(1, this.numberOfBedrooms ?? 1);
+    const baths = Math.max(1, this.numberOfBathrooms ?? 1);
+    const extraBeds = Math.max(0, beds - 1);
+    const extraBaths = Math.max(0, baths - 1);
+    return base + extraBeds * this.pricePerBedroom + extraBaths * this.pricePerBathroom;
+  }
+
+  get homeSizeBaseOnly(): number {
+    if (this.isHourlyService) return 0;
+    const tier = homeSqFtTierById(this.homeSqFtTierId);
+    return tier?.surchargeJd ?? 0;
+  }
+
+  get extraBedroomsCount(): number {
+    if (this.isHourlyService) return 0;
+    const beds = Math.max(1, this.numberOfBedrooms ?? 1);
+    return Math.max(0, beds - 1);
+  }
+
+  get extraBathroomsCount(): number {
+    if (this.isHourlyService) return 0;
+    const baths = Math.max(1, this.numberOfBathrooms ?? 1);
+    return Math.max(0, baths - 1);
+  }
+
+  get extraBedroomsAmount(): number {
+    return this.extraBedroomsCount * this.pricePerBedroom;
+  }
+
+  get extraBathroomsAmount(): number {
+    return this.extraBathroomsCount * this.pricePerBathroom;
   }
 
   /** Hourly subtotal before home-size / pet surcharges */
@@ -367,7 +460,10 @@ export class Services implements OnInit {
     this.selectedTasksService.setHasPets(this.hasPets);
     this.selectedTasksService.setHomeSqFtTierId(this.homeSqFtTierId);
     this.syncCostToService();
+    if (this.selectedOfferId) localStorage.setItem(this.OFFER_STORAGE_KEY, this.selectedOfferId);
+    else localStorage.removeItem(this.OFFER_STORAGE_KEY);
     this.router.navigate(['/booking'], {
+      queryParams: this.selectedOfferId ? { offer: this.selectedOfferId } : undefined,
       state: {
         selectedTasks,
         numberOfRooms: this.numberOfRooms,
@@ -379,6 +475,7 @@ export class Services implements OnInit {
         homeSqFtTierId: this.homeSqFtTierId,
         estimatedCost: this.estimatedCost,
         currency: this.currency,
+        offerId: this.selectedOfferId,
         selectedSectionsWithPrices: this.receiptLines.map((line) => ({ ...line })),
       },
     });

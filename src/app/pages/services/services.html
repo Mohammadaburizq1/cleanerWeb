@@ -42,7 +42,7 @@
               <select
                 id="quote-bathrooms"
                 class="step-1-select"
-                [value]="(numberOfBathrooms ?? 0).toString()"
+                [value]="(numberOfBathrooms ?? 1).toString()"
                 (change)="onBathroomChange($event)"
               >
                 @for (opt of bathroomOptions; track opt.value) {
@@ -90,10 +90,9 @@
               <select
                 id="quote-sqft-tier"
                 class="step-1-select"
-                [value]="homeSqFtTierId ?? ''"
+                [value]="homeSqFtTierId ?? 'sqft_1_999'"
                 (change)="onHomeSqFtTierChange($event)"
               >
-                <option value="">Select range…</option>
                 @for (opt of homeSqFtTierOptions; track opt.id) {
                   <option [value]="opt.id">{{ opt.label }} (+{{ opt.surchargeJd }} {{ currency }})</option>
                 }
@@ -139,7 +138,11 @@
                 [id]="'trigger-' + section.title"
               >
                 <span class="accordion-title">{{ section.title }}</span>
-                <span class="accordion-price">{{ section.pricePerTask }} {{ currency }}/task</span>
+                @if (section.itemPrices) {
+                  <span class="accordion-price">Custom pricing</span>
+                } @else {
+                  <span class="accordion-price">{{ section.pricePerTask }} {{ currency }}/task</span>
+                }
                 <span class="accordion-count">{{ section.items.length }} tasks</span>
                 <span class="accordion-icon" aria-hidden="true"></span>
               </button>
@@ -163,7 +166,12 @@
                         [checked]="isChecked(section, item)"
                         (change)="toggleChecked(section, item)"
                       />
-                      <label [for]="'check-' + section.title + '-' + item" class="checklist-label">{{ item }}</label>
+                      <label [for]="'check-' + section.title + '-' + item" class="checklist-label">
+                        <span class="checklist-label__text">{{ item }}</span>
+                        @if (section.itemPrices && section.itemPrices[item] != null) {
+                          <span class="checklist-label__price">+{{ section.itemPrices[item] }} {{ currency }}</span>
+                        }
+                      </label>
                     </li>
                   }
                 </ul>
@@ -198,13 +206,21 @@
               <span>SUB-TOTAL</span>
               <span>{{ subTotal | number : '1.2-2' }} {{ currency }}</span>
             </div>
-            <div class="booking-summary-cost-row booking-summary-tax">
-              <span>SALES TAX</span>
-              <span>{{ salesTax | number : '1.2-2' }} {{ currency }}</span>
-            </div>
+            @if (discountAmount > 0) {
+              <div class="booking-summary-cost-row booking-summary-discount">
+                <span>PROMO ({{ offerDiscountPercent }}%)</span>
+                <span>-{{ discountAmount | number : '1.2-2' }} {{ currency }}</span>
+              </div>
+            }
+            @if (salesTax > 0) {
+              <div class="booking-summary-cost-row booking-summary-tax">
+                <span>SALES TAX</span>
+                <span>{{ salesTax | number : '1.2-2' }} {{ currency }}</span>
+              </div>
+            }
             <div class="booking-summary-cost-row booking-summary-total">
               <span>TOTAL</span>
-              <span>{{ total | number : '1.2-2' }} {{ currency }}</span>
+              <span>{{ totalAfterDiscount | number : '1.2-2' }} {{ currency }}</span>
             </div>
           </div>
         </div>
@@ -217,10 +233,21 @@
       <div class="booking-details">
         <details class="selected-tasks-details">
           <summary>Cost breakdown</summary>
-          @if (!isHourlyService && homeBaseTotal > 0) {
+          @if (!isHourlyService && homeSizeBaseOnly > 0) {
             <p class="cost-breakdown-row cost-breakdown-row--home">
-              Bedrooms &amp; baths: {{ numberOfBedrooms ?? 0 }} bedroom(s) × {{ pricePerBedroom }} + {{ numberOfBathrooms ?? 0 }}
-              bathroom(s) × {{ pricePerBathroom }} = <strong>{{ homeBaseTotal | number : '1.2-2' }} {{ currency }}</strong>
+              Base (home size): <strong>{{ homeSizeBaseOnly | number : '1.2-2' }} {{ currency }}</strong>
+            </p>
+          }
+          @if (!isHourlyService && extraBedroomsCount > 0) {
+            <p class="cost-breakdown-row">
+              Extra bedrooms: {{ extraBedroomsCount }} × {{ pricePerBedroom }} =
+              <strong>{{ extraBedroomsAmount | number : '1.2-2' }} {{ currency }}</strong>
+            </p>
+          }
+          @if (!isHourlyService && extraBathroomsCount > 0) {
+            <p class="cost-breakdown-row">
+              Extra bathrooms: {{ extraBathroomsCount }} × {{ pricePerBathroom }} =
+              <strong>{{ extraBathroomsAmount | number : '1.2-2' }} {{ currency }}</strong>
             </p>
           }
           @if (isHourlyService) {

@@ -30,10 +30,6 @@
     </div>
 
     <div class="navbar-mobile-bar">
-      <a routerLink="/offers" routerLinkActive="active" class="nav-link-offers nav-link-offers--mobile" (click)="closeMobileMenu()"
-        >Offers</a
-      >
-      <button type="button" class="btn-primary btn-primary--mobile" (click)="goToBookNow()">Book Now</button>
       <button
         type="button"
         class="nav-menu-toggle"
@@ -44,6 +40,14 @@
       >
         <span class="nav-menu-toggle__bars" aria-hidden="true"></span>
       </button>
+      <a
+        routerLink="/offers"
+        routerLinkActive="active"
+        class="nav-link-offers nav-link-offers--mobile"
+        (click)="closeMobileMenu()"
+        >Offers</a
+      >
+      <button type="button" class="btn-primary btn-primary--mobile" (click)="goToBookNow()">Book Now</button>
     </div>
   </div>
 
