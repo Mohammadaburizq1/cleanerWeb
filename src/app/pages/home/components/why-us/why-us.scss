@@ -81,8 +81,7 @@
 }
 
 .btn-gold:hover {
-  background: #e0bf57;
-  border-color: #e0bf57;
+  filter: brightness(1.06);
 }
 
 @media (max-width: 1100px) {

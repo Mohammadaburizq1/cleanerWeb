@@ -1,6 +1,5 @@
 import { Routes } from '@angular/router';
 import { Home } from './pages/home/home';
-import { Services } from './pages/services/services';
 import { Checklist } from './pages/checklist/checklist';
 import { About } from './pages/about/about';
 import { Contact } from './pages/contact/contact';
@@ -19,8 +18,8 @@ export const routes: Routes = [
   },
   {
     path: 'services',
-    component: Services,
-    title: 'Services',
+    redirectTo: 'booking',
+    pathMatch: 'full',
   },
   {
     path: 'checklist',

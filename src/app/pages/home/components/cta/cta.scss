@@ -19,7 +19,14 @@
   border-radius: 26px;
   padding: 52px 28px;
   text-align: center;
-  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-md);
+  background:
+    radial-gradient(
+        520px 240px at 18% 12%,
+        color-mix(in srgb, var(--accent-color) 14%, transparent),
+        transparent 60%
+      ),
+    var(--card-bg);
 }
 
 .cta-box h2 {
@@ -54,8 +61,8 @@
 }
 
 .btn-gold:hover {
-  background: #e0bf57;
-  border-color: #e0bf57;
+  transform: translateY(-1px);
+  filter: brightness(1.04);
 }
 
 @media (max-width: 768px) {

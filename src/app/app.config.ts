@@ -4,6 +4,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { routes } from './app.routes';
 import { API_BASE_URL } from './core/api-base-url';
 import { loggingInterceptor } from './core/logging.interceptor';
+import { authExpiryInterceptor } from './core/auth-expiry.interceptor';
 import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
@@ -11,7 +12,7 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideHttpClient(withInterceptors([loggingInterceptor])),
+    provideHttpClient(withInterceptors([loggingInterceptor, authExpiryInterceptor])),
     { provide: API_BASE_URL, useValue: environment.apiUrl },
   ],
 };

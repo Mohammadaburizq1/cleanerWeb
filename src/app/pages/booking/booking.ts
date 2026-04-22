@@ -2,6 +2,7 @@ import {
   AfterViewInit,
   Component,
   ElementRef,
+  HostListener,
   inject,
   NgZone,
   OnDestroy,
@@ -22,9 +23,22 @@ import { catchError, firstValueFrom, of } from 'rxjs';
 import { PaymentsService } from '../../core/payments.service';
 import { BookingService } from '../../core/booking.service';
 import { SelectedTasksService } from '../../core/selected-tasks.service';
-import { homeSqFtTierById, legacySqFtToTierId } from '../../core/services-quote';
+import {
+  computeServicesQuote,
+  HOME_SQ_FT_TIERS,
+  homeSqFtTierById,
+  legacySqFtToTierId,
+  QUOTE_HOURLY_RATE_PER_CLEANER,
+  QUOTE_PET_SURCHARGE_JD,
+  QUOTE_PRICE_PER_BATHROOM,
+  QUOTE_PRICE_PER_BEDROOM,
+} from '../../core/services-quote';
 import { OfferService } from '../../core/offer.service';
 import type { OfferDto } from '../../core/offer.dto';
+import {
+  CLEANING_CHECKLIST_SECTIONS,
+  type ChecklistSection,
+} from '../../core/cleaning-checklist.data';
 import {
   loadStripe,
   type Stripe,
@@ -154,6 +168,57 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
 
   /** Tasks chosen on the Services page (from "Book Now" with checkboxes) */
   selectedTasks: SelectedTask[] = [];
+  /** Checklist sections backing add-on selection (same as old Services page). */
+  readonly checklist: ChecklistSection[] = CLEANING_CHECKLIST_SECTIONS;
+  /** Add-on services (Deep Clean, Moving Clean, Upgrades). */
+  readonly addOnSections = this.checklist.slice(3);
+
+  /** Which section titles are expanded (multiple can be open). */
+  expanded = new Set<string>();
+
+  /** Checked items: key = "sectionTitle|task" */
+  checkedItems = new Set<string>();
+
+  /** STEP 1 options (quote builder). */
+  readonly bedroomOptions: { label: string; value: number }[] = [
+    { label: 'One Bedroom Home', value: 1 },
+    { label: 'Two Bedroom Home', value: 2 },
+    { label: 'Three Bedroom Home', value: 3 },
+    { label: 'Four Bedroom Home', value: 4 },
+    { label: 'Five Bedroom Home', value: 5 },
+    { label: 'Six Bedroom Home', value: 6 },
+    { label: 'Hourly Service', value: 0 },
+  ];
+
+  readonly bathroomOptions: { label: string; value: number }[] = [
+    { label: '1 Bathroom', value: 1 },
+    { label: '2 Bathrooms', value: 2 },
+    { label: '3 Bathrooms', value: 3 },
+    { label: '4+ Bathrooms', value: 4 },
+  ];
+
+  /** Shown when "Hourly Service" is selected. */
+  readonly cleanerOptions: { label: string; value: number }[] = [
+    { label: '1 Cleaner', value: 1 },
+    { label: '2 Cleaners', value: 2 },
+    { label: '3 Cleaners', value: 3 },
+  ];
+
+  readonly hourOptions: { label: string; value: number }[] = [
+    { label: '2 Hours', value: 2 },
+    { label: '2.5 Hours', value: 2.5 },
+    { label: '3 Hours', value: 3 },
+    { label: '3.5 Hours', value: 3.5 },
+    { label: '4 Hours', value: 4 },
+    { label: '4.5 Hours', value: 4.5 },
+    { label: '5 Hours', value: 5 },
+    { label: '5.5 Hours', value: 5.5 },
+    { label: '6 Hours', value: 6 },
+    { label: '6.5 Hours', value: 6.5 },
+    { label: '7 Hours', value: 7 },
+    { label: '7.5 Hours', value: 7.5 },
+    { label: '8 Hours', value: 8 },
+  ];
   /** Number of rooms from Services page */
   numberOfRooms: number | null = null;
   /** Number of bedrooms from Services page */
@@ -175,6 +240,15 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   private readonly paymentCurrency = 'usd';
   /** Cost breakdown / receipt lines (from Services page) */
   selectedSectionsWithPrices: { title: string; taskCount?: number; pricePerTask?: number; amount: number }[] = [];
+
+  readonly homeSqFtTierOptions = HOME_SQ_FT_TIERS;
+  readonly petSurchargeJd = QUOTE_PET_SURCHARGE_JD;
+  readonly pricePerBedroom = QUOTE_PRICE_PER_BEDROOM;
+  readonly pricePerBathroom = QUOTE_PRICE_PER_BATHROOM;
+  readonly hourlyRatePerCleaner = QUOTE_HOURLY_RATE_PER_CLEANER;
+
+  /** UI-only: custom dropdown open key for Step 1 controls. */
+  openStepSelectKey: 'bedrooms' | 'bathrooms' | 'cleaners' | 'hours' | 'sqft' | null = null;
 
   /** Active offers from GET /api/Offer — optional promo on this booking */
   availableOffers: OfferDto[] = [];
@@ -242,6 +316,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
       fromRouter && Array.isArray(nav.selectedTasks)
         ? nav.selectedTasks
         : this.selectedTasksService.getSelectedTasks();
+    this.checkedItems = new Set(this.selectedTasks.map((t) => `${t.sectionTitle}|${t.task}`));
     this.numberOfRooms =
       fromRouter && nav.numberOfRooms !== undefined ? nav.numberOfRooms : this.selectedTasksService.getNumberOfRooms();
     this.numberOfBedrooms =
@@ -285,6 +360,30 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
       fromRouter && Array.isArray(nav.selectedSectionsWithPrices)
         ? nav.selectedSectionsWithPrices
         : this.selectedTasksService.getSelectedSectionsWithPrices();
+
+    // Enforce defaults (same behavior as Services page used to have).
+    if (this.numberOfBedrooms == null || this.numberOfBedrooms < 0) {
+      this.numberOfBedrooms = 1;
+      this.selectedTasksService.setNumberOfBedrooms(1);
+    }
+    if (this.numberOfBathrooms == null || this.numberOfBathrooms < 1) {
+      this.numberOfBathrooms = 1;
+      this.selectedTasksService.setNumberOfBathrooms(1);
+    }
+    if (this.numberOfCleaners == null || this.numberOfCleaners < 1) {
+      this.numberOfCleaners = 1;
+      this.selectedTasksService.setNumberOfCleaners(1);
+    }
+    if (this.hourlyDurationHours == null || this.hourlyDurationHours <= 0) {
+      this.hourlyDurationHours = 7.5;
+      this.selectedTasksService.setHourlyDurationHours(7.5);
+    }
+    if (this.homeSqFtTierId == null || this.homeSqFtTierId === '') {
+      this.homeSqFtTierId = 'sqft_1_999';
+      this.selectedTasksService.setHomeSqFtTierId(this.homeSqFtTierId);
+    }
+
+    this.syncCostToState();
     this.takenDatesLoadPromise = this.loadTakenBookingDates();
 
     const storedOffer = (localStorage.getItem(this.OFFER_STORAGE_KEY) ?? '').trim();
@@ -318,6 +417,229 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
           localStorage.removeItem(this.OFFER_STORAGE_KEY);
         }
       });
+  }
+
+  /** True when user selected "Hourly Service" (bedrooms = 0). */
+  get isHourlyService(): boolean {
+    return (this.numberOfBedrooms ?? 0) === 0;
+  }
+
+  private computeQuote() {
+    return computeServicesQuote({
+      numberOfBedrooms: this.numberOfBedrooms,
+      numberOfBathrooms: this.numberOfBathrooms,
+      numberOfCleaners: this.numberOfCleaners,
+      hourlyDurationHours: this.hourlyDurationHours,
+      checkedItemKeys: this.checkedItems,
+      hasPets: this.hasPets,
+      homeSqFtTierId: this.homeSqFtTierId,
+    });
+  }
+
+  private syncCostToState(): void {
+    const { estimatedCost, selectedSectionsWithPrices } = this.computeQuote();
+    this.estimatedCost = estimatedCost;
+    this.selectedSectionsWithPrices = selectedSectionsWithPrices;
+    this.selectedTasks = this.getSelectedTasks();
+
+    this.selectedTasksService.setSelectedTasks(this.selectedTasks);
+    this.selectedTasksService.setNumberOfBedrooms(this.numberOfBedrooms);
+    this.selectedTasksService.setNumberOfBathrooms(this.numberOfBathrooms);
+    this.selectedTasksService.setNumberOfCleaners(this.numberOfCleaners);
+    this.selectedTasksService.setHourlyDurationHours(this.hourlyDurationHours);
+    this.selectedTasksService.setHasPets(this.hasPets);
+    this.selectedTasksService.setHomeSqFtTierId(this.homeSqFtTierId);
+    this.selectedTasksService.setCostDetails({
+      estimatedCost: this.estimatedCost ?? 0,
+      selectedSectionsWithPrices: this.selectedSectionsWithPrices,
+    });
+  }
+
+  onBedroomChange(event: Event): void {
+    const v = (event.target as HTMLSelectElement).value;
+    this.numberOfBedrooms = v === '' ? null : Math.max(0, parseInt(v, 10));
+    if (this.numberOfBedrooms !== 0) {
+      this.numberOfBedrooms = Math.max(1, this.numberOfBedrooms ?? 1);
+    }
+    this.syncCostToState();
+  }
+
+  // --- Step 1 custom selects (UI-only; keeps the same quote logic) ---
+  @HostListener('document:click')
+  onDocumentClick(): void {
+    this.openStepSelectKey = null;
+  }
+
+  toggleStepSelect(
+    key: NonNullable<Booking['openStepSelectKey']>,
+    event?: Event,
+  ): void {
+    event?.stopPropagation();
+    this.openStepSelectKey = this.openStepSelectKey === key ? null : key;
+  }
+
+  setBedrooms(value: number): void {
+    this.numberOfBedrooms = Math.max(0, value);
+    if (this.numberOfBedrooms !== 0) {
+      this.numberOfBedrooms = Math.max(1, this.numberOfBedrooms ?? 1);
+    }
+    this.openStepSelectKey = null;
+    this.syncCostToState();
+  }
+
+  setBathrooms(value: number): void {
+    this.numberOfBathrooms = Math.max(1, value);
+    this.openStepSelectKey = null;
+    this.syncCostToState();
+  }
+
+  setCleaners(value: number): void {
+    this.numberOfCleaners = Math.max(1, value);
+    this.openStepSelectKey = null;
+    this.syncCostToState();
+  }
+
+  setHours(value: number): void {
+    this.hourlyDurationHours = Math.max(0, value);
+    this.openStepSelectKey = null;
+    this.syncCostToState();
+  }
+
+  setHomeSqFtTier(id: string): void {
+    const v = (id ?? '').trim();
+    this.homeSqFtTierId = v === '' ? null : v;
+    this.openStepSelectKey = null;
+    this.syncCostToState();
+  }
+
+  get bedroomsLabel(): string {
+    const v = this.numberOfBedrooms ?? 1;
+    return this.bedroomOptions.find((o) => o.value === v)?.label ?? 'Bedrooms';
+  }
+
+  get bathroomsLabel(): string {
+    const v = this.numberOfBathrooms ?? 1;
+    return this.bathroomOptions.find((o) => o.value === v)?.label ?? 'Bathrooms';
+  }
+
+  get cleanersLabel(): string {
+    const v = this.numberOfCleaners ?? 1;
+    return this.cleanerOptions.find((o) => o.value === v)?.label ?? 'Cleaners';
+  }
+
+  get hoursLabel(): string {
+    const v = this.hourlyDurationHours ?? 7.5;
+    return this.hourOptions.find((o) => o.value === v)?.label ?? 'Hours';
+  }
+
+  get homeSqFtTierLabel(): string {
+    const v = this.homeSqFtTierId ?? 'sqft_1_999';
+    return this.homeSqFtTierOptions.find((o) => o.id === v)?.label ?? 'Home size';
+  }
+
+  onBathroomChange(event: Event): void {
+    const v = (event.target as HTMLSelectElement).value;
+    this.numberOfBathrooms = v === '' ? null : Math.max(1, parseInt(v, 10));
+    this.syncCostToState();
+  }
+
+  onCleanersChange(event: Event): void {
+    const v = (event.target as HTMLSelectElement).value;
+    this.numberOfCleaners = v === '' ? null : Math.max(1, parseInt(v, 10));
+    this.syncCostToState();
+  }
+
+  onHoursChange(event: Event): void {
+    const v = (event.target as HTMLSelectElement).value;
+    this.hourlyDurationHours = v === '' ? null : Math.max(0, parseFloat(v));
+    this.syncCostToState();
+  }
+
+  onHomeSqFtTierChange(event: Event): void {
+    const v = (event.target as HTMLSelectElement).value.trim();
+    this.homeSqFtTierId = v === '' ? null : v;
+    this.syncCostToState();
+  }
+
+  onHasPetsChange(event: Event): void {
+    this.hasPets = (event.target as HTMLInputElement).checked;
+    this.syncCostToState();
+  }
+
+  /** Clear add-ons and restore default Step 1 options. */
+  resetQuote(): void {
+    this.checkedItems = new Set();
+    this.expanded = new Set();
+    this.numberOfBedrooms = 1;
+    this.numberOfBathrooms = 1;
+    this.numberOfCleaners = 1;
+    this.hourlyDurationHours = 7.5;
+    this.hasPets = false;
+    this.homeSqFtTierId = 'sqft_1_999';
+    this.syncCostToState();
+  }
+
+  itemKey(section: ChecklistSection, item: string): string {
+    return `${section.title}|${item}`;
+  }
+
+  isChecked(section: ChecklistSection, item: string): boolean {
+    return this.checkedItems.has(this.itemKey(section, item));
+  }
+
+  toggleChecked(section: ChecklistSection, item: string): void {
+    const key = this.itemKey(section, item);
+    if (this.checkedItems.has(key)) this.checkedItems.delete(key);
+    else this.checkedItems.add(key);
+    this.checkedItems = new Set(this.checkedItems);
+    this.syncCostToState();
+  }
+
+  getSelectedTasks(): SelectedTask[] {
+    return Array.from(this.checkedItems).map((key) => {
+      const [sectionTitle, ...taskParts] = key.split('|');
+      return { sectionTitle, task: taskParts.join('|') };
+    });
+  }
+
+  toggle(section: ChecklistSection): void {
+    if (this.expanded.has(section.title)) this.expanded.delete(section.title);
+    else this.expanded.add(section.title);
+    this.expanded = new Set(this.expanded);
+  }
+
+  isExpanded(title: string): boolean {
+    return this.expanded.has(title);
+  }
+
+  isSectionAllChecked(section: ChecklistSection): boolean {
+    return section.items.every((item) => this.checkedItems.has(this.itemKey(section, item)));
+  }
+
+  toggleSectionAll(section: ChecklistSection): void {
+    const allChecked = this.isSectionAllChecked(section);
+    for (const item of section.items) {
+      const key = this.itemKey(section, item);
+      if (allChecked) this.checkedItems.delete(key);
+      else this.checkedItems.add(key);
+    }
+    this.checkedItems = new Set(this.checkedItems);
+    this.syncCostToState();
+  }
+
+  addOnIconName(sectionTitle: string, item: string): string {
+    const t = `${sectionTitle} ${item}`.toLowerCase();
+    if (t.includes('deep')) return 'spray';
+    if (t.includes('move') || t.includes('moving')) return 'box';
+    if (t.includes('fridge') || t.includes('freezer')) return 'fridge';
+    if (t.includes('oven')) return 'oven';
+    if (t.includes('window')) return 'window';
+    if (t.includes('linen')) return 'towel';
+    if (t.includes('vacuum') || t.includes('couch') || t.includes('sectional')) return 'sofa';
+    if (t.includes('additional time') || t.includes('minutes') || t.includes('hour')) return 'clock';
+    if (t.includes('baseboard') || t.includes('trim')) return 'brush';
+    if (t.includes('grease') || t.includes('kitchen')) return 'sparkle';
+    return 'sparkle';
   }
 
   openTermsModal(): void {
@@ -564,10 +886,12 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
 
     this.mapError = null;
 
-    L.Icon.Default.mergeOptions({
-      iconUrl: '/leaflet-images/marker-icon.png',
-      iconRetinaUrl: '/leaflet-images/marker-icon-2x.png',
-      shadowUrl: '/leaflet-images/marker-shadow.png',
+    // Use a DivIcon so we don't depend on external marker image assets (prevents “broken image” pins).
+    const pinIcon = L.divIcon({
+      className: 'booking-leaflet-pin-wrap',
+      html: '<span class="booking-leaflet-pin" aria-hidden="true"></span>',
+      iconSize: [28, 28],
+      iconAnchor: [14, 28],
     });
 
     const defaultCenter = L.latLng(38.2527, -85.7585);
@@ -578,7 +902,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
       maxZoom: 19,
     }).addTo(map);
 
-    const marker = L.marker(defaultCenter, { draggable: true }).addTo(map);
+    const marker = L.marker(defaultCenter, { draggable: true, icon: pinIcon }).addTo(map);
 
     this.leafletMap = map;
     this.leafletMarker = marker;
@@ -830,10 +1154,10 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     }
 
     if (this.total <= 0) {
-      void this.router.navigate(['/services'], {
+      void this.router.navigate(['/booking'], {
         state: {
           bookingRedirectReason:
-            'Your booking total must be greater than zero. Build a quote on Services (Step 1 and any add-ons), then tap Book again.',
+            'Your booking total must be greater than zero. Build a quote (Step 1 and any add-ons), then tap Book again.',
         },
       });
       return;
@@ -1087,20 +1411,20 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
 
   confirmBookingFeedback(): void {
     this.bookingFeedbackSubmitted = true;
-    void this.router.navigate(['/services']);
+    void this.router.navigate(['/booking']);
   }
 
   closeBookingFeedbackDialog(): void {
     this.showBookingFeedbackDialog = false;
     this.bookingFeedbackProperty = null;
-    void this.router.navigate(['/services']);
+    void this.router.navigate(['/booking']);
   }
 
-  /** Close the success dialog and open the Services page (e.g. book again). */
+  /** Close the success dialog and stay on Booking (e.g. book again). */
   goToServicesFromFeedback(): void {
     this.showBookingFeedbackDialog = false;
     this.bookingFeedbackProperty = null;
-    void this.router.navigate(['/services']);
+    void this.router.navigate(['/booking']);
   }
 
   private toBookingDateIso(date: string, time: string): string {

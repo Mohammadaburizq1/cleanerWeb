@@ -78,8 +78,72 @@ export class AuthService {
     this.clearAuth();
   }
 
+  /**
+   * Clear auth + all client-side state and return to a clean session.
+   * Use this when the backend reports 401/expired token.
+   */
+  clearClientSession(): void {
+    this.clearAuth();
+
+    try {
+      sessionStorage.clear();
+    } catch {
+      // ignore
+    }
+
+    // User explicitly asked to clear "cookies" as well (best-effort; HttpOnly cookies cannot be cleared by JS).
+    try {
+      const cookies = (document.cookie ?? '')
+        .split(';')
+        .map((c) => c.trim())
+        .filter(Boolean);
+      for (const c of cookies) {
+        const eq = c.indexOf('=');
+        const name = (eq >= 0 ? c.slice(0, eq) : c).trim();
+        if (!name) continue;
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+      }
+    } catch {
+      // ignore
+    }
+
+    // Clear remaining local storage keys (after we removed auth keys above).
+    try {
+      localStorage.clear();
+    } catch {
+      // ignore
+    }
+  }
+
   getAccessToken(): string | null {
     return this.loadAccessToken();
+  }
+
+  /**
+   * Best-effort role extraction from the JWT access token.
+   * This is used as a UI fallback in case `/api/Auth/me` does not include `role`.
+   */
+  getRoleFromAccessToken(): string {
+    const token = this.loadAccessToken();
+    if (!token) return '';
+    const payload = this.parseJwtPayload(token);
+    if (!payload) return '';
+
+    const candidates: unknown[] = [
+      payload['role'],
+      payload['roles'],
+      // Common ASP.NET role claim URI
+      payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'],
+    ];
+
+    for (const c of candidates) {
+      if (typeof c === 'string') return c;
+      if (Array.isArray(c)) {
+        const first = c.find((x) => typeof x === 'string') as string | undefined;
+        if (first) return first;
+      }
+    }
+    return '';
   }
 
   private handleAuthResult(result: AuthResultDto): void {
@@ -88,6 +152,25 @@ export class AuthService {
       this._isLoggedIn.set(true);
     } else {
       this.clearAuth();
+    }
+  }
+
+  private parseJwtPayload(token: string): Record<string, unknown> | null {
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+    const payload = parts[1];
+    try {
+      // base64url → base64
+      const b64 = payload.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(payload.length / 4) * 4, '=');
+      const json = decodeURIComponent(
+        Array.from(atob(b64))
+          .map((c) => `%${c.charCodeAt(0).toString(16).padStart(2, '0')}`)
+          .join(''),
+      );
+      const obj = JSON.parse(json) as unknown;
+      return obj && typeof obj === 'object' ? (obj as Record<string, unknown>) : null;
+    } catch {
+      return null;
     }
   }
 

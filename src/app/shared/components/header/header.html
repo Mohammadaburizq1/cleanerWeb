@@ -7,7 +7,6 @@
         >Home</a
       >
       <a routerLink="/offers" routerLinkActive="active" class="nav-link-offers" (click)="closeMobileMenu()">Offers</a>
-      <a routerLink="/services" routerLinkActive="active" (click)="closeMobileMenu()">Services</a>
       <a routerLink="/checklist" routerLinkActive="active" (click)="closeMobileMenu()">Checklist</a>
       <a routerLink="/about" routerLinkActive="active" (click)="closeMobileMenu()">About</a>
       <a routerLink="/contact" routerLinkActive="active" (click)="closeMobileMenu()">Contact</a>
@@ -17,7 +16,7 @@
       @if (isLoggedIn()) {
         <button type="button" class="nav-logout" (click)="logout()">Log out</button>
       }
-      @if (isAdmin()) {
+      @if (isLoggedIn()) {
         <a routerLink="/admin" routerLinkActive="active" (click)="closeMobileMenu()">Admin</a>
       }
     </nav>
@@ -65,7 +64,7 @@
       <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMobileMenu()"
         >Home</a
       >
-      <a routerLink="/services" routerLinkActive="active" (click)="closeMobileMenu()">Services</a>
+      <a routerLink="/booking" routerLinkActive="active" (click)="closeMobileMenu()">Booking</a>
       <a routerLink="/checklist" routerLinkActive="active" (click)="closeMobileMenu()">Checklist</a>
       <a routerLink="/about" routerLinkActive="active" (click)="closeMobileMenu()">About</a>
       <a routerLink="/contact" routerLinkActive="active" (click)="closeMobileMenu()">Contact</a>

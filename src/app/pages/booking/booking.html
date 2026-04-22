@@ -1,12 +1,26 @@
 <section class="booking-page">
   <div class="container">
     <div class="booking-hero">
-      <span class="section-tag">BOOKING PAGE</span>
+      <span class="section-tag">Secure booking</span>
       <h1>Book Your Cleaning Service</h1>
       <p>
-        Fill out the form below and we will contact you to confirm your appointment and final
-        details.
+        Build your quote, choose a date, confirm your location, and securely reserve your cleaning —
+        in just a couple of minutes.
       </p>
+      <div class="booking-hero-trust" aria-label="Trust highlights">
+        <div class="trust-chip" role="listitem">
+          <span class="trust-chip__icon" aria-hidden="true">✓</span>
+          <span class="trust-chip__text">Licensed &amp; insured</span>
+        </div>
+        <div class="trust-chip" role="listitem">
+          <span class="trust-chip__icon" aria-hidden="true">🔒</span>
+          <span class="trust-chip__text">Stripe-secured checkout</span>
+        </div>
+        <div class="trust-chip" role="listitem">
+          <span class="trust-chip__icon" aria-hidden="true">🕒</span>
+          <span class="trust-chip__text">Fast confirmation</span>
+        </div>
+      </div>
     </div>
 
     <div class="booking-layout">
@@ -120,33 +134,337 @@
               }
             </div>
           }
-        </section>
 
-        <div class="info-card">
-          <h2>Why Book With Us</h2>
-          <ul>
-            <li>✔ Fast response and confirmation</li>
-            <li>✔ Flexible scheduling</li>
-            <li>✔ Residential and commercial cleaning</li>
-            <li>✔ Trusted, professional cleaners</li>
-            <li>✔ Satisfaction-focused service</li>
-          </ul>
-        </div>
-
-        <div class="info-card">
-          <h2>Need Help?</h2>
-          <p>
-            If you are not sure which service fits your needs, contact us and we will guide you.
-          </p>
-          <div class="contact-lines">
-            <a href="tel:+15020000000">(502) 000-0000</a>
-            <a href="mailto:info@supermagicmop.com">info@supermagicmop.com</a>
+          <div class="booking-reassurance" aria-label="Reassurance">
+            <div class="booking-reassurance__row">
+              <span class="booking-reassurance__icon" aria-hidden="true">🧾</span>
+              <span class="booking-reassurance__text">
+                Transparent pricing — your total updates instantly as you choose add-ons.
+              </span>
+            </div>
+            <div class="booking-reassurance__row">
+              <span class="booking-reassurance__icon" aria-hidden="true">🛡️</span>
+              <span class="booking-reassurance__text">
+                Secure authorization hold only. Final charge after service completion.
+              </span>
+            </div>
+            <div class="booking-reassurance__row">
+              <span class="booking-reassurance__icon" aria-hidden="true">📍</span>
+              <span class="booking-reassurance__text">
+                Confirm your location on the map — or simply type your address.
+              </span>
+            </div>
           </div>
-        </div>
+        </section>
       </aside>
 
       <div class="booking-card">
+        <div class="booking-quote" aria-label="Quote builder">
+          <div class="booking-section-head">
+            <h2 class="booking-section-title">1) Build your quote</h2>
+            <p class="booking-section-subtitle">
+              Choose home details and optional add-ons. Your price updates instantly in the summary.
+            </p>
+          </div>
+          <div class="step-1">
+            <h2 class="step-1-title">STEP 1: GET A QUOTE</h2>
+            <p class="step-1-desc">
+              Select bedrooms, bathrooms, and about how many square feet we will clean. Tell us if pets live in the home so we can plan accordingly.
+              All other rooms are included in the price shown.
+            </p>
+            <div class="step-1-dropdowns">
+              <div class="step-1-field">
+                <label for="quote-bedrooms" class="step-1-label">Bedrooms</label>
+                <div class="ux-select" (click)="$event.stopPropagation()">
+                  <button
+                    type="button"
+                    id="quote-bedrooms"
+                    class="ux-select__trigger"
+                    [attr.aria-expanded]="openStepSelectKey === 'bedrooms'"
+                    (click)="toggleStepSelect('bedrooms', $event)"
+                  >
+                    <span class="ux-select__value">{{ bedroomsLabel }}</span>
+                  </button>
+                  @if (openStepSelectKey === 'bedrooms') {
+                    <div class="ux-select__menu" role="listbox" aria-label="Bedrooms options">
+                      @for (opt of bedroomOptions; track opt.value) {
+                        <button
+                          type="button"
+                          class="ux-select__option"
+                          [class.is-selected]="(numberOfBedrooms ?? 1) === opt.value"
+                          (click)="setBedrooms(opt.value)"
+                        >
+                          {{ opt.label }}
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+              <div class="step-1-field">
+                <label for="quote-bathrooms" class="step-1-label">Bathrooms</label>
+                <div class="ux-select" (click)="$event.stopPropagation()">
+                  <button
+                    type="button"
+                    id="quote-bathrooms"
+                    class="ux-select__trigger"
+                    [attr.aria-expanded]="openStepSelectKey === 'bathrooms'"
+                    (click)="toggleStepSelect('bathrooms', $event)"
+                  >
+                    <span class="ux-select__value">{{ bathroomsLabel }}</span>
+                  </button>
+                  @if (openStepSelectKey === 'bathrooms') {
+                    <div class="ux-select__menu" role="listbox" aria-label="Bathrooms options">
+                      @for (opt of bathroomOptions; track opt.value) {
+                        <button
+                          type="button"
+                          class="ux-select__option"
+                          [class.is-selected]="(numberOfBathrooms ?? 1) === opt.value"
+                          (click)="setBathrooms(opt.value)"
+                        >
+                          {{ opt.label }}
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+              @if (isHourlyService) {
+                <div class="step-1-field">
+                  <label for="quote-cleaners" class="step-1-label">Cleaners</label>
+                  <div class="ux-select" (click)="$event.stopPropagation()">
+                    <button
+                      type="button"
+                      id="quote-cleaners"
+                      class="ux-select__trigger"
+                      [attr.aria-expanded]="openStepSelectKey === 'cleaners'"
+                      (click)="toggleStepSelect('cleaners', $event)"
+                    >
+                      <span class="ux-select__value">{{ cleanersLabel }}</span>
+                    </button>
+                    @if (openStepSelectKey === 'cleaners') {
+                      <div class="ux-select__menu" role="listbox" aria-label="Cleaners options">
+                        @for (opt of cleanerOptions; track opt.value) {
+                          <button
+                            type="button"
+                            class="ux-select__option"
+                            [class.is-selected]="(numberOfCleaners ?? 1) === opt.value"
+                            (click)="setCleaners(opt.value)"
+                          >
+                            {{ opt.label }}
+                          </button>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+                <div class="step-1-field">
+                  <label for="quote-hours" class="step-1-label">Hours</label>
+                  <div class="ux-select" (click)="$event.stopPropagation()">
+                    <button
+                      type="button"
+                      id="quote-hours"
+                      class="ux-select__trigger"
+                      [attr.aria-expanded]="openStepSelectKey === 'hours'"
+                      (click)="toggleStepSelect('hours', $event)"
+                    >
+                      <span class="ux-select__value">{{ hoursLabel }}</span>
+                    </button>
+                    @if (openStepSelectKey === 'hours') {
+                      <div class="ux-select__menu" role="listbox" aria-label="Hours options">
+                        @for (opt of hourOptions; track opt.value) {
+                          <button
+                            type="button"
+                            class="ux-select__option"
+                            [class.is-selected]="(hourlyDurationHours ?? 7.5) === opt.value"
+                            (click)="setHours(opt.value)"
+                          >
+                            {{ opt.label }}
+                          </button>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+ 
+            </div>
+
+            <div class="step-1-extra-fields">
+              <div class="step-1-field step-1-field--sqft">
+                <label for="quote-sqft-tier" class="step-1-label">Home size (sq ft)</label>
+                <div class="ux-select" (click)="$event.stopPropagation()">
+                  <button
+                    type="button"
+                    id="quote-sqft-tier"
+                    class="ux-select__trigger"
+                    [attr.aria-expanded]="openStepSelectKey === 'sqft'"
+                    (click)="toggleStepSelect('sqft', $event)"
+                  >
+                    <span class="ux-select__value">{{ homeSqFtTierLabel }}</span>
+                  </button>
+                  @if (openStepSelectKey === 'sqft') {
+                    <div class="ux-select__menu" role="listbox" aria-label="Home size options">
+                      @for (opt of homeSqFtTierOptions; track opt.id) {
+                        <button
+                          type="button"
+                          class="ux-select__option"
+                          [class.is-selected]="(homeSqFtTierId ?? 'sqft_1_999') === opt.id"
+                          (click)="setHomeSqFtTier(opt.id)"
+                        >
+                          {{ opt.label }} (+{{ opt.surchargeJd }} {{ currency }})
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+              <div class="step-1-field step-1-field--pets">
+                <span class="step-1-label step-1-label--spacer" aria-hidden="true">&nbsp;</span>
+                <label class="step-1-checkbox">
+                  <input
+                    type="checkbox"
+                    [checked]="hasPets"
+                    (change)="onHasPetsChange($event)"
+                    aria-describedby="step-1-pets-hint"
+                  />
+                  <span>We have pet(s) in the home</span>
+                </label>
+                <p id="step-1-pets-hint" class="step-1-hint">
+                  Adds {{ petSurchargeJd }} {{ currency }} to your quote. Helps us plan supplies and time for dander, litter,
+                  etc.
+                </p>
+              </div>
+            </div>
+            <div class="step-1-field step-1-field--reset">
+              <span class="step-1-label step-1-label--spacer" aria-hidden="true">&nbsp;</span>
+              <button type="button" class="btn btn-reset" (click)="resetQuote()">Reset</button>
+            </div>
+          </div>
+
+          <section class="checklist-group checklist-group-addons" aria-label="Add-on services">
+            <h2 class="group-title">Add-on services</h2>
+            <p class="group-desc">Optional extras for deep cleans, moves, and upgrades.</p>
+            <div class="add-ons-grid" role="list" aria-label="Add-on services list">
+              @for (section of addOnSections; track section.title) {
+                @if (section.title !== 'Upgrades') {
+                  <button
+                    type="button"
+                    class="add-on-tile add-on-tile--section"
+                    role="listitem"
+                    [class.is-selected]="isSectionAllChecked(section)"
+                    (click)="toggleSectionAll(section)"
+                  >
+                    <span class="add-on-tile__icon" aria-hidden="true">
+                      @switch (section.title) {
+                        @case ('Deep Clean') {
+                          <svg viewBox="0 0 24 24" class="add-on-icon" aria-hidden="true">
+                            <path d="M8 7h8M9 7v-2a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M7 10h10v9a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-9Z" />
+                            <path d="M18.5 10.5c1.8 0 3 1.2 3 3 0 1.7-1.2 3-3 3" />
+                          </svg>
+                        }
+                        @case ('Moving Clean') {
+                          <svg viewBox="0 0 24 24" class="add-on-icon" aria-hidden="true">
+                            <path d="M4 9.5 12 5l8 4.5v9L12 23 4 18.5v-9Z" />
+                            <path d="M12 5v9.5" />
+                            <path d="M4 9.5l8 5 8-5" />
+                          </svg>
+                        }
+                        @default {
+                          <svg viewBox="0 0 24 24" class="add-on-icon" aria-hidden="true">
+                            <path d="M12 2l2.2 6.2L21 10l-6.2 2.2L12 19l-2.8-6.8L3 10l6.8-1.8L12 2Z" />
+                          </svg>
+                        }
+                      }
+                    </span>
+                    <span class="add-on-tile__label">{{ section.title }}</span>
+                    <span class="add-on-tile__price">
+                      @if (section.itemPrices) {
+                        Custom pricing
+                      } @else {
+                        +{{ section.pricePerTask }} {{ currency }}/task
+                      }
+                    </span>
+                  </button>
+                }
+              }
+              @for (section of addOnSections; track section.title) {
+                @if (section.title === 'Upgrades') {
+                  @for (item of section.items; track item) {
+                    <label
+                      class="add-on-tile add-on-tile--upgrade"
+                      role="listitem"
+                      [class.is-selected]="isChecked(section, item)"
+                    >
+                      <input
+                        type="checkbox"
+                        class="add-on-tile__input"
+                        [checked]="isChecked(section, item)"
+                        (change)="toggleChecked(section, item)"
+                      />
+                      <span class="add-on-tile__icon" aria-hidden="true">
+                        @switch (addOnIconName(section.title, item)) {
+                          @case ('fridge') {
+                            <svg viewBox="0 0 24 24" class="add-on-icon" aria-hidden="true">
+                              <path d="M7 2h10v20H7z" />
+                              <path d="M7 11h10" />
+                              <path d="M9 6h1" />
+                              <path d="M9 15h1" />
+                            </svg>
+                          }
+                          @case ('oven') {
+                            <svg viewBox="0 0 24 24" class="add-on-icon" aria-hidden="true">
+                              <path d="M5 4h14v16H5z" />
+                              <path d="M8 7h.01M11 7h.01M14 7h.01" />
+                              <path d="M8 11h8v6H8z" />
+                            </svg>
+                          }
+                          @case ('window') {
+                            <svg viewBox="0 0 24 24" class="add-on-icon" aria-hidden="true">
+                              <path d="M5 4h14v16H5z" />
+                              <path d="M12 4v16" />
+                              <path d="M5 12h14" />
+                            </svg>
+                          }
+                          @case ('towel') {
+                            <svg viewBox="0 0 24 24" class="add-on-icon" aria-hidden="true">
+                              <path d="M7 4h10v16a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V4z" />
+                              <path d="M9 8h6" />
+                            </svg>
+                          }
+                          @case ('sofa') {
+                            <svg viewBox="0 0 24 24" class="add-on-icon" aria-hidden="true">
+                              <path d="M5 12v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" />
+                              <path d="M7 12V9a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v3" />
+                              <path d="M5 16h2M17 16h2" />
+                            </svg>
+                          }
+                          @default {
+                            <svg viewBox="0 0 24 24" class="add-on-icon" aria-hidden="true">
+                              <path d="M12 2l2.2 6.2L21 10l-6.2 2.2L12 19l-2.8-6.8L3 10l6.8-1.8L12 2Z" />
+                            </svg>
+                          }
+                        }
+                      </span>
+                      <span class="add-on-tile__label">{{ item }}</span>
+                      @if (section.itemPrices && section.itemPrices[item] != null) {
+                        <span class="add-on-tile__price">+{{ section.itemPrices[item] }} {{ currency }}</span>
+                      }
+                    </label>
+                  }
+                }
+              }
+            </div>
+          </section>
+        </div>
+
         <form [formGroup]="bookingForm" (ngSubmit)="submit()">
+          <div class="booking-form-head">
+            <h2 class="booking-section-title">2) Booking details</h2>
+            <p class="booking-section-subtitle">
+              Pick your schedule, date/time, location, and payment details. You’ll review everything before submitting.
+            </p>
+          </div>
           <div class="form-grid">
             <div class="form-group">
               <label for="fullName">Full Name</label>
@@ -239,10 +557,7 @@
                   conflicts.
                 </small>
               } @else {
-                <small class="booking-datetime-note">
-                  Up to {{ maxBookingsPerDay }} bookings per day. Unavailable days are grayed out — hover (or long-press on
-                  mobile) for “Fully booked today”.
-                </small>
+                <small class="booking-datetime-note"></small>
               }
               @if (submitted && f.preferredDate.errors) {
                 <small class="error">Preferred date is required.</small>
@@ -253,7 +568,7 @@
             </div>
 
             <div class="form-group form-group-full booking-location-block">
-              <span class="booking-location-label">Service location (OpenStreetMap — no API key)</span>
+              <span class="booking-location-label">Service location</span>
               <div class="booking-map-toolbar">
                 <button type="button" class="btn-map" (click)="useMyLocation()" [disabled]="!mapReady || geoLoading">
                   {{ geoLoading ? 'Getting location…' : 'Use my location' }}

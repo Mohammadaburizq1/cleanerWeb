@@ -52,7 +52,7 @@
 
 .step-card:hover {
   transform: translateY(-4px);
-  border-color: rgba(212, 175, 55, 0.45);
+  border-color: color-mix(in srgb, var(--accent-color) 55%, var(--border-color));
 }
 
 .step-number {
@@ -62,8 +62,8 @@
   place-items: center;
   border-radius: 50%;
   margin-bottom: 18px;
-  background: rgba(212, 175, 55, 0.12);
-  border: 1px solid rgba(212, 175, 55, 0.35);
+  background: color-mix(in srgb, var(--accent-color) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-color) 40%, var(--border-color));
   color: var(--accent-color);
   font-size: 18px;
   font-weight: 800;

@@ -5,7 +5,7 @@
       <h1 class="offers-title">Special offers &amp; promotions</h1>
       <p class="offers-intro">
         Everything we are running right now — from first-time savings to bundles and seasonal deals. Tap
-        <strong>Get a quote</strong> to build your price on the Services page.
+        <strong>Book</strong> to build your price and schedule on the Booking page.
       </p>
       @if (loadError) {
         <p class="offers-api-note offers-api-note--error" role="alert">{{ loadError }}</p>
@@ -29,8 +29,8 @@
             <h2 class="offer-card__title">{{ offer.title }}</h2>
             <p class="offer-card__summary">{{ offer.summary }}</p>
             <p class="offer-card__detail">{{ offer.detail }}</p>
-            <a class="offer-card__book" routerLink="/services" [queryParams]="{ offer: offer.id }">
-              Get a quote with this offer
+            <a class="offer-card__book" routerLink="/booking" [queryParams]="{ offer: offer.id }">
+              Book with this offer
             </a>
           </li>
         }
@@ -38,7 +38,7 @@
     }
 
     <div class="offers-cta">
-      <a routerLink="/services" class="offers-cta__btn">Get a quote</a>
+      <a routerLink="/booking" class="offers-cta__btn">Book now</a>
       <a routerLink="/contact" class="offers-cta__link">Questions or custom offer? Contact us</a>
     </div>
   </div>

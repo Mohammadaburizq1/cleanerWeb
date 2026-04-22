@@ -115,7 +115,7 @@
 .offers-popup-btn--secondary {
   background: transparent;
   color: var(--accent-color);
-  border: 2px solid color-mix(in srgb, #2563eb 50%, var(--accent-color));
+  border: 2px solid color-mix(in srgb, var(--accent-color) 45%, var(--border-color));
 
   &:hover {
     background: color-mix(in srgb, var(--accent-color) 8%, transparent);
@@ -210,7 +210,7 @@
 .home-section:nth-child(odd)::before {
   background: radial-gradient(
     ellipse 88% 52% at 50% 0%,
-    rgba(212, 175, 55, 0.075),
+    color-mix(in srgb, var(--accent-color) 12%, transparent),
     transparent 58%
   );
 }
@@ -218,7 +218,7 @@
 .home-section:nth-child(even)::before {
   background: radial-gradient(
     ellipse 88% 52% at 50% 100%,
-    rgba(212, 175, 55, 0.065),
+    color-mix(in srgb, var(--accent-color) 10%, transparent),
     transparent 58%
   );
 }
@@ -243,29 +243,29 @@
   margin-top: clamp(1.35rem, 3.75vw, 2.35rem);
   pointer-events: none;
   background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 32' fill='none'%3E%3Cpath stroke='%23d4af37' stroke-opacity='0.35' stroke-width='1' d='M8 16h38M74 16h38'/%3E%3Cpath fill='%23d4af37' fill-opacity='0.2' d='M52 8h16v16H52z' transform='rotate(45 60 16)'/%3E%3Cpath fill='%23d4af37' d='M56.5 10.5h7v7h-7z' transform='rotate(45 60 16)'/%3E%3C/svg%3E")
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 32' fill='none'%3E%3Cpath stroke='%232f8f2f' stroke-opacity='0.35' stroke-width='1' d='M8 16h38M74 16h38'/%3E%3Cpath fill='%232f8f2f' fill-opacity='0.2' d='M52 8h16v16H52z' transform='rotate(45 60 16)'/%3E%3Cpath fill='%232f8f2f' d='M56.5 10.5h7v7h-7z' transform='rotate(45 60 16)'/%3E%3C/svg%3E")
       center 46% / 120px 32px no-repeat,
     radial-gradient(
       ellipse min(420px, 88vw) 36px at 50% 42%,
-      rgba(212, 175, 55, 0.18),
+      color-mix(in srgb, var(--accent-color) 22%, transparent),
       transparent 70%
     ),
     linear-gradient(
       90deg,
       transparent 0%,
-      rgba(212, 175, 55, 0.08) 18%,
+      color-mix(in srgb, var(--accent-color) 12%, transparent) 18%,
       var(--border-color) 42%,
-      rgba(212, 175, 55, 0.45) 50%,
+      color-mix(in srgb, var(--accent-color) 55%, transparent) 50%,
       var(--border-color) 58%,
-      rgba(212, 175, 55, 0.08) 82%,
+      color-mix(in srgb, var(--accent-color) 12%, transparent) 82%,
       transparent 100%
     )
       center 50% / 100% 1px no-repeat,
     linear-gradient(
       90deg,
       transparent 0%,
-      rgba(212, 175, 55, 0.04) 30%,
-      rgba(212, 175, 55, 0.04) 70%,
+      color-mix(in srgb, var(--accent-color) 7%, transparent) 30%,
+      color-mix(in srgb, var(--accent-color) 7%, transparent) 70%,
       transparent 100%
     )
       center calc(50% + 5px) / 100% 1px no-repeat;

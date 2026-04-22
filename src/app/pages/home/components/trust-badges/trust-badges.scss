@@ -24,8 +24,18 @@
   border: 1px solid var(--border-color);
   border-radius: 18px;
   padding: 22px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-sm);
   text-align: center;
+  transition:
+    transform var(--dur-2) var(--ease-soft),
+    box-shadow var(--dur-2) var(--ease-soft),
+    border-color var(--dur-2) var(--ease-soft);
+}
+
+.badge-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: color-mix(in srgb, var(--accent-color) 32%, var(--border-color));
 }
 
 .badge-card h3 {
@@ -36,7 +46,7 @@
 
 .badge-card p {
   margin: 0;
-  color: var(--muted-text);
+  color: color-mix(in srgb, var(--accent-color) 72%, var(--text-color));
   line-height: 1.7;
   font-size: 15px;
 }

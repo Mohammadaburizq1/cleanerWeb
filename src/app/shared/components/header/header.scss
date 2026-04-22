@@ -6,6 +6,7 @@
   background: var(--header-bg);
   color: var(--text-color);
   border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 10px 26px rgba(2, 10, 4, 0.06);
   transition:
     background-color 0.3s ease,
     color 0.3s ease,
@@ -82,55 +83,41 @@
   color: var(--accent-color);
 }
 
-/* Offers — red & blue gradient pill + gentle jump (see prefers-reduced-motion below) */
+/* Offers — premium green pill (subtle, not flashy) */
 .nav-desktop a.nav-link-offers {
   position: relative;
   padding: 7px 14px;
   border-radius: 999px;
   font-weight: 800;
   color: #fff !important;
-  background: linear-gradient(125deg, #dc2626 0%, #4f46e5 45%, #2563eb 100%);
-  background-size: 140% 140%;
+  background: linear-gradient(135deg, var(--brand-700), var(--accent-color));
   box-shadow:
-    0 2px 10px rgba(37, 99, 235, 0.45),
-    0 1px 0 rgba(255, 255, 255, 0.12) inset;
-  animation: nav-offers-jump 1.15s ease-in-out infinite;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    0 14px 30px color-mix(in srgb, var(--accent-color) 26%, transparent),
+    0 1px 0 rgba(255, 255, 255, 0.18) inset;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition:
+    transform 160ms var(--ease-soft),
+    filter 160ms var(--ease-soft),
+    box-shadow 160ms var(--ease-soft);
 }
 
 .nav-desktop a.nav-link-offers:hover {
   color: #fff !important;
-  filter: brightness(1.08);
-  animation-duration: 0.85s;
+  filter: brightness(1.05);
+  transform: translateY(-1px);
 }
 
 .nav-desktop a.nav-link-offers.active {
   color: #fff !important;
   box-shadow:
     0 0 0 2px color-mix(in srgb, #fff 55%, transparent),
-    0 4px 14px rgba(220, 38, 38, 0.45);
-}
-
-@keyframes nav-offers-jump {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  35% {
-    transform: translateY(-5px);
-  }
-  55% {
-    transform: translateY(0);
-  }
-  70% {
-    transform: translateY(-3px);
-  }
+    0 18px 36px color-mix(in srgb, var(--accent-color) 30%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .nav-desktop a.nav-link-offers,
   .navbar-mobile-bar a.nav-link-offers--mobile {
-    animation: none;
+    transition: none;
   }
 }
 
@@ -163,16 +150,22 @@
   color: var(--button-text);
   border: 1px solid var(--button-border);
   padding: 12px 22px;
-  border-radius: 8px;
+  border-radius: 14px;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  box-shadow: 0 12px 26px color-mix(in srgb, var(--accent-color) 14%, transparent);
+  transition:
+    transform var(--dur-1) var(--ease-out),
+    box-shadow var(--dur-2) var(--ease-soft),
+    filter var(--dur-2) var(--ease-soft);
   white-space: nowrap;
 }
 
 .btn-primary:hover {
   transform: translateY(-1px);
+  filter: brightness(1.02);
+  box-shadow: 0 16px 34px color-mix(in srgb, var(--accent-color) 18%, transparent);
 }
 
 .btn-primary--mobile {
@@ -189,24 +182,26 @@
   border-radius: 999px;
   font-weight: 800;
   color: #fff !important;
-  background: linear-gradient(125deg, #dc2626 0%, #4f46e5 45%, #2563eb 100%);
-  background-size: 140% 140%;
+  background: linear-gradient(135deg, var(--brand-700), var(--accent-color));
   box-shadow:
-    0 2px 10px rgba(37, 99, 235, 0.45),
-    0 1px 0 rgba(255, 255, 255, 0.12) inset;
-  animation: nav-offers-jump 1.15s ease-in-out infinite;
+    0 14px 30px color-mix(in srgb, var(--accent-color) 26%, transparent),
+    0 1px 0 rgba(255, 255, 255, 0.18) inset;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition:
+    transform 160ms var(--ease-soft),
+    filter 160ms var(--ease-soft),
+    box-shadow 160ms var(--ease-soft);
 }
 
 .navbar-mobile-bar a.nav-link-offers--mobile:hover {
-  filter: brightness(1.08);
-  animation-duration: 0.85s;
+  filter: brightness(1.05);
+  transform: translateY(-1px);
 }
 
 .navbar-mobile-bar a.nav-link-offers--mobile.active {
   box-shadow:
     0 0 0 2px color-mix(in srgb, #fff 55%, transparent),
-    0 4px 14px rgba(220, 38, 38, 0.45);
+    0 18px 36px color-mix(in srgb, var(--accent-color) 30%, transparent);
 }
 
 .nav-menu-toggle {
