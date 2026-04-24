@@ -111,13 +111,30 @@ export class AdminOffers {
     this.formError = null;
     this.busy = true;
     try {
+      let saved: OfferDto | null = null;
       if (this.editingId) {
-        await firstValueFrom(this.offerService.updateOffer(this.editingId, dto as UpdateOfferDto));
+        saved = await firstValueFrom(this.offerService.updateOffer(this.editingId, dto as UpdateOfferDto));
       } else {
-        await firstValueFrom(this.offerService.createOffer(dto));
+        saved = await firstValueFrom(this.offerService.createOffer(dto));
       }
+
+      // Update the list immediately (no manual refresh needed).
+      if (saved && saved.id) {
+        const idx = this.offers.findIndex((o) => o.id === saved!.id);
+        if (idx >= 0) {
+          this.offers = [
+            ...this.offers.slice(0, idx),
+            saved,
+            ...this.offers.slice(idx + 1),
+          ];
+        } else {
+          this.offers = [...this.offers, saved];
+        }
+        this.offers = [...this.offers].sort((a, b) => a.sortOrder - b.sortOrder);
+      }
+
       this.emptyForm();
-      this.loadOffers();
+      this.busy = false;
     } catch (err: unknown) {
       this.formError = this.errMessage(err);
       this.busy = false;
@@ -131,7 +148,8 @@ export class AdminOffers {
     try {
       await firstValueFrom(this.offerService.deleteOffer(o.id));
       if (this.editingId === o.id) this.emptyForm();
-      this.loadOffers();
+      this.offers = this.offers.filter((x) => x.id !== o.id);
+      this.busy = false;
     } catch (err: unknown) {
       this.formError = this.errMessage(err);
       this.busy = false;
