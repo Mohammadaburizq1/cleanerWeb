@@ -5,6 +5,7 @@ import { routes } from './app.routes';
 import { API_BASE_URL } from './core/api-base-url';
 import { loggingInterceptor } from './core/logging.interceptor';
 import { authExpiryInterceptor } from './core/auth-expiry.interceptor';
+import { noCacheInterceptor } from './core/no-cache.interceptor';
 import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
@@ -12,7 +13,7 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideHttpClient(withInterceptors([loggingInterceptor, authExpiryInterceptor])),
+    provideHttpClient(withInterceptors([loggingInterceptor, noCacheInterceptor, authExpiryInterceptor])),
     { provide: API_BASE_URL, useValue: environment.apiUrl },
   ],
 };

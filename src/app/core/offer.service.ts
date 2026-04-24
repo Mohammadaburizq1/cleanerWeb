@@ -25,7 +25,10 @@ export class OfferService {
   /** GET /api/Offer (no auth). Client keeps only `isActive` and sorts by `sortOrder`. */
   listPublicOffers(): Observable<OfferDto[]> {
     const url = joinUrl(this.apiBaseUrl, '/api/Offer');
-    return this.http.get<unknown[]>(url).pipe(
+    // Cache-bust so admin changes reflect immediately (some hosts/CDNs may cache GETs).
+    return this.http
+      .get<unknown[]>(url, { params: { _: String(Date.now()) } })
+      .pipe(
       map((rows) => (Array.isArray(rows) ? rows.map((r) => this.normalizeOffer(r)) : [])),
       map((list) => list.filter((o) => o.isActive).sort((a, b) => a.sortOrder - b.sortOrder)),
     );
@@ -34,7 +37,8 @@ export class OfferService {
   /** GET /api/Offer with Bearer token (admin sees inactive if backend allows). */
   listAllOffers(): Observable<OfferDto[]> {
     const url = joinUrl(this.apiBaseUrl, '/api/Offer');
-    return this.http.get<unknown[]>(url, { headers: this.authHeaders() }).pipe(
+    // Cache-bust so CRUD refresh always reflects the latest server state.
+    return this.http.get<unknown[]>(url, { headers: this.authHeaders(), params: { _: String(Date.now()) } }).pipe(
       map((rows) => (Array.isArray(rows) ? rows.map((r) => this.normalizeOffer(r)) : [])),
       map((list) => [...list].sort((a, b) => a.sortOrder - b.sortOrder)),
     );

@@ -117,10 +117,14 @@
               @if (selectedSectionsWithPrices.length > 0) {
                 <ul class="cost-breakdown-list">
                   @for (entry of selectedSectionsWithPrices; track entry.title) {
-                    @if (entry.taskCount != null && entry.pricePerTask != null) {
-                      <li>{{ entry.title }}: {{ entry.taskCount }} × {{ entry.pricePerTask }} {{ currency }} = {{ entry.amount }} {{ currency }}</li>
-                    } @else {
-                      <li>{{ entry.title }}: {{ entry.amount }} {{ currency }}</li>
+                    @if (!entry.title.startsWith('Home size:')) {
+                      @if (entry.taskCount != null && entry.pricePerTask != null) {
+                        <li>
+                          {{ entry.title }}: {{ entry.taskCount }} × {{ entry.pricePerTask }} {{ currency }} = {{ entry.amount }} {{ currency }}
+                        </li>
+                      } @else {
+                        <li>{{ entry.title }}: {{ entry.amount }} {{ currency }}</li>
+                      }
                     }
                   }
                 </ul>
@@ -312,7 +316,7 @@
                           [class.is-selected]="(homeSqFtTierId ?? 'sqft_1_999') === opt.id"
                           (click)="setHomeSqFtTier(opt.id)"
                         >
-                          {{ opt.label }} (+{{ opt.surchargeJd }} {{ currency }})
+                          {{ opt.label }}
                         </button>
                       }
                     </div>
@@ -842,12 +846,14 @@
             <h3>Your services</h3>
             <ul class="booking-feedback-services-list">
               @for (s of bookingFeedbackSelectedSectionsWithPrices; track s.title) {
-                <li class="booking-feedback-service-item">
-                  <span class="booking-feedback-service-title">{{ s.title }}</span>
-                  <span class="booking-feedback-service-meta">
-                    {{ s.taskCount ?? 0 }} tasks • {{ s.amount | number : '1.2-2' }} {{ currency }}
-                  </span>
-                </li>
+                @if (!s.title.startsWith('Home size:')) {
+                  <li class="booking-feedback-service-item">
+                    <span class="booking-feedback-service-title">{{ s.title }}</span>
+                    <span class="booking-feedback-service-meta">
+                      {{ s.taskCount ?? 0 }} tasks • {{ s.amount | number : '1.2-2' }} {{ currency }}
+                    </span>
+                  </li>
+                }
               }
             </ul>
           </div>
