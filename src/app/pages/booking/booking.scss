@@ -158,8 +158,18 @@
   align-items: start;
 
   @media (max-width: 980px) {
-    grid-template-columns: 1fr;
+    /* Mobile: switch to flex to guarantee visual order. */
+    display: flex;
+    flex-direction: column;
     gap: 18px;
+
+    .booking-card {
+      order: 1;
+    }
+
+    .booking-info {
+      order: 2;
+    }
   }
 }
 
@@ -2156,13 +2166,38 @@ label {
 
 @media (max-width: 1000px) {
   .booking-layout {
+    /* Mobile/tablet: ensure summary appears at the end. */
+    display: flex;
+    flex-direction: column;
     grid-template-columns: 1fr;
+  }
+
+  .booking-layout .booking-card {
+    order: 1;
+  }
+
+  .booking-layout .booking-info {
+    order: 2;
   }
 }
 
 @media (max-width: 768px) {
   .booking-page {
-    padding: 56px 0 68px;
+    /* Leave room for the fixed mobile booking summary bar. */
+    --mobile-summary-bar-h: 156px;
+    padding: 56px 0 calc(var(--mobile-summary-bar-h) + 24px + env(safe-area-inset-bottom));
+  }
+
+  /*
+    On some mobile browsers, a transformed ancestor makes `position: fixed`
+    behave like `position: absolute`. The entrance animation uses `transform`,
+    so we disable it on small screens to ensure the summary sticks to viewport bottom.
+  */
+  .booking-page .booking-hero,
+  .booking-page .booking-info,
+  .booking-page .booking-card {
+    animation: none;
+    transform: none;
   }
 
   .booking-hero h1 {
@@ -2183,5 +2218,37 @@ label {
 
   .booking-form-head {
     padding: 18px 18px 0;
+  }
+
+  /* Mobile: keep booking summary visible at the bottom. */
+  .booking-summary {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    z-index: 50;
+    margin: 0;
+    border-radius: 18px;
+    box-shadow:
+      0 18px 44px rgba(0, 0, 0, 0.18),
+      0 2px 0 rgba(255, 255, 255, 0.55) inset;
+    max-height: min(55vh, 360px);
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .booking-summary-title {
+    margin: 0 0 12px;
+    font-size: 14px;
+    letter-spacing: 0.08em;
+  }
+
+  .booking-summary-divider {
+    margin: 12px 0;
+  }
+
+  .booking-summary-cost-row,
+  .booking-summary-row {
+    font-size: 14px;
   }
 }
