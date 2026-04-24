@@ -664,16 +664,45 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     return Math.min(100, p);
   }
 
-  /** Discount amount applied to sub-total (before tax). */
-  get discountAmount(): number {
-    if (this.offerDiscountPercent <= 0) return 0;
-    const raw = this.subTotal * (this.offerDiscountPercent / 100);
-    return Math.round(raw * 100) / 100;
+  /** Discount rate 0–100 based on schedule selection (weekly/biweekly/monthly). */
+  get scheduleDiscountPercent(): number {
+    const v = (this.bookingForm.get('schedule')?.value ?? 'one_time').toString();
+    if (v === 'weekly') return 45;
+    if (v === 'biweekly') return 35;
+    if (v === 'monthly') return 25;
+    return 0;
   }
 
-  /** Sub-total after promo discount (before tax). */
+  /** Sub-total after schedule discount (before promo, before tax). */
+  get subTotalAfterScheduleDiscount(): number {
+    const p = this.scheduleDiscountPercent;
+    if (p <= 0) return this.subTotal;
+    const raw = this.subTotal * (1 - p / 100);
+    return Math.max(0, Math.round(raw * 100) / 100);
+  }
+
+  /** Discount amount from schedule (before promo, before tax). */
+  get scheduleDiscountAmount(): number {
+    const raw = this.subTotal - this.subTotalAfterScheduleDiscount;
+    return Math.max(0, Math.round(raw * 100) / 100);
+  }
+
+  /** Discount amount from promo offer, applied after the schedule discount (before tax). */
+  get promoDiscountAmount(): number {
+    if (this.offerDiscountPercent <= 0) return 0;
+    const raw = this.subTotalAfterScheduleDiscount * (this.offerDiscountPercent / 100);
+    return Math.max(0, Math.round(raw * 100) / 100);
+  }
+
+  /** Total discount amount from schedule + promo (before tax). */
+  get discountAmount(): number {
+    return Math.round((this.scheduleDiscountAmount + this.promoDiscountAmount) * 100) / 100;
+  }
+
+  /** Sub-total after schedule + promo discounts (before tax). */
   get subTotalAfterDiscount(): number {
-    return Math.max(0, Math.round((this.subTotal - this.discountAmount) * 100) / 100);
+    const raw = this.subTotalAfterScheduleDiscount - this.promoDiscountAmount;
+    return Math.max(0, Math.round(raw * 100) / 100);
   }
 
   onOfferSelectChange(event: Event): void {
@@ -685,8 +714,11 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
 
   /** Total row label — shows DiscountPercent when a promo applies. */
   get totalLineLabel(): string {
-    if (this.offerDiscountPercent <= 0) return 'TOTAL';
-    return `TOTAL (includes ${this.offerDiscountPercent}% DiscountPercent)`;
+    const parts: string[] = [];
+    if (this.scheduleDiscountPercent > 0) parts.push(`${this.scheduleDiscountPercent}% schedule`);
+    if (this.offerDiscountPercent > 0) parts.push(`${this.offerDiscountPercent}% promo`);
+    if (parts.length === 0) return 'TOTAL';
+    return `TOTAL (includes ${parts.join(' + ')} discount)`;
   }
 
   /** Selected offer full description (`detail`) for the booking summary. */

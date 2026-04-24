@@ -74,10 +74,16 @@
                 <span>SUB-TOTAL</span>
                 <span>{{ subTotal | number : '1.2-2' }} {{ currency }}</span>
               </div>
+              @if (scheduleDiscountAmount > 0) {
+                <div class="booking-summary-cost-row booking-summary-discount">
+                  <span>{{ scheduleLabel }} ({{ scheduleDiscountPercent }}%)</span>
+                  <span>-{{ scheduleDiscountAmount | number : '1.2-2' }} {{ currency }}</span>
+                </div>
+              }
               @if (discountAmount > 0) {
                 <div class="booking-summary-cost-row booking-summary-discount">
                   <span>PROMO ({{ offerDiscountPercent }}%)</span>
-                  <span>-{{ discountAmount | number : '1.2-2' }} {{ currency }}</span>
+                  <span>-{{ promoDiscountAmount | number : '1.2-2' }} {{ currency }}</span>
                 </div>
               }
               @if (salesTax > 0) {
@@ -90,9 +96,20 @@
                 <span>{{ totalLineLabel }}</span>
                 <span>{{ total | number : '1.2-2' }} {{ currency }}</span>
               </div>
-              @if (offerDiscountPercent > 0) {
+              @if (offerDiscountPercent > 0 || scheduleDiscountPercent > 0) {
                 <p class="booking-total-discount-meta">
-                  <strong>DiscountPercent</strong> applied to sub-total: <strong>{{ offerDiscountPercent }}%</strong>
+                  <strong>Discount</strong> applied to sub-total:
+                  <strong>
+                    @if (scheduleDiscountPercent > 0) {
+                      {{ scheduleDiscountPercent }}% ({{ scheduleLabel }})
+                    }
+                    @if (scheduleDiscountPercent > 0 && offerDiscountPercent > 0) {
+                      +
+                    }
+                    @if (offerDiscountPercent > 0) {
+                      {{ offerDiscountPercent }}% (promo)
+                    }
+                  </strong>
                   (sub-total after discount: {{ subTotalAfterDiscount | number : '1.2-2' }} {{ currency }}).
                 </p>
               }
