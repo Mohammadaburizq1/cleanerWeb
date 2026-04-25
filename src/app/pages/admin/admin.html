@@ -3,7 +3,11 @@
     <div class="admin-hero">
       <span class="section-tag">ADMIN</span>
       <h1>Bookings</h1>
-      <p>List from <code>GET /api/Booking</code> (requires access token when the API is protected).</p>
+      <p>
+        List from <code>GET /api/Booking</code>. Every card has a <strong>Refund</strong> in the top bar. It
+        is only active when <code>GET /api/Payments</code> includes a row whose <code>bookingId</code> matches
+        the booking, or you can refund the same charge from the Payments list below.
+      </p>
     </div>
 
     <app-admin-offers [embedded]="true" />
@@ -57,11 +61,40 @@
     } @else {
       <div class="orders-list">
         @for (b of filteredBookings; track b.id) {
-          <article class="order-card" [class]="'order-card--' + statusClass(b.status)">
-            <div class="order-header">
-              <span class="order-id">{{ b.id }}</span>
-              <span class="order-date">{{ formatDate(b.date) }}</span>
-              <span class="order-badge order-badge--dynamic">{{ b.status }}</span>
+          <article
+            [class]="
+              'order-card order-card--' +
+              statusClass(b.status) +
+              (refundingPaymentId && paymentForBooking(b.id)?.paymentId === refundingPaymentId
+                ? ' order-card--is-refund-pending'
+                : '')
+            "
+          >
+            <div class="order-header order-header--payment">
+              <div class="order-header__meta">
+                <span class="order-id">{{ b.id }}</span>
+                <span class="order-date">{{ formatDate(b.date) }}</span>
+              </div>
+              <div class="order-header__actions order-header__actions--booking">
+                @if (paymentForBooking(b.id); as pay) {
+                  <span class="order-amount">{{ formatAmount(pay) }}</span>
+                }
+                <button
+                  type="button"
+                  class="btn-refund"
+                  (click)="onBookingRefundClick(b.id)"
+                  [disabled]="bookingRefundIsDisabled(b.id)"
+                  [attr.aria-busy]="bookingRefundIsRefunding(b.id) ? 'true' : null"
+                  [attr.title]="bookingRefundTitle(b.id)"
+                >
+                  @if (bookingRefundIsRefunding(b.id)) {
+                    Refunding…
+                  } @else {
+                    Refund
+                  }
+                </button>
+                <span class="order-badge order-badge--dynamic order-badge--on-card">{{ b.status }}</span>
+              </div>
             </div>
             <div class="order-body">
               <div class="order-row">
@@ -104,19 +137,37 @@
       <div class="orders-list">
         @for (p of payments; track p.paymentId) {
           <article
-            [ngClass]="[
-              'order-card',
-              'order-card--' + statusClass(p.status),
-              { 'order-card--is-refund-pending': refundingPaymentId === p.paymentId },
-            ]"
+            [class]="
+              'order-card order-card--' +
+              statusClass(p.status) +
+              (refundingPaymentId === p.paymentId ? ' order-card--is-refund-pending' : '')
+            "
           >
-            <div class="order-header">
-              <span class="order-id">{{ p.paymentId }}</span>
-              <span class="order-amount">{{ formatAmount(p) }}</span>
-              <span class="order-date">{{ formatDate(p.createdAt) }}</span>
-              <span class="order-badge order-badge--dynamic">{{ p.status }}</span>
+            <div class="order-header order-header--payment">
+              <div class="order-header__meta">
+                <span class="order-id">{{ p.paymentId }}</span>
+                <span class="order-amount">{{ formatAmount(p) }}</span>
+                <span class="order-date">{{ formatDate(p.createdAt) }}</span>
+              </div>
+              <div class="order-header__actions">
+                <button
+                  type="button"
+                  class="btn-refund"
+                  (click)="requestRefund(p)"
+                  [disabled]="!canRefundPayment(p) || refundingPaymentId !== null"
+                  [attr.aria-busy]="refundingPaymentId === p.paymentId ? 'true' : null"
+                  [attr.title]="!canRefundPayment(p) ? 'Not available for this status' : null"
+                >
+                  @if (refundingPaymentId === p.paymentId) {
+                    Refunding…
+                  } @else {
+                    Refund
+                  }
+                </button>
+                <span class="order-badge order-badge--dynamic order-badge--on-card">{{ p.status }}</span>
+              </div>
             </div>
-            <div class="order-body">
+            <div class="order-body order-body--payment">
               <div class="order-row">
                 <span class="order-label">Provider</span>
                 <span class="order-value">{{ p.provider }}</span>
@@ -133,27 +184,6 @@
                   <span class="order-value order-value--mono">{{ p.providerPaymentId }}</span>
                 </div>
               }
-              <div class="order-row order-actions">
-                <span class="order-label">Actions</span>
-                <div class="order-actions__buttons">
-                  <button
-                    type="button"
-                    class="btn-refund"
-                    (click)="requestRefund(p)"
-                    [disabled]="!canRefundPayment(p) || refundingPaymentId !== null"
-                    [attr.aria-busy]="refundingPaymentId === p.paymentId ? 'true' : null"
-                  >
-                    @if (refundingPaymentId === p.paymentId) {
-                      Refunding…
-                    } @else {
-                      Refund
-                    }
-                  </button>
-                  @if (!canRefundPayment(p)) {
-                    <span class="refund-locked">Not available for this status</span>
-                  }
-                </div>
-              </div>
             </div>
           </article>
         }

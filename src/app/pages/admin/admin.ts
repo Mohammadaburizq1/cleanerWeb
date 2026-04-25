@@ -99,6 +99,50 @@ export class Admin implements OnInit {
     return !NON_REFUNDABLE.has((p.status || '').toLowerCase());
   }
 
+  onBookingRefundClick(bookingId: string): void {
+    const p = this.paymentForBooking(bookingId);
+    if (p) {
+      this.requestRefund(p);
+    }
+  }
+
+  /** Class fields (not prototype methods) so HMR / dev client always has callable handlers on the instance. */
+  readonly bookingRefundIsRefunding = (bookingId: string): boolean => {
+    const p = this.paymentForBooking(bookingId);
+    return p ? this.refundingPaymentId === p.paymentId : false;
+  };
+
+  readonly bookingRefundIsDisabled = (bookingId: string): boolean => {
+    if (this.paymentsLoading) {
+      return true;
+    }
+    if (this.refundingPaymentId) {
+      return true;
+    }
+    const p = this.paymentForBooking(bookingId);
+    if (!p) {
+      return true;
+    }
+    return !this.canRefundPayment(p);
+  };
+
+  readonly bookingRefundTitle = (bookingId: string): string => {
+    if (this.paymentsLoading) {
+      return 'Loading payments…';
+    }
+    if (this.paymentsError) {
+      return 'Payments list failed to load. Tap Refresh, or refund from the Payments section below.';
+    }
+    const p = this.paymentForBooking(bookingId);
+    if (!p) {
+      return 'No API payment is linked. The payment must include bookingId matching this booking, or use Refund on that charge in the Payments section below.';
+    }
+    if (!this.canRefundPayment(p)) {
+      return 'Not available for this payment status.';
+    }
+    return 'Issue a refund for this charge';
+  };
+
   requestRefund(p: PaymentDto): void {
     if (!this.canRefundPayment(p) || this.refundingPaymentId) return;
     const amt = p.amount;
@@ -156,6 +200,26 @@ export class Admin implements OnInit {
       return `${n.toFixed(2)} ${p.currency}`.trim();
     }
     return `${String(p.amount)} ${p.currency}`.trim();
+  }
+
+  /**
+   * Payment record linked to this booking (`PaymentDto.bookingId` === booking id from API).
+   * Prefer the most recent payment that is still refundable; otherwise the most recent for this booking.
+   */
+  paymentForBooking(bookingId: string): PaymentDto | null {
+    if (!this.payments.length) return null;
+    const want = bookingId.trim().toLowerCase();
+    const matches = this.payments.filter(
+      (p) => p.bookingId && p.bookingId.trim().toLowerCase() === want,
+    );
+    if (matches.length === 0) return null;
+    const byDate = (a: PaymentDto, b: PaymentDto) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    const refundable = matches.filter((p) => this.canRefundPayment(p));
+    if (refundable.length) {
+      return [...refundable].sort(byDate)[0];
+    }
+    return [...matches].sort(byDate)[0];
   }
 
   /** Safe CSS fragment for status-based card style */
