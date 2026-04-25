@@ -34,7 +34,14 @@
         }
       </div>
       <div class="admin-toolbar-links">
-        <button type="button" class="btn-refresh" (click)="reloadBookings()" [disabled]="loading">Refresh</button>
+        <button
+          type="button"
+          class="btn-refresh"
+          (click)="reloadAll()"
+          [disabled]="loading || paymentsLoading"
+        >
+          Refresh
+        </button>
         <a routerLink="/admin/offers" class="btn-offers-cta">Offers (full page)</a>
         <a routerLink="/" class="back-link">← Back to site</a>
       </div>
@@ -71,6 +78,82 @@
                   <span class="order-value">{{ b.notes }}</span>
                 </div>
               }
+            </div>
+          </article>
+        }
+      </div>
+    }
+
+    <div class="admin-payments">
+      <h2 class="admin-subtitle">Payments</h2>
+      <p class="admin-hint">From <code>GET /api/Payments</code> · Refund uses <code>POST /api/Payments/&#123;paymentId&#125;/refund</code>.</p>
+    </div>
+
+    @if (paymentsError) {
+      <div class="admin-banner admin-banner--error" role="alert">{{ paymentsError }}</div>
+    }
+
+    @if (paymentsLoading && payments.length === 0) {
+      <p class="admin-loading">Loading payments…</p>
+    } @else if (payments.length === 0 && !paymentsLoading) {
+      <div class="empty-state empty-state--tight">
+        <p>No payments in this list.</p>
+        <p class="empty-hint">Completed checkouts and manual payments will appear when the API returns them.</p>
+      </div>
+    } @else {
+      <div class="orders-list">
+        @for (p of payments; track p.paymentId) {
+          <article
+            [ngClass]="[
+              'order-card',
+              'order-card--' + statusClass(p.status),
+              { 'order-card--is-refund-pending': refundingPaymentId === p.paymentId },
+            ]"
+          >
+            <div class="order-header order-header--with-actions">
+              <span class="order-id">{{ p.paymentId }}</span>
+              <span class="order-amount order-header-amount">{{ formatAmount(p) }}</span>
+              <span class="order-date">{{ formatDate(p.createdAt) }}</span>
+              <span class="order-badge order-badge--dynamic">{{ p.status }}</span>
+            </div>
+            <div class="order-body">
+              <div class="order-row">
+                <span class="order-label">Provider</span>
+                <span class="order-value">{{ p.provider }}</span>
+              </div>
+              @if (p.bookingId) {
+                <div class="order-row">
+                  <span class="order-label">Booking</span>
+                  <span class="order-value order-value--mono">{{ p.bookingId }}</span>
+                </div>
+              }
+              @if (p.providerPaymentId) {
+                <div class="order-row">
+                  <span class="order-label">Provider ref</span>
+                  <span class="order-value order-value--mono">{{ p.providerPaymentId }}</span>
+                </div>
+              }
+              <div class="order-row order-actions">
+                <span class="order-label">Actions</span>
+                <div class="order-actions__buttons">
+                  <button
+                    type="button"
+                    class="btn-refund"
+                    (click)="requestRefund(p)"
+                    [disabled]="!canRefundPayment(p) || refundingPaymentId !== null"
+                    [attr.aria-busy]="refundingPaymentId === p.paymentId ? 'true' : null"
+                  >
+                    @if (refundingPaymentId === p.paymentId) {
+                      Refunding…
+                    } @else {
+                      Refund
+                    }
+                  </button>
+                  @if (!canRefundPayment(p)) {
+                    <span class="refund-locked">Not available for this status</span>
+                  }
+                </div>
+              </div>
             </div>
           </article>
         }

@@ -165,7 +165,34 @@
   }
 }
 
+.admin-payments {
+  margin-top: 48px;
+  margin-bottom: 8px;
+}
+
+.admin-subtitle {
+  margin: 0 0 6px;
+  font-size: 24px;
+  line-height: 1.2;
+  color: var(--text-color);
+}
+
+.admin-hint {
+  margin: 0 0 16px;
+  color: var(--muted-text);
+  font-size: 14px;
+  line-height: 1.4;
+
+  code {
+    font-size: 12px;
+  }
+}
+
 .empty-state {
+  &--tight {
+    margin-top: 0;
+  }
+
   text-align: center;
   padding: 48px 24px;
   background: var(--card-bg);
@@ -206,9 +233,22 @@
     background: color-mix(in srgb, #ef4444 6%, var(--card-bg));
   }
 
+  &--succeeded,
+  &--captured,
+  &--complete,
+  &--completed,
+  &--paid {
+    border-color: #22c55e;
+    background: color-mix(in srgb, #22c55e 4%, var(--card-bg));
+  }
+
   &--refunded {
     border-color: #f59e0b;
     background: color-mix(in srgb, #f59e0b 8%, var(--card-bg));
+  }
+
+  &--is-refund-pending {
+    opacity: 0.9;
   }
 
   &--pending {
@@ -224,6 +264,18 @@
   padding: 16px 20px;
   background: color-mix(in srgb, var(--accent-color) 8%, var(--card-bg));
   border-bottom: 1px solid var(--border-color);
+
+  &--with-actions .order-badge {
+    margin-left: 0;
+  }
+}
+
+.order-header-amount,
+.order-amount {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-color);
+  margin-left: auto;
 }
 
 .order-id {
@@ -301,6 +353,54 @@
 
 .order-value {
   color: var(--text-color);
+
+  &--mono {
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    word-break: break-all;
+  }
+}
+
+.order-actions {
+  grid-template-columns: 120px 1fr;
+
+  &__buttons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+  }
+}
+
+.refund-locked {
+  font-size: 12px;
+  color: var(--muted-text);
+}
+
+.btn-refund {
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1c1917;
+  background: linear-gradient(180deg, #fbbf24, #d97706);
+  border: 1px solid #b45309;
+  border-radius: 10px;
+  cursor: pointer;
+  min-width: 6.5rem;
+  transition:
+    filter 0.2s,
+    box-shadow 0.2s;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.05);
+    box-shadow: 0 2px 8px color-mix(in srgb, #b45309 30%, transparent);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: none;
+  }
 }
 
 @media (max-width: 600px) {
