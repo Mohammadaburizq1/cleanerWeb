@@ -119,6 +119,13 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   // NOTE: Put your Stripe publishable key here (pk_...). Never put the secret key in the frontend.
   private readonly stripePublishableKey = 'pk_test_51TK1xVRykzBb9Zc11JSb6OI928pjU6S6MGEbL0XTA2VRDrlXYs7kR4t5rEVv8SSdLHQuv3l2cpCkP9isqlQku4dp00UhF9fQxg';
 
+  /**
+   * Temporary checkout override for testing.
+   * When enabled, the UI "TOTAL" and the backend payment amount are forced to $1.00.
+   */
+  private readonly TEST_PAYMENT_MODE = true;
+  private readonly TEST_PAYMENT_TOTAL = 1;
+
   @ViewChild('stripeCardMount', { static: false })
   private stripeCardMount?: ElementRef<HTMLDivElement>;
 
@@ -1407,6 +1414,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
 
   /** Total after discount and tax */
   get total(): number {
+    if (this.TEST_PAYMENT_MODE) return this.TEST_PAYMENT_TOTAL;
     return Math.round((this.subTotalAfterDiscount + this.salesTax) * 100) / 100;
   }
 
