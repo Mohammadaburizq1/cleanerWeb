@@ -135,8 +135,14 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('mapContainer', { static: false })
   private mapContainer?: ElementRef<HTMLDivElement>;
 
-  @ViewChild('fpDateTime', { static: false })
-  private fpDateTime?: ElementRef<HTMLInputElement>;
+  @ViewChild('preferredDateInput', { static: false })
+  private preferredDateInput?: ElementRef<HTMLInputElement>;
+
+  @ViewChild('preferredTimeInput', { static: false })
+  private preferredTimeInput?: ElementRef<HTMLInputElement>;
+
+  private datePicker: FlatpickrInstance | null = null;
+  private timePicker: FlatpickrInstance | null = null;
 
   private stripe: Stripe | null = null;
   private elements: StripeElements | null = null;
@@ -170,7 +176,6 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   readonly maxBookingsPerDay = 4;
   /** True when GET /api/Booking failed (e.g. auth); calendar cannot show capacity. */
   takenDatesUnavailable = false;
-  private fpInstance: FlatpickrInstance | null = null;
   private takenDatesLoadPromise: Promise<void> = Promise.resolve();
 
   /** Tasks chosen on the Services page (from "Book Now" with checkboxes) */
@@ -744,7 +749,8 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     await this.initStripe();
     await this.takenDatesLoadPromise;
     queueMicrotask(() => this.initLeafletMap());
-    this.initFlatpickr();
+    this.initDatePicker();
+    this.initTimePicker();
   }
 
   /** Loads existing bookings so calendar days at capacity are not selectable. */
@@ -789,18 +795,20 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     return `${y}-${m}-${day}`;
   }
 
-  private initFlatpickr(): void {
-    const el = this.fpDateTime?.nativeElement;
+  private initDatePicker(): void {
+    const el = this.preferredDateInput?.nativeElement;
     if (!el) return;
-
-    this.fpInstance?.destroy();
 
     const fullyBookedTooltip = 'Fully booked today';
 
-    this.fpInstance = flatpickr(el, {
-      enableTime: true,
-      dateFormat: 'Y-m-d H:i',
-      time_24hr: true,
+    this.datePicker?.destroy();
+    this.datePicker = flatpickr(el, {
+      enableTime: false,
+      dateFormat: 'Y-m-d',
+      altInput: true,
+      altFormat: 'D, M j, Y',
+      altInputClass: 'booking-datetime-input booking-datetime-input--date',
+      disableMobile: true,
       minDate: 'today',
       disable: [(d: Date) => this.isDayFullyBooked(this.dateToYmd(d))],
       onDayCreate: (_dates, _dateStr, _instance, dayElem) => {
@@ -817,30 +825,57 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
         }
       },
       onChange: (selectedDates) => {
-        if (!selectedDates.length) {
-          this.ngZone.run(() => {
-            this.bookingForm.patchValue({ preferredDate: '', preferredTime: '' });
-          });
-          return;
-        }
         const d = selectedDates[0];
-        const datePart = this.dateToYmd(d);
-        const hh = String(d.getHours()).padStart(2, '0');
-        const mm = String(d.getMinutes()).padStart(2, '0');
-        const timePart = `${hh}:${mm}`;
-        this.ngZone.run(() => {
-          this.bookingForm.patchValue({ preferredDate: datePart, preferredTime: timePart });
-        });
+        const datePart = d ? this.dateToYmd(d) : '';
+        this.bookingForm.patchValue({ preferredDate: datePart });
       },
     });
 
+    // Flatpickr keeps the original input in the DOM; hide it so only the styled alt input is visible.
+    el.classList.add('booking-datetime-input--original-hidden');
+
     const pd = (this.bookingForm.get('preferredDate')?.value ?? '').toString().trim();
+    if (pd) {
+      const d = new Date(`${pd}T00:00:00`);
+      if (!isNaN(d.getTime())) this.datePicker.setDate(d, false);
+    }
+  }
+
+  private initTimePicker(): void {
+    const el = this.preferredTimeInput?.nativeElement;
+    if (!el) return;
+
+    this.timePicker?.destroy();
+    this.timePicker = flatpickr(el, {
+      enableTime: true,
+      noCalendar: true,
+      dateFormat: 'H:i',
+      time_24hr: false,
+      minuteIncrement: 15,
+      disableMobile: true,
+      onChange: (selectedDates, dateStr) => {
+        // Flatpickr gives a Date; keep HH:mm in form for backend compatibility.
+        const d = selectedDates[0];
+        if (d && !isNaN(d.getTime())) {
+          const hh = String(d.getHours()).padStart(2, '0');
+          const mm = String(d.getMinutes()).padStart(2, '0');
+          this.bookingForm.patchValue({ preferredTime: `${hh}:${mm}` });
+        } else {
+          this.bookingForm.patchValue({ preferredTime: (dateStr ?? '').trim() });
+        }
+      },
+    });
+
     const pt = (this.bookingForm.get('preferredTime')?.value ?? '').toString().trim();
-    if (pd && pt) {
-      const tNorm = pt.length === 5 ? `${pt}:00` : pt;
-      const combined = new Date(`${pd}T${tNorm}`);
-      if (!isNaN(combined.getTime())) {
-        this.fpInstance.setDate(combined, false);
+    if (pt) {
+      // use today's date to seed time picker
+      const d = new Date();
+      const [hh, mm] = pt.split(':');
+      const h = Number(hh);
+      const m = Number(mm);
+      if (Number.isFinite(h) && Number.isFinite(m)) {
+        d.setHours(h, m, 0, 0);
+        this.timePicker.setDate(d, false);
       }
     }
   }
@@ -1130,8 +1165,10 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     } catch {
       // ignore
     }
-    this.fpInstance?.destroy();
-    this.fpInstance = null;
+    this.datePicker?.destroy();
+    this.datePicker = null;
+    this.timePicker?.destroy();
+    this.timePicker = null;
     this.leafletMap?.remove();
     this.leafletMap = null;
     this.leafletMarker = null;
@@ -1304,10 +1341,12 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
         if (bookedDay) {
           this.bookingsCountByDay.set(bookedDay, (this.bookingsCountByDay.get(bookedDay) ?? 0) + 1);
         }
-        this.fpInstance?.clear();
-        this.fpInstance?.destroy();
-        this.fpInstance = null;
-        this.initFlatpickr();
+        try {
+          this.datePicker?.clear();
+          this.timePicker?.clear();
+        } catch {
+          // ignore
+        }
         this.submitted = false;
         this.selectedTasksService.clearAll();
         this.selectedTasks = [];

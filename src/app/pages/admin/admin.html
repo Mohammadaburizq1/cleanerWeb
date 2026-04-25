@@ -73,7 +73,10 @@
             <div class="order-header order-header--payment">
               <div class="order-header__meta">
                 <span class="order-id">{{ b.id }}</span>
-                <span class="order-date">{{ formatDate(b.date) }}</span>
+                <span class="order-date" [attr.aria-label]="'Booking date ' + formatDate(b.date)">
+                  <span class="order-date__day">{{ formatDateDay(b.date) }}</span>
+                  <span class="order-date__time">{{ formatDateTimeOnly(b.date) }}</span>
+                </span>
               </div>
               <div class="order-header__actions order-header__actions--booking">
                 @if (paymentForBooking(b.id); as pay) {
@@ -122,20 +125,54 @@
       <p class="admin-hint">From <code>GET /api/Payments</code> · Refund uses <code>POST /api/Payments/&#123;paymentId&#125;/refund</code>.</p>
     </div>
 
+    <div class="admin-toolbar admin-toolbar--payments">
+      <div class="filter-tabs">
+        <button
+          type="button"
+          class="filter-tab"
+          [class.active]="paymentFilter === 'all'"
+          (click)="setPaymentFilter('all')"
+        >
+          All
+        </button>
+        <button
+          type="button"
+          class="filter-tab"
+          [class.active]="paymentFilter === 'not_refunded'"
+          (click)="setPaymentFilter('not_refunded')"
+        >
+          Not refunded
+        </button>
+        <button
+          type="button"
+          class="filter-tab"
+          [class.active]="paymentFilter === 'refunded'"
+          (click)="setPaymentFilter('refunded')"
+        >
+          Refunded
+        </button>
+      </div>
+      <div class="admin-toolbar-links">
+        <button type="button" class="btn-refresh" (click)="reloadPayments()" [disabled]="paymentsLoading">
+          Refresh payments
+        </button>
+      </div>
+    </div>
+
     @if (paymentsError) {
       <div class="admin-banner admin-banner--error" role="alert">{{ paymentsError }}</div>
     }
 
     @if (paymentsLoading && payments.length === 0) {
       <p class="admin-loading">Loading payments…</p>
-    } @else if (payments.length === 0 && !paymentsLoading) {
+    } @else if (filteredPayments.length === 0 && !paymentsLoading) {
       <div class="empty-state empty-state--tight">
         <p>No payments in this list.</p>
         <p class="empty-hint">Completed checkouts and manual payments will appear when the API returns them.</p>
       </div>
     } @else {
       <div class="orders-list">
-        @for (p of payments; track p.paymentId) {
+        @for (p of filteredPayments; track p.paymentId) {
           <article
             [class]="
               'order-card order-card--' +
@@ -147,14 +184,31 @@
               <div class="order-header__meta">
                 <span class="order-id">{{ p.paymentId }}</span>
                 <span class="order-amount">{{ formatAmount(p) }}</span>
-                <span class="order-date">{{ formatDate(p.createdAt) }}</span>
+                <span class="order-date" [attr.aria-label]="'Payment created ' + formatDate(p.createdAt)">
+                  <span class="order-date__day">{{ formatDateDay(p.createdAt) }}</span>
+                  <span class="order-date__time">{{ formatDateTimeOnly(p.createdAt) }}</span>
+                </span>
               </div>
               <div class="order-header__actions">
                 <button
                   type="button"
+                  class="btn-delete"
+                  (click)="deletePayment(p)"
+                  [disabled]="deletingPaymentId !== null || refundingPaymentId !== null"
+                  [attr.aria-busy]="deletingPaymentId === p.paymentId ? 'true' : null"
+                  title="Delete test payment (if API supports it)"
+                >
+                  @if (deletingPaymentId === p.paymentId) {
+                    Deleting…
+                  } @else {
+                    Delete
+                  }
+                </button>
+                <button
+                  type="button"
                   class="btn-refund"
                   (click)="requestRefund(p)"
-                  [disabled]="!canRefundPayment(p) || refundingPaymentId !== null"
+                  [disabled]="!canRefundPayment(p) || refundingPaymentId !== null || deletingPaymentId !== null"
                   [attr.aria-busy]="refundingPaymentId === p.paymentId ? 'true' : null"
                   [attr.title]="!canRefundPayment(p) ? 'Not available for this status' : null"
                 >

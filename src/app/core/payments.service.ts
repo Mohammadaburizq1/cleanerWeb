@@ -95,4 +95,13 @@ export class PaymentsService {
     const url = joinUrl(this.apiBaseUrl, `/api/Payments/${paymentId}/refund`);
     return this.http.post<PaymentDto>(url, {}, { headers: this.authHeaders() });
   }
+
+  /**
+   * DELETE /api/Payments/{paymentId}
+   * Note: Not present in the current OpenAPI snapshot, but supported by some backends.
+   */
+  deletePayment(paymentId: string): Observable<void> {
+    const url = joinUrl(this.apiBaseUrl, `/api/Payments/${paymentId}`);
+    return this.http.delete<void>(url, { headers: this.authHeaders() });
+  }
 }

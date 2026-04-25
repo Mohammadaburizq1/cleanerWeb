@@ -558,19 +558,18 @@
               </select>
             </div>
 
-            <div class="form-group form-group-full booking-datetime-field">
-              <label for="fpDateTime">Preferred date &amp; time</label>
+            <div class="form-group booking-datetime-field">
+              <label for="preferredDate">Preferred date</label>
               <input
-                #fpDateTime
-                id="fpDateTime"
+                #preferredDateInput
+                id="preferredDate"
                 type="text"
                 readonly
                 class="booking-datetime-input"
-                placeholder="Select date and time"
+                placeholder="Tap to pick a date"
                 autocomplete="off"
               />
               <input type="hidden" formControlName="preferredDate" />
-              <input type="hidden" formControlName="preferredTime" />
               @if (takenDatesUnavailable) {
                 <small class="booking-datetime-note">
                   Could not load existing bookings. Days that are already full may still appear — the server may reject
@@ -582,6 +581,20 @@
               @if (submitted && f.preferredDate.errors) {
                 <small class="error">Preferred date is required.</small>
               }
+            </div>
+
+            <div class="form-group booking-datetime-field">
+              <label for="preferredTime">Preferred time</label>
+              <input
+                #preferredTimeInput
+                id="preferredTime"
+                type="text"
+                readonly
+                class="booking-datetime-input"
+                placeholder="Tap to pick a time"
+                autocomplete="off"
+              />
+              <input type="hidden" formControlName="preferredTime" />
               @if (submitted && f.preferredTime.errors) {
                 <small class="error">Preferred time is required.</small>
               }

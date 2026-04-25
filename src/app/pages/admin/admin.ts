@@ -45,6 +45,8 @@ export class Admin implements OnInit {
   paymentsLoading = false;
   paymentsError: string | null = null;
   refundingPaymentId: string | null = null;
+  deletingPaymentId: string | null = null;
+  paymentFilter: 'all' | 'refunded' | 'not_refunded' = 'all';
 
   loading = false;
   loadError: string | null = null;
@@ -95,6 +97,17 @@ export class Admin implements OnInit {
       .subscribe((rows) => {
         this.payments = rows;
       });
+  }
+
+  get filteredPayments(): PaymentDto[] {
+    if (this.paymentFilter === 'all') return this.payments;
+    const isRefunded = (p: PaymentDto) => (p.status || '').toLowerCase() === 'refunded';
+    if (this.paymentFilter === 'refunded') return this.payments.filter(isRefunded);
+    return this.payments.filter((p) => !isRefunded(p));
+  }
+
+  setPaymentFilter(v: 'all' | 'refunded' | 'not_refunded'): void {
+    this.paymentFilter = v;
   }
 
   canRefundPayment(p: PaymentDto): boolean {
@@ -183,6 +196,40 @@ export class Admin implements OnInit {
       });
   }
 
+  async deletePayment(p: PaymentDto): Promise<void> {
+    if (this.deletingPaymentId || this.refundingPaymentId) return;
+
+    const ok = await this.dialog.confirm({
+      title: 'Delete payment',
+      message:
+        `Delete payment ${p.paymentId}? ` +
+        `This should only be used for test data. Refund is safer for real charges.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+    });
+    if (!ok) return;
+
+    this.deletingPaymentId = p.paymentId;
+    this.paymentsError = null;
+    this.paymentsService
+      .deletePayment(p.paymentId)
+      .pipe(
+        catchError((err) => {
+          this.paymentsError = err?.error?.message
+            ? String(err.error.message)
+            : 'Delete failed. If the API does not support DELETE /api/Payments/{paymentId}, use Refund instead.';
+          return of(null);
+        }),
+        finalize(() => {
+          this.deletingPaymentId = null;
+        }),
+      )
+      .subscribe((res) => {
+        if (res === null) return;
+        this.payments = this.payments.filter((x) => x.paymentId !== p.paymentId);
+      });
+  }
+
   get statusOptions(): string[] {
     const set = new Set(this.bookings.map((b) => b.status).filter(Boolean));
     return Array.from(set).sort();
@@ -200,6 +247,16 @@ export class Admin implements OnInit {
   formatDate(iso: string): string {
     const d = new Date(iso);
     return isNaN(d.getTime()) ? iso : d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+  }
+
+  formatDateDay(iso: string): string {
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: '2-digit' });
+  }
+
+  formatDateTimeOnly(iso: string): string {
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? '' : d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
   }
 
   formatAmount(p: PaymentDto): string {
