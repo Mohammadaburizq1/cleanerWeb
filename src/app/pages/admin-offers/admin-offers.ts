@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { OfferService } from '../../core/offer.service';
 import { CreateOfferDto, OfferDto, UpdateOfferDto } from '../../core/offer.dto';
+import { DialogService } from '../../shared/components/dialog/dialog.service';
 
 @Component({
   selector: 'app-admin-offers',
@@ -15,6 +16,7 @@ import { CreateOfferDto, OfferDto, UpdateOfferDto } from '../../core/offer.dto';
 })
 export class AdminOffers {
   private readonly offerService = inject(OfferService);
+  private readonly dialog = inject(DialogService);
 
   /** When true, compact header for use inside main `/admin` page. */
   @Input() embedded = false;
@@ -142,7 +144,13 @@ export class AdminOffers {
   }
 
   async remove(o: OfferDto): Promise<void> {
-    if (!confirm(`Delete offer “${o.title}”? This cannot be undone.`)) return;
+    const ok = await this.dialog.confirm({
+      title: 'Delete offer',
+      message: `Delete offer “${o.title}”? This cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+    });
+    if (!ok) return;
     this.busy = true;
     this.formError = null;
     try {

@@ -1,0 +1,76 @@
+:host {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.dialog-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
+  pointer-events: auto;
+}
+
+.dialog {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(520px, calc(100% - 32px));
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.35);
+  padding: 18px 18px 16px;
+  pointer-events: auto;
+}
+
+.dialog__title {
+  margin: 0 0 8px;
+  font-size: 18px;
+  line-height: 1.2;
+  color: var(--text-color);
+}
+
+.dialog__message {
+  margin: 0;
+  color: var(--muted-text);
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.dialog__btn {
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 12px;
+  cursor: pointer;
+  border: 1px solid var(--border-color);
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.dialog__btn--ghost {
+  color: var(--text-color);
+  background: color-mix(in srgb, var(--card-bg) 92%, #000);
+}
+
+.dialog__btn--primary {
+  color: #fff;
+  background: linear-gradient(135deg, var(--brand-700), var(--accent-color));
+  border-color: color-mix(in srgb, var(--accent-color) 50%, transparent);
+}
+

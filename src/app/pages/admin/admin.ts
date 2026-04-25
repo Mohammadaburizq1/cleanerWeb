@@ -7,6 +7,7 @@ import { BookingDto } from '../../core/booking.dto';
 import { AdminOffers } from '../admin-offers/admin-offers';
 import { PaymentsService } from '../../core/payments.service';
 import type { PaymentDto } from '../../core/payments.dto';
+import { DialogService } from '../../shared/components/dialog/dialog.service';
 
 /** HTTP payment statuses that should not show Refund (no capture yet or final negative state). */
 const NON_REFUNDABLE = new Set(
@@ -35,6 +36,7 @@ const NON_REFUNDABLE = new Set(
 export class Admin implements OnInit {
   private readonly bookingService = inject(BookingService);
   private readonly paymentsService = inject(PaymentsService);
+  private readonly dialog = inject(DialogService);
 
   bookings: BookingDto[] = [];
   filterStatus: 'all' | string = 'all';
@@ -99,10 +101,10 @@ export class Admin implements OnInit {
     return !NON_REFUNDABLE.has((p.status || '').toLowerCase());
   }
 
-  onBookingRefundClick(bookingId: string): void {
+  async onBookingRefundClick(bookingId: string): Promise<void> {
     const p = this.paymentForBooking(bookingId);
     if (p) {
-      this.requestRefund(p);
+      await this.requestRefund(p);
     }
   }
 
@@ -143,14 +145,20 @@ export class Admin implements OnInit {
     return 'Issue a refund for this charge';
   };
 
-  requestRefund(p: PaymentDto): void {
+  async requestRefund(p: PaymentDto): Promise<void> {
     if (!this.canRefundPayment(p) || this.refundingPaymentId) return;
     const amt = p.amount;
     const cur = p.currency || '';
     const line = p.bookingId
       ? `Issue refund for this payment (${String(amt)} ${cur})? Booking: ${p.bookingId}.`
       : `Issue refund for this payment (${String(amt)} ${cur})?`;
-    if (!globalThis.confirm(line)) return;
+    const ok = await this.dialog.confirm({
+      title: 'Confirm refund',
+      message: line,
+      confirmText: 'Refund',
+      cancelText: 'Cancel',
+    });
+    if (!ok) return;
 
     this.refundingPaymentId = p.paymentId;
     this.paymentsError = null;

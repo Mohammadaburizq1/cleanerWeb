@@ -16,7 +16,7 @@
       @if (isLoggedIn()) {
         <button type="button" class="nav-logout" (click)="logout()">Log out</button>
       }
-      @if (isLoggedIn()) {
+      @if (isAdmin()) {
         <a routerLink="/admin" routerLinkActive="active" (click)="closeMobileMenu()">Admin</a>
       }
     </nav>

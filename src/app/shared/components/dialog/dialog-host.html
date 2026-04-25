@@ -1,0 +1,21 @@
+@if (state().open) {
+  <div class="dialog-backdrop" role="presentation" (click)="onBackdropClick()"></div>
+  <div class="dialog" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+    @if (state().title) {
+      <h2 class="dialog__title">{{ state().title }}</h2>
+    }
+    <p class="dialog__message">{{ state().message }}</p>
+
+    <div class="dialog__actions">
+      @if (state().kind === 'confirm') {
+        <button type="button" class="dialog__btn dialog__btn--ghost" (click)="onCancel()" [disabled]="state().busy">
+          {{ state().cancelText ?? 'Cancel' }}
+        </button>
+      }
+      <button type="button" class="dialog__btn dialog__btn--primary" (click)="onConfirm()" [disabled]="state().busy">
+        {{ state().confirmText }}
+      </button>
+    </div>
+  </div>
+}
+
