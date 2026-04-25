@@ -411,10 +411,16 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
       .pipe(catchError(() => of([])))
       .subscribe((rows) => {
         this.availableOffers = rows;
-        // If the query param is invalid (or offer inactive), reset to "None".
+        // If a previously selected offer is invalid (or inactive), clear it.
         if (this.selectedOfferId && !rows.some((r) => r.id === this.selectedOfferId)) {
           this.selectedOfferId = null;
           localStorage.removeItem(this.OFFER_STORAGE_KEY);
+        }
+
+        // No "None" option in the dropdown — default to the first offer when available.
+        if (!this.selectedOfferId && rows.length > 0) {
+          this.selectedOfferId = rows[0].id;
+          localStorage.setItem(this.OFFER_STORAGE_KEY, this.selectedOfferId);
         }
       });
   }

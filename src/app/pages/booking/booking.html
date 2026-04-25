@@ -52,7 +52,6 @@
                       [value]="selectedOfferId ?? ''"
                       (change)="onOfferSelectChange($event)"
                     >
-                      <option value="" [selected]="!selectedOfferId">None</option>
                       @for (o of availableOffers; track o.id) {
                         <option [value]="o.id" [selected]="o.id === selectedOfferId">
                           {{ o.title

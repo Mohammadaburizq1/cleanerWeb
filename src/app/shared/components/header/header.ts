@@ -30,13 +30,8 @@ export class Header implements OnInit {
     );
   });
 
-  ngOnInit(): void {
-    const savedTheme = localStorage.getItem('site-theme');
-
-    this.isLightTheme = savedTheme === 'light';
-    this.applyTheme();
-
-    // Header can be mounted before login occurs; reactively load the profile once after login.
+  constructor() {
+    // effect() must run in an injection context (constructor/field), not in ngOnInit (NG0203).
     effect(() => {
       if (this.isLoggedIn() && !this.meLoadAttempted) {
         this.meLoadAttempted = true;
@@ -46,6 +41,13 @@ export class Header implements OnInit {
         this.meLoadAttempted = false;
       }
     });
+  }
+
+  ngOnInit(): void {
+    const savedTheme = localStorage.getItem('site-theme');
+
+    this.isLightTheme = savedTheme === 'light';
+    this.applyTheme();
   }
 
   toggleTheme(): void {
