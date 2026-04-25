@@ -110,9 +110,9 @@
               { 'order-card--is-refund-pending': refundingPaymentId === p.paymentId },
             ]"
           >
-            <div class="order-header order-header--with-actions">
+            <div class="order-header">
               <span class="order-id">{{ p.paymentId }}</span>
-              <span class="order-amount order-header-amount">{{ formatAmount(p) }}</span>
+              <span class="order-amount">{{ formatAmount(p) }}</span>
               <span class="order-date">{{ formatDate(p.createdAt) }}</span>
               <span class="order-badge order-badge--dynamic">{{ p.status }}</span>
             </div>

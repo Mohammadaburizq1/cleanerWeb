@@ -264,14 +264,9 @@
   padding: 16px 20px;
   background: color-mix(in srgb, var(--accent-color) 8%, var(--card-bg));
   border-bottom: 1px solid var(--border-color);
-
-  &--with-actions .order-badge {
-    margin-left: 0;
-  }
 }
 
-.order-amount,
-.order-header-amount {
+.order-amount {
   font-size: 15px;
   font-weight: 800;
   color: var(--text-color);
