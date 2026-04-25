@@ -707,14 +707,51 @@
             }
           </div>
 
-          <button type="submit" class="btn-submit" [disabled]="sending">
-            {{ sending ? 'Submitting...' : 'Submit Booking Request' }}
-          </button>
-          <p class="booking-payment-hold-note">
-            By booking, you agree that a temporary authorization hold will be placed on your card before your
-            appointment. This is not an immediate charge. Final payment will be processed after the service is
-            completed.
-          </p>
+          <div class="booking-submit-area">
+            <button type="submit" class="btn-submit" [disabled]="sending">
+              {{ sending ? 'Submitting...' : 'Submit Booking Request' }}
+            </button>
+            <p class="booking-payment-hold-note">
+              By booking, you agree that a temporary authorization hold will be placed on your card before your
+              appointment. This is not an immediate charge. Final payment will be processed after the service is
+              completed.
+            </p>
+          </div>
+
+          <!-- Mobile-only sticky bottom summary (like a fixed section, not a floating overlay). -->
+          <div class="booking-mobile-bottom" aria-label="Booking total and submit">
+            <div class="booking-mobile-bottom__totals">
+              <div class="booking-mobile-total-row">
+                <span>SUB-TOTAL</span>
+                <span>{{ subTotal | number : '1.2-2' }} {{ currency }}</span>
+              </div>
+              @if (scheduleDiscountAmount > 0) {
+                <div class="booking-mobile-total-row booking-mobile-total-row--discount">
+                  <span>{{ scheduleLabel }} ({{ scheduleDiscountPercent }}%)</span>
+                  <span>-{{ scheduleDiscountAmount | number : '1.2-2' }} {{ currency }}</span>
+                </div>
+              }
+              @if (discountAmount > 0) {
+                <div class="booking-mobile-total-row booking-mobile-total-row--discount">
+                  <span>PROMO ({{ offerDiscountPercent }}%)</span>
+                  <span>-{{ promoDiscountAmount | number : '1.2-2' }} {{ currency }}</span>
+                </div>
+              }
+              @if (salesTax > 0) {
+                <div class="booking-mobile-total-row">
+                  <span>SALES TAX</span>
+                  <span>{{ salesTax | number : '1.2-2' }} {{ currency }}</span>
+                </div>
+              }
+              <div class="booking-mobile-total-row booking-mobile-total-row--total">
+                <span>{{ totalLineLabel }}</span>
+                <span>{{ total | number : '1.2-2' }} {{ currency }}</span>
+              </div>
+            </div>
+            <button type="submit" class="btn-submit btn-submit--mobile" [disabled]="sending">
+              {{ sending ? 'Submitting...' : 'Submit Booking Request' }}
+            </button>
+          </div>
         </form>
       </div>
     </div>

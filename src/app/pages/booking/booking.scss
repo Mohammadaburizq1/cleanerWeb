@@ -2,6 +2,11 @@
   display: block;
 }
 
+/* Mobile sticky bottom section is hidden on larger screens. */
+.booking-mobile-bottom {
+  display: none;
+}
+
 .booking-page {
   /* Page-scoped UI system (enforces consistent sizing + spacing). */
   --booking-gap-1: 8px;
@@ -2183,9 +2188,9 @@ label {
 
 @media (max-width: 768px) {
   .booking-page {
-    /* Leave room for the fixed mobile booking summary bar. */
-    --mobile-summary-bar-h: 156px;
-    padding: 56px 0 calc(var(--mobile-summary-bar-h) + 24px + env(safe-area-inset-bottom));
+    /* Leave room for the sticky mobile bottom section (totals + submit). */
+    --mobile-bottom-ui-h: 220px;
+    padding: 56px 0 calc(var(--mobile-bottom-ui-h) + env(safe-area-inset-bottom));
   }
 
   /*
@@ -2220,21 +2225,82 @@ label {
     padding: 18px 18px 0;
   }
 
-  /* Mobile: keep booking summary visible at the bottom. */
+  /* Stop using the old floating / fixed summary + submit on mobile. */
   .booking-summary {
-    position: fixed;
-    left: 12px;
-    right: 12px;
+    position: static;
+    max-height: none;
+    overflow: visible;
+    box-shadow: none;
+  }
+
+  .btn-submit {
+    position: static;
+    width: 100%;
+  }
+
+  .booking-payment-hold-note {
+    margin-bottom: 0;
+  }
+
+  /* Desktop submit area remains in-flow; on mobile we hide it and use the sticky bottom section. */
+  .booking-submit-area {
+    display: none;
+  }
+
+  .booking-mobile-bottom {
+    display: grid;
+    gap: 12px;
+    position: sticky;
     bottom: calc(12px + env(safe-area-inset-bottom));
-    z-index: 50;
-    margin: 0;
+    z-index: 60;
+    margin-top: 18px;
+    padding: 14px;
     border-radius: 18px;
-    box-shadow:
-      0 18px 44px rgba(0, 0, 0, 0.18),
-      0 2px 0 rgba(255, 255, 255, 0.55) inset;
-    max-height: min(55vh, 360px);
-    overflow: auto;
-    -webkit-overflow-scrolling: touch;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.18);
+  }
+
+  .booking-mobile-bottom__totals {
+    display: grid;
+    gap: 6px;
+  }
+
+  .booking-mobile-total-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--muted-text);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+
+    span:last-child {
+      color: var(--text-color);
+      font-variant-numeric: tabular-nums;
+    }
+
+    &--discount span:last-child {
+      color: color-mix(in srgb, var(--accent-color) 85%, #ffffff 15%);
+    }
+
+    &--total {
+      margin-top: 4px;
+      padding-top: 10px;
+      border-top: 1px dashed color-mix(in srgb, var(--accent-color) 18%, var(--border-color));
+      font-size: 14px;
+      color: var(--text-color);
+
+      span:last-child {
+        font-weight: 900;
+        color: var(--accent-color);
+      }
+    }
+  }
+
+  .btn-submit--mobile {
+    width: 100%;
+    min-height: 52px;
   }
 
   .booking-summary-title {
