@@ -270,12 +270,11 @@
   }
 }
 
-.order-header-amount,
-.order-amount {
+.order-amount,
+.order-header-amount {
   font-size: 15px;
   font-weight: 800;
   color: var(--text-color);
-  margin-left: auto;
 }
 
 .order-id {
