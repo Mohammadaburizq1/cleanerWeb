@@ -241,7 +241,7 @@
 .mobile-nav-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 998;
+  z-index: 990;
   background: rgba(0, 0, 0, 0.4);
   animation: mobile-backdrop-in 0.2s ease forwards;
 }
@@ -371,10 +371,13 @@
 
   .mobile-nav-panel {
     display: block;
+    position: relative;
+    z-index: 995;
     overflow: hidden;
     max-height: 0;
     opacity: 0;
     visibility: hidden;
+    pointer-events: none;
     border-bottom: 1px solid var(--border-color);
     background: var(--header-bg);
     transition:
@@ -388,6 +391,7 @@
     opacity: 1;
     visibility: visible;
     overflow-y: auto;
+    pointer-events: auto;
     transition:
       max-height 0.32s ease,
       opacity 0.22s ease,
