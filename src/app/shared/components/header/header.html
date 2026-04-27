@@ -22,9 +22,6 @@
     </nav>
 
     <div class="navbar-actions-desktop">
-      <button class="theme-toggle" type="button" (click)="toggleTheme()" aria-label="Toggle light or dark theme">
-        <span class="icon">{{ isLightTheme ? '☀' : '🌙' }}</span>
-      </button>
       <button type="button" class="btn-primary" (click)="goToBookNow()">Book Now</button>
     </div>
 
@@ -77,12 +74,7 @@
       @if (isAdmin()) {
         <a routerLink="/admin" routerLinkActive="active" (click)="closeMobileMenu()">Admin</a>
       }
-      <div class="mobile-nav-panel__theme">
-        <span class="mobile-nav-panel__theme-label">Theme</span>
-        <button class="theme-toggle theme-toggle--panel" type="button" (click)="toggleTheme()" aria-label="Toggle theme">
-          <span class="icon">{{ isLightTheme ? '☀' : '🌙' }}</span>
-        </button>
-      </div>
+
     </nav>
   </div>
 </header>

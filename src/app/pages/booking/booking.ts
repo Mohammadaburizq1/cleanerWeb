@@ -117,7 +117,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   private ngZone = inject(NgZone);
 
   // NOTE: Put your Stripe publishable key here (pk_...). Never put the secret key in the frontend.
-  private readonly stripePublishableKey = 'pk_test_51TK1xVRykzBb9Zc11JSb6OI928pjU6S6MGEbL0XTA2VRDrlXYs7kR4t5rEVv8SSdLHQuv3l2cpCkP9isqlQku4dp00UhF9fQxg';
+  private readonly stripePublishableKey = 'pk_live_51TK1xIRw8UyOG4twlWkLGoGT28HeGzWr8nL6Oo9YoUmxtBdzuiiamhAPngF2sx1xPGdiNTFhyER8eRvNbvs12cOm0029Sx483H';
 
   /**
    * Temporary checkout override for testing.
