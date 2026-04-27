@@ -723,8 +723,35 @@
 }
 
 .add-on-tile.is-selected {
-  border-color: var(--accent-color);
-  background: color-mix(in srgb, var(--accent-color) 8%, var(--card-bg));
+  border-color: color-mix(in srgb, var(--accent-color) 85%, #14532d);
+  background: color-mix(in srgb, var(--accent-color) 22%, var(--card-bg));
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--accent-color) 42%, transparent),
+    0 18px 36px color-mix(in srgb, var(--accent-color) 26%, rgba(0, 0, 0, 0.14));
+}
+
+.add-on-tile.is-selected:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent-color) 90%, #134e4a);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--accent-color) 48%, transparent),
+    0 20px 40px color-mix(in srgb, var(--accent-color) 30%, rgba(0, 0, 0, 0.16));
+}
+
+.add-on-tile.is-selected .add-on-tile__icon {
+  border-color: color-mix(in srgb, var(--accent-color) 55%, var(--border-color));
+  background: color-mix(in srgb, var(--accent-color) 26%, var(--page-bg));
+}
+
+.add-on-tile.is-selected .add-on-tile__price {
+  border-color: color-mix(in srgb, var(--accent-color) 45%, var(--border-color));
+  background: color-mix(in srgb, var(--accent-color) 32%, var(--page-bg));
+  color: color-mix(in srgb, var(--accent-color) 55%, #14532d);
+}
+
+.add-on-tile.is-selected .add-on-icon {
+  stroke: color-mix(in srgb, var(--accent-color) 88%, #064e3b);
+  stroke-width: 2;
 }
 
 /* Selection is communicated via border + background (no checkbox UI). */
@@ -1286,11 +1313,17 @@
   box-shadow: 0 0 0 4px color-mix(in srgb, #dc2626 16%, transparent);
 }
 
+:host ::ng-deep .form-group:has(.error) input.booking-datetime-input {
+  border-color: color-mix(in srgb, #dc2626 45%, var(--border-color));
+  box-shadow: 0 0 0 4px color-mix(in srgb, #dc2626 16%, transparent);
+}
+
 .form-group:has(.error) label {
   color: color-mix(in srgb, #dc2626 70%, var(--text-color));
 }
 
 .booking-card input:not([type='checkbox']):not([type='radio']):not(.__PrivateStripeElement-input):hover,
+:host ::ng-deep .booking-card input.booking-datetime-input:not([type='checkbox']):not([type='radio']):hover,
 .booking-card select:hover,
 .booking-card textarea:hover {
   border-color: color-mix(in srgb, var(--accent-color) 30%, var(--border-color));
@@ -1491,7 +1524,13 @@
   grid-column: 1 / -1;
 }
 
-.booking-datetime-input {
+/*
+  Flatpickr inserts the visible date/time inputs at runtime without Angular emulated-
+  encapsulation attributes, so selectors like `.booking-datetime-input` alone do not match.
+  Mirror rules with `:host ::ng-deep input.booking-datetime-input`.
+*/
+.booking-datetime-input,
+:host ::ng-deep input.booking-datetime-input {
   cursor: pointer;
   width: 100%;
   box-sizing: border-box;
@@ -1502,6 +1541,7 @@
   background: var(--page-bg);
   color: var(--text-color);
   font: inherit;
+  line-height: 1.35;
   outline: none;
   transition:
     border-color 0.2s ease,
@@ -1516,7 +1556,7 @@
   color: var(--muted-text);
 }
 
-/* Flatpickr uses the input directly for date (no alt input). */
+/* Flatpickr calendar portal (high z-index). */
 
 ::ng-deep .flatpickr-calendar {
   z-index: 20050;
@@ -1812,11 +1852,13 @@ label {
 }
 
 .booking-card input:not([type='checkbox']):not([type='radio']):not(.__PrivateStripeElement-input)::placeholder,
+:host ::ng-deep .booking-card input.booking-datetime-input::placeholder,
 .booking-card textarea::placeholder {
   color: var(--muted-text);
 }
 
 .booking-card input:not([type='checkbox']):not([type='radio']):not(.__PrivateStripeElement-input):focus,
+:host ::ng-deep .booking-card input.booking-datetime-input:focus,
 .booking-card select:focus,
 .booking-card textarea:focus {
   border-color: var(--accent-color);
