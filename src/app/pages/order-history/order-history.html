@@ -4,53 +4,44 @@
       <span class="section-tag">MY BOOKINGS</span>
       <h1>Order history</h1>
       <p>
-        Enter the email you used when booking. We’ll show every reservation we can match from our system.
+        These are bookings we can match to <strong>your account email</strong>. We load them automatically when you open
+        this page.
       </p>
     </header>
 
     <div class="order-history-panel">
-      <form [formGroup]="form" (ngSubmit)="search()" class="order-history-form" novalidate>
-        <label class="order-history-label" for="order-history-email">Email address</label>
-        <div class="order-history-form-row">
-          <input
-            id="order-history-email"
-            type="email"
-            formControlName="email"
-            class="order-history-input"
-            placeholder="you@example.com"
-            autocomplete="email"
-            [attr.aria-invalid]="submitted && form.controls.email.invalid"
-          />
-          <button type="submit" class="btn-view-orders" [disabled]="loading">
-            {{ loading ? 'Loading…' : 'View My Orders' }}
+      @if (accountEmail) {
+        <div class="order-history-account-bar">
+          <div class="order-history-account-bar__text">
+            <span class="order-history-account-bar__label">Your email</span>
+            <span class="order-history-account-bar__email">{{ accountEmail }}</span>
+          </div>
+          <button type="button" class="btn-refresh-orders" (click)="refresh()" [disabled]="loading" aria-label="Refresh orders">
+            {{ loading ? 'Loading…' : 'Refresh' }}
           </button>
         </div>
-        @if (submitted && form.controls.email.errors?.['required']) {
-          <p class="order-history-field-error">Email is required.</p>
-        }
-        @if (submitted && form.controls.email.errors?.['email']) {
-          <p class="order-history-field-error">Please enter a valid email address.</p>
-        }
-      </form>
+      }
 
       @if (errorMessage) {
         <div class="order-history-banner order-history-banner--error" role="alert">{{ errorMessage }}</div>
       }
 
       @if (loading) {
-        <p class="order-history-loading" aria-live="polite">Looking up your orders…</p>
+        <p class="order-history-loading" aria-live="polite">Loading your orders…</p>
       }
 
-      @if (!loading && hasSearched && !errorMessage && rows.length === 0) {
+      @if (!loading && hasLoaded && !errorMessage && rows.length === 0 && accountEmail) {
         <div class="order-history-empty">
           <p class="order-history-empty-title">No orders found for this email.</p>
-          <p class="order-history-empty-hint">Try another email or complete a booking first.</p>
+          <p class="order-history-empty-hint">
+            When you book, use the same email as your account, or your history may not appear here.
+          </p>
         </div>
       }
 
       @if (!loading && rows.length > 0) {
         <p class="order-history-payment-hint">
-          Signed in: payment status is shown when your account can access payment records for linked bookings.
+          Payment status appears when your account can access payment records for linked bookings.
         </p>
 
         <!-- Desktop: table -->

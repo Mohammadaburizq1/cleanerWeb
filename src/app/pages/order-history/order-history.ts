@@ -1,12 +1,12 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { catchError, finalize, map, of, switchMap } from 'rxjs';
 import { BookingService } from '../../core/booking.service';
 import { PaymentsService } from '../../core/payments.service';
 import { AuthService } from '../../core/auth.service';
 import type { BookingDto } from '../../core/booking.dto';
+import type { MeDto } from '../../core/auth.dto';
 import { parseBookingNotesForDisplay, type ParsedBookingNotes } from './booking-notes.util';
 
 /** One row for table/cards (booking + parsed notes + optional payment status). */
@@ -19,55 +19,81 @@ export interface OrderHistoryRow {
 @Component({
   selector: 'app-order-history',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule],
   templateUrl: './order-history.html',
   styleUrl: './order-history.scss',
 })
-export class OrderHistory {
-  private readonly fb = inject(FormBuilder);
+export class OrderHistoryComponent implements OnInit {
   private readonly bookingService = inject(BookingService);
   private readonly paymentsService = inject(PaymentsService);
   private readonly auth = inject(AuthService);
 
-  readonly form = this.fb.nonNullable.group({
-    email: ['', [Validators.required, Validators.email]],
-  });
-
-  submitted = false;
   loading = false;
-  hasSearched = false;
+  /** True after first load attempt finishes (success or error). */
+  hasLoaded = false;
   errorMessage = '';
+  /** Email used for the lookup (from your account). */
+  accountEmail: string | null = null;
   rows: OrderHistoryRow[] = [];
 
-  search(): void {
-    this.submitted = true;
+  ngOnInit(): void {
+    this.loadMyOrders();
+  }
+
+  /** Reload bookings for the signed-in account email. */
+  refresh(): void {
+    this.loadMyOrders();
+  }
+
+  private loadMyOrders(): void {
     this.errorMessage = '';
     this.rows = [];
-
-    if (this.form.invalid) {
-      return;
-    }
-
-    const email = this.form.controls.email.value.trim();
     this.loading = true;
-    this.hasSearched = true;
 
-    this.bookingService
-      .listBookingsByEmail(email)
+    const cached = this.auth.me();
+    const profile$ =
+      cached?.email?.trim() ? of(cached) : this.auth.loadMe().pipe(catchError((err: unknown) => of(null as MeDto | null)));
+
+    profile$
       .pipe(
-        switchMap((bookings) => this.enrichRows(bookings)),
+        switchMap((me) => this.ordersForProfile(me)),
         finalize(() => {
           this.loading = false;
+          this.hasLoaded = true;
         }),
       )
       .subscribe({
         next: (list) => {
           this.rows = list;
         },
-        error: (err: unknown) => {
-          this.errorMessage = this.formatHttpError(err);
-        },
       });
+  }
+
+  /** Loads bookings by account email; sets `accountEmail` or `errorMessage`. */
+  private ordersForProfile(me: MeDto | null) {
+    if (!me) {
+      this.accountEmail = null;
+      this.errorMessage = 'Could not load your account. Please sign in again.';
+      return of<OrderHistoryRow[]>([]);
+    }
+
+    const email = me.email?.trim() ?? '';
+    if (!email) {
+      this.accountEmail = null;
+      this.errorMessage =
+        'Your account does not have an email address on file. Bookings are matched by the email used when you placed an order.';
+      return of<OrderHistoryRow[]>([]);
+    }
+
+    this.accountEmail = email;
+
+    return this.bookingService.listBookingsByEmail(email).pipe(
+      switchMap((bookings) => this.enrichRows(bookings)),
+      catchError((err: unknown) => {
+        this.errorMessage = this.formatHttpError(err);
+        return of<OrderHistoryRow[]>([]);
+      }),
+    );
   }
 
   display(value: string | null | undefined): string {
@@ -98,16 +124,6 @@ export class OrderHistory {
       const tb = new Date(b.date).getTime();
       return (Number.isFinite(tb) ? tb : 0) - (Number.isFinite(ta) ? ta : 0);
     });
-
-    if (!this.auth.isLoggedIn()) {
-      return of(
-        sorted.map((b) => ({
-          booking: b,
-          parsed: parseBookingNotesForDisplay(b.notes),
-          paymentStatus: null as string | null,
-        })),
-      );
-    }
 
     return this.paymentsService.listPayments().pipe(
       map((payments) => {

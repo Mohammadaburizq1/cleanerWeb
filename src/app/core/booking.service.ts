@@ -35,6 +35,7 @@ export class BookingService {
   /**
    * GET /api/Booking/by-email?email=
    * Backend OpenAPI: `/api/Booking/by-email` with query `email`.
+   * Use the signed-in user’s email (from `/api/Auth/me`) for “my orders” — no separate “current user” bookings route required.
    */
   listBookingsByEmail(email: string): Observable<BookingDto[]> {
     const q = (email ?? '').trim();

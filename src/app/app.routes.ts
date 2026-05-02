@@ -9,7 +9,7 @@ import { Signup } from './pages/signup/signup';
 import { Admin } from './pages/admin/admin';
 import { AdminOffers } from './pages/admin-offers/admin-offers';
 import { Offers } from './pages/offers/offers';
-import { OrderHistory } from './pages/order-history/order-history';
+import { OrderHistoryComponent } from './pages/order-history/order-history';
 import { authGuard } from './core/auth.guard';
 
 export const routes: Routes = [
@@ -60,7 +60,7 @@ export const routes: Routes = [
   },
   {
     path: 'order-history',
-    component: OrderHistory,
+    component: OrderHistoryComponent,
     title: 'Order history',
     canActivate: [authGuard],
   },
