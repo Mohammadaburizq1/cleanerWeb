@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
@@ -82,9 +83,14 @@ export class Signup {
           this.errorMessage = result.errors?.join(', ') || 'Sign up failed.';
         }
       },
-      error: () => {
+      error: (err: unknown) => {
         this.loading = false;
-        this.errorMessage = 'Unable to sign up. Please try again.';
+        if (err instanceof HttpErrorResponse && err.status === 0) {
+          this.errorMessage =
+            'The browser could not complete the request (status 0). This is often a CORS issue: the API must allow your site’s origin, or the server may be unreachable. Check the Network tab and your backend CORS settings.';
+        } else {
+          this.errorMessage = 'Unable to sign up. Please try again.';
+        }
       },
     });
   }
