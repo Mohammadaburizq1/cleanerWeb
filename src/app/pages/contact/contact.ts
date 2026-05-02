@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FeedbackService } from '../../core/feedback.service';
 import type { CreateFeedbackDto } from '../../core/feedback.dto';
 
@@ -63,9 +64,17 @@ export class Contact {
         this.feedbackSuccess = true;
         this.feedbackForm.reset({ name: '', rating: 0, comment: '' });
       },
-      error: () => {
+      error: (err: unknown) => {
         this.feedbackSubmitting = false;
-        this.feedbackError = 'Could not submit feedback. Please try again.';
+        if (err instanceof HttpErrorResponse) {
+          const m = err.error?.['message'] ?? err.error?.['title'] ?? err.message;
+          this.feedbackError =
+            typeof m === 'string' && m.trim()
+              ? m
+              : `Could not submit feedback (${err.status}). Check API URL, CORS, and network.`;
+        } else {
+          this.feedbackError = 'Could not submit feedback. Please try again.';
+        }
       },
     });
   }

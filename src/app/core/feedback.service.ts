@@ -19,7 +19,7 @@ export class FeedbackService {
   /** POST /api/Feedback */
   createFeedback(dto: CreateFeedbackDto): Observable<FeedbackDto> {
     const url = joinUrl(this.apiBaseUrl, '/api/Feedback');
-    return this.http.post<FeedbackDto>(url, dto);
+    return this.http.post<FeedbackDto>(url, dto, { headers: this.authHeaders() });
   }
 
   /** GET /api/Feedback?userId&bookingId */

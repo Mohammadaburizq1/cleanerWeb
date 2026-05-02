@@ -2135,6 +2135,17 @@ label {
   color: var(--text-color);
 }
 
+.booking-feedback-error {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fecaca;
+  background: color-mix(in srgb, #ef4444 12%, var(--card-bg));
+  border: 1px solid color-mix(in srgb, #ef4444 28%, var(--border-color));
+}
+
 .booking-feedback-footer {
   display: flex;
   flex-direction: column;

@@ -22,6 +22,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, firstValueFrom, of } from 'rxjs';
 import { PaymentsService } from '../../core/payments.service';
 import { BookingService } from '../../core/booking.service';
+import { FeedbackService } from '../../core/feedback.service';
+import type { CreateFeedbackDto } from '../../core/feedback.dto';
 import { SelectedTasksService } from '../../core/selected-tasks.service';
 import {
   computeServicesQuote,
@@ -114,6 +116,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   private selectedTasksService = inject(SelectedTasksService);
   private paymentsService = inject(PaymentsService);
   private bookingService = inject(BookingService);
+  private feedbackService = inject(FeedbackService);
   private ngZone = inject(NgZone);
 
   // NOTE: Put your Stripe publishable key here (pk_...). Never put the secret key in the frontend.
@@ -298,6 +301,11 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   showBookingFeedbackDialog = false;
   bookingFeedbackPercent: number | null = null;
   bookingFeedbackSubmitted = false;
+  /** Booking id from last successful submission — sent with POST /api/Feedback. */
+  private bookingFeedbackBookingId: string | null = null;
+  private bookingFeedbackGuestName: string | null = null;
+  bookingFeedbackSubmitting = false;
+  bookingFeedbackApiError: string | null = null;
   bookingFeedbackCardInfo: { holder: string; maskedNumber: string; expiry: string } | null = null;
 
   /** Snapshot of selected services shown inside the feedback dialog */
@@ -1218,6 +1226,10 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     this.showBookingFeedbackDialog = false;
     this.bookingFeedbackPercent = null;
     this.bookingFeedbackSubmitted = false;
+    this.bookingFeedbackBookingId = null;
+    this.bookingFeedbackGuestName = null;
+    this.bookingFeedbackSubmitting = false;
+    this.bookingFeedbackApiError = null;
     this.bookingFeedbackSelectedSectionsWithPrices = [];
     this.bookingFeedbackCardInfo = null;
     this.bookingFeedbackProperty = null;
@@ -1377,6 +1389,9 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
 
         this.bookingFeedbackSelectedSectionsWithPrices = sectionsSnapshot;
         this.bookingFeedbackProperty = feedbackPropertySnapshot;
+        this.bookingFeedbackBookingId = createdBooking.id;
+        this.bookingFeedbackGuestName = (payload.fullName ?? '').trim() || null;
+        this.bookingFeedbackApiError = null;
         this.bookingFeedbackCardInfo = {
           holder: (payload.cardHolder ?? '').trim(),
           maskedNumber: `**** **** **** ${pm.last4}`,
@@ -1495,22 +1510,46 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     this.bookingFeedbackPercent = Math.max(0, Math.min(100, value));
   }
 
-  confirmBookingFeedback(): void {
-    this.bookingFeedbackSubmitted = true;
-    void this.router.navigate(['/booking']);
+  async confirmBookingFeedback(): Promise<void> {
+    if (this.bookingFeedbackSubmitting) return;
+    const bookingId = this.bookingFeedbackBookingId;
+    const pct = this.bookingFeedbackPercent ?? 50;
+    const rating = Math.max(1, Math.min(5, Math.floor(pct / 20) + 1));
+    const dto: CreateFeedbackDto = {
+      guestUserName: this.bookingFeedbackGuestName,
+      bookingId,
+      userId: null,
+      rating,
+      comment: `Booking satisfaction slider: ${pct}% (${this.bookingFeedbackHeadline})`,
+    };
+
+    this.bookingFeedbackSubmitting = true;
+    this.bookingFeedbackApiError = null;
+    try {
+      await firstValueFrom(this.feedbackService.createFeedback(dto));
+      this.bookingFeedbackSubmitted = true;
+    } catch (err) {
+      this.bookingFeedbackApiError = this.httpErrorDetail(err);
+    } finally {
+      this.bookingFeedbackSubmitting = false;
+    }
   }
 
   closeBookingFeedbackDialog(): void {
     this.showBookingFeedbackDialog = false;
     this.bookingFeedbackProperty = null;
-    void this.router.navigate(['/booking']);
+    this.bookingFeedbackBookingId = null;
+    this.bookingFeedbackGuestName = null;
+    this.bookingFeedbackApiError = null;
   }
 
   /** Close the success dialog and stay on Booking (e.g. book again). */
   goToServicesFromFeedback(): void {
     this.showBookingFeedbackDialog = false;
     this.bookingFeedbackProperty = null;
-    void this.router.navigate(['/booking']);
+    this.bookingFeedbackBookingId = null;
+    this.bookingFeedbackGuestName = null;
+    this.bookingFeedbackApiError = null;
   }
 
   private toBookingDateIso(date: string, time: string): string {

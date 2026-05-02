@@ -26,6 +26,16 @@
         >
           All
         </button>
+        <button
+          type="button"
+          class="filter-tab"
+          [class.active]="filterStatus === 'refunded'"
+          (click)="setFilter('refunded')"
+          [disabled]="paymentsLoading"
+          [attr.title]="paymentsLoading ? 'Loading payments…' : null"
+        >
+          Refunded
+        </button>
         @for (st of statusOptions; track st) {
           <button
             type="button"

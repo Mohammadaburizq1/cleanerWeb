@@ -192,6 +192,8 @@ export class Admin implements OnInit {
         if (res) {
           const i = this.payments.findIndex((x) => x.paymentId === res.paymentId);
           if (i >= 0) this.payments = [...this.payments.slice(0, i), res, ...this.payments.slice(i + 1)];
+          // Refresh from API so the list reflects the final server state (status, metadata, etc).
+          this.reloadPayments();
         }
       });
   }
@@ -237,6 +239,11 @@ export class Admin implements OnInit {
 
   get filteredBookings(): BookingDto[] {
     if (this.filterStatus === 'all') return this.bookings;
+    if (this.filterStatus === 'refunded') {
+      return this.bookings.filter(
+        (b) => (this.paymentForBooking(b.id)?.status || '').toLowerCase() === 'refunded',
+      );
+    }
     return this.bookings.filter((b) => b.status === this.filterStatus);
   }
 

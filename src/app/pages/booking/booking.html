@@ -993,6 +993,10 @@
           <label for="bookingFeedbackRange" class="booking-feedback-slider-label booking-feedback-slider-label--right">Happy</label>
         </div>
 
+        @if (bookingFeedbackApiError) {
+          <p class="booking-feedback-error" role="alert">{{ bookingFeedbackApiError }}</p>
+        }
+
         @if (bookingFeedbackSubmitted) {
           <p class="booking-feedback-thanks">Thank you for your feedback!</p>
         }
@@ -1018,8 +1022,10 @@
               type="button"
               class="booking-feedback-confirm"
               (click)="$event.stopPropagation(); confirmBookingFeedback()"
+              [disabled]="bookingFeedbackSubmitting"
+              [attr.aria-busy]="bookingFeedbackSubmitting ? 'true' : null"
             >
-              Submit feedback
+              {{ bookingFeedbackSubmitting ? 'Sending…' : 'Submit feedback' }}
             </button>
           }
         </div>
