@@ -117,7 +117,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   private ngZone = inject(NgZone);
 
   // NOTE: Put your Stripe publishable key here (pk_...). Never put the secret key in the frontend.
-  private readonly stripePublishableKey = 'pk_test_51TK1xVRykzBb9Zc11JSb6OI928pjU6S6MGEbL0XTA2VRDrlXYs7kR4t5rEVv8SSdLHQuv3l2cpCkP9isqlQku4dp00UhF9fQxg';
+  private readonly stripePublishableKey = 'pk_live_51TK1xIRw8UyOG4twlWkLGoGT28HeGzWr8nL6Oo9YoUmxtBdzuiiamhAPngF2sx1xPGdiNTFhyER8eRvNbvs12cOm0029Sx483H';
 
   /**
    * Temporary checkout override for testing.
@@ -216,6 +216,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     { label: '3 Cleaners', value: 3 },
   ];
 
+  
   readonly hourOptions: { label: string; value: number }[] = [
     { label: '2 Hours', value: 2 },
     { label: '2.5 Hours', value: 2.5 },
@@ -231,6 +232,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     { label: '7.5 Hours', value: 7.5 },
     { label: '8 Hours', value: 8 },
   ];
+
   /** Number of rooms from Services page */
   numberOfRooms: number | null = null;
   /** Number of bedrooms from Services page */
@@ -584,7 +586,6 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     this.syncCostToState();
   }
 
-  /** Clear add-ons and restore default Step 1 options. */
   resetQuote(): void {
     this.checkedItems = new Set();
     this.expanded = new Set();
