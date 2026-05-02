@@ -5,6 +5,8 @@
   <title>CleaningSite</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Chrome / mobile UI tint -->
+  <meta name="theme-color" content="#2f8f2f">
   <!-- Ensure map tile providers receive a referrer (OSM usage policy). -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,7 +15,9 @@
     href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
     rel="stylesheet"
   >
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <!-- Tab + home screen: file must live at public/images/cleaining_icon.png (square PNG, e.g. 256×256) -->
+  <link rel="icon" type="image/png" href="/images/cleaining_icon.png" />
+  <link rel="apple-touch-icon" href="/images/cleaining_icon.png" />
 </head>
 <body>
   <app-root></app-root>
