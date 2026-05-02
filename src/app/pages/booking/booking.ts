@@ -35,6 +35,7 @@ import {
   QUOTE_PRICE_PER_BATHROOM,
   QUOTE_PRICE_PER_BEDROOM,
 } from '../../core/services-quote';
+import { BUSINESS_CONTACT } from '../../core/contact.constants';
 import { OfferService } from '../../core/offer.service';
 import type { OfferDto } from '../../core/offer.dto';
 import {
@@ -107,6 +108,7 @@ function bookingLocationValidator(group: AbstractControl): ValidationErrors | nu
   styleUrl: './booking.scss',
 })
 export class Booking implements OnInit, AfterViewInit, OnDestroy {
+  readonly contact = BUSINESS_CONTACT;
   private readonly OFFER_STORAGE_KEY = 'selected-offer-id';
   showTermsModal = false;
   private fb = inject(FormBuilder);

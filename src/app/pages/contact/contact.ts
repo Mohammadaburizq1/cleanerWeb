@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FeedbackService } from '../../core/feedback.service';
 import type { CreateFeedbackDto } from '../../core/feedback.dto';
+import { BUSINESS_CONTACT } from '../../core/contact.constants';
 
 @Component({
   selector: 'app-contact',
@@ -12,6 +13,7 @@ import type { CreateFeedbackDto } from '../../core/feedback.dto';
   styleUrl: './contact.scss',
 })
 export class Contact {
+  readonly contact = BUSINESS_CONTACT;
   private fb = inject(FormBuilder);
   private feedbackService = inject(FeedbackService);
 

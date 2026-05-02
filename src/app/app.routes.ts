@@ -6,6 +6,8 @@ import { Contact } from './pages/contact/contact';
 import { Booking } from './pages/booking/booking';
 import { Login } from './pages/login/login';
 import { Signup } from './pages/signup/signup';
+import { ForgotPassword } from './pages/forgot-password/forgot-password';
+import { ResetPassword } from './pages/reset-password/reset-password';
 import { Admin } from './pages/admin/admin';
 import { AdminOffers } from './pages/admin-offers/admin-offers';
 import { Offers } from './pages/offers/offers';
@@ -52,6 +54,16 @@ export const routes: Routes = [
     path: 'login',
     component: Login,
     title: 'Sign in',
+  },
+  {
+    path: 'forgot-password',
+    component: ForgotPassword,
+    title: 'Forgot password',
+  },
+  {
+    path: 'reset-password',
+    component: ResetPassword,
+    title: 'Reset password',
   },
   {
     path: 'signup',

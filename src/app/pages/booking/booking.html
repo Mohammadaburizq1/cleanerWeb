@@ -885,7 +885,10 @@
         We reserve the right to refuse service or terminate access to our Service at our discretion.
         <br /><br />
         <strong>19. Contact Us</strong><br />
-        If you have any questions about these Terms, please contact us.
+        Questions about these Terms:
+        <a [href]="'tel:' + contact.phoneTel">{{ contact.phoneDisplay }}</a>
+        ·
+        <a [href]="'mailto:' + contact.email">{{ contact.email }}</a>
         <br /><br />
         <strong>By booking a service with SUPER MAGIC MOP CLEAN L.L.C, you agree to all Terms listed above.</strong>
       </div>

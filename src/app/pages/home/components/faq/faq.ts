@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { BUSINESS_CONTACT } from '../../../../core/contact.constants';
 import { FaqItem } from '../../models/home.models';
 
 @Component({
@@ -30,8 +31,7 @@ export class Faq {
     },
     {
       question: 'How do I book a cleaning service?',
-      answer:
-        'You can request a quote using the booking form on this page or contact us directly by phone.',
+      answer: `Book online from this site or reach us at ${BUSINESS_CONTACT.phoneDisplay} or ${BUSINESS_CONTACT.email}.`,
     },
   ];
 

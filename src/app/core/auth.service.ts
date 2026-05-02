@@ -3,7 +3,16 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { API_BASE_URL, joinUrl } from './api-base-url';
 import { jsonStr } from './aspnet-json.util';
-import { AuthResultDto, LoginDto, MeDto, RefreshTokenRequestDto, RegisterDto } from './auth.dto';
+import {
+  AuthResultDto,
+  ForgotPasswordRequestDto,
+  ForgotPasswordResponseDto,
+  LoginDto,
+  MeDto,
+  RefreshTokenRequestDto,
+  RegisterDto,
+  ResetPasswordRequestDto,
+} from './auth.dto';
 
 const ACCESS_TOKEN_KEY = 'auth-access-token';
 const REFRESH_TOKEN_KEY = 'auth-refresh-token';
@@ -36,6 +45,27 @@ export class AuthService {
         this.handleAuthResult(result);
         return result;
       })
+    );
+  }
+
+  /** Always 200 for valid requests; does not reveal whether the email exists. */
+  forgotPassword(dto: ForgotPasswordRequestDto): Observable<ForgotPasswordResponseDto> {
+    const url = joinUrl(this.apiBaseUrl, '/api/Auth/forgot-password');
+    return this.http.post<ForgotPasswordResponseDto>(url, dto);
+  }
+
+  /**
+   * Successful reset returns JWTs like login. Invalid/expired token → HTTP 400 with errors in body.
+   */
+  resetPassword(dto: ResetPasswordRequestDto): Observable<AuthResultDto> {
+    const url = joinUrl(this.apiBaseUrl, '/api/Auth/reset-password');
+    return this.http.post<AuthResultDto>(url, dto).pipe(
+      map((result) => {
+        if (result?.success && result.accessToken) {
+          this.handleAuthResult(result);
+        }
+        return result;
+      }),
     );
   }
 

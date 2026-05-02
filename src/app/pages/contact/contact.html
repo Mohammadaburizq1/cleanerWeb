@@ -51,12 +51,12 @@
 
         <div class="info-item">
           <strong>Phone</strong>
-          <p>(502) 000-0000</p>
+          <p><a [href]="'tel:' + contact.phoneTel">{{ contact.phoneDisplay }}</a></p>
         </div>
 
         <div class="info-item">
           <strong>Email</strong>
-          <p>info@supermagicmop.com</p>
+          <p><a [href]="'mailto:' + contact.email">{{ contact.email }}</a></p>
         </div>
 
         <div class="info-item">

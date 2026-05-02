@@ -41,8 +41,12 @@
 
       <ul class="contact">
         <li>📍 Louisville, Kentucky</li>
-        <li>📞 (502) 000-0000</li>
-        <li>✉ info@supermagicmop.com</li>
+        <li>
+          📞 <a [href]="'tel:' + contact.phoneTel">{{ contact.phoneDisplay }}</a>
+        </li>
+        <li>
+          ✉ <a [href]="'mailto:' + contact.email">{{ contact.email }}</a>
+        </li>
       </ul>
     </div>
   </div>

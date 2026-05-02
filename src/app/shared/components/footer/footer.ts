@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { BUSINESS_CONTACT } from '../../../core/contact.constants';
 
 @Component({
   selector: 'app-footer',
@@ -8,4 +9,5 @@ import { Component } from '@angular/core';
 })
 export class Footer {
   currentYear = new Date().getFullYear();
+  readonly contact = BUSINESS_CONTACT;
 }
