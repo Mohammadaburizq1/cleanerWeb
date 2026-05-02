@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { LoginDto } from '../../core/auth.dto';
 
@@ -15,6 +15,7 @@ import { LoginDto } from '../../core/auth.dto';
 export class Login {
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private auth = inject(AuthService);
 
   loginForm = this.fb.group({
@@ -59,7 +60,15 @@ export class Login {
         this.auth.loadMe().subscribe({
           next: () => {
             this.loading = false;
-            this.router.navigate(['/']);
+            const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+            const target =
+              returnUrl &&
+              returnUrl.startsWith('/') &&
+              !returnUrl.startsWith('//') &&
+              !returnUrl.includes(':')
+                ? returnUrl
+                : '/';
+            void this.router.navigateByUrl(target);
           },
           error: () => {
             this.loading = false;

@@ -9,6 +9,8 @@ import { Signup } from './pages/signup/signup';
 import { Admin } from './pages/admin/admin';
 import { AdminOffers } from './pages/admin-offers/admin-offers';
 import { Offers } from './pages/offers/offers';
+import { OrderHistory } from './pages/order-history/order-history';
+import { authGuard } from './core/auth.guard';
 
 export const routes: Routes = [
   {
@@ -55,6 +57,12 @@ export const routes: Routes = [
     path: 'signup',
     component: Signup,
     title: 'Create account',
+  },
+  {
+    path: 'order-history',
+    component: OrderHistory,
+    title: 'Order history',
+    canActivate: [authGuard],
   },
   {
     path: 'admin',

@@ -10,6 +10,9 @@
       <a routerLink="/checklist" routerLinkActive="active" (click)="closeMobileMenu()">Checklist</a>
       <a routerLink="/about" routerLinkActive="active" (click)="closeMobileMenu()">About</a>
       <a routerLink="/contact" routerLinkActive="active" (click)="closeMobileMenu()">Contact</a>
+      @if (isLoggedIn()) {
+        <a routerLink="/order-history" routerLinkActive="active" (click)="closeMobileMenu()">Order history</a>
+      }
       @if (!isLoggedIn()) {
         <a routerLink="/login" routerLinkActive="active" (click)="closeMobileMenu()">Account Login</a>
       }
@@ -65,6 +68,9 @@
       <a routerLink="/checklist" routerLinkActive="active" (click)="closeMobileMenu()">Checklist</a>
       <a routerLink="/about" routerLinkActive="active" (click)="closeMobileMenu()">About</a>
       <a routerLink="/contact" routerLinkActive="active" (click)="closeMobileMenu()">Contact</a>
+      @if (isLoggedIn()) {
+        <a routerLink="/order-history" routerLinkActive="active" (click)="closeMobileMenu()">Order history</a>
+      }
       @if (!isLoggedIn()) {
         <a routerLink="/login" routerLinkActive="active" (click)="closeMobileMenu()">Account Login</a>
       }

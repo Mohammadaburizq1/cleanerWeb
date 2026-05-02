@@ -1,0 +1,166 @@
+<section class="order-history-page">
+  <div class="order-history-container">
+    <header class="order-history-hero">
+      <span class="section-tag">MY BOOKINGS</span>
+      <h1>Order history</h1>
+      <p>
+        Enter the email you used when booking. We’ll show every reservation we can match from our system.
+      </p>
+    </header>
+
+    <div class="order-history-panel">
+      <form [formGroup]="form" (ngSubmit)="search()" class="order-history-form" novalidate>
+        <label class="order-history-label" for="order-history-email">Email address</label>
+        <div class="order-history-form-row">
+          <input
+            id="order-history-email"
+            type="email"
+            formControlName="email"
+            class="order-history-input"
+            placeholder="you@example.com"
+            autocomplete="email"
+            [attr.aria-invalid]="submitted && form.controls.email.invalid"
+          />
+          <button type="submit" class="btn-view-orders" [disabled]="loading">
+            {{ loading ? 'Loading…' : 'View My Orders' }}
+          </button>
+        </div>
+        @if (submitted && form.controls.email.errors?.['required']) {
+          <p class="order-history-field-error">Email is required.</p>
+        }
+        @if (submitted && form.controls.email.errors?.['email']) {
+          <p class="order-history-field-error">Please enter a valid email address.</p>
+        }
+      </form>
+
+      @if (errorMessage) {
+        <div class="order-history-banner order-history-banner--error" role="alert">{{ errorMessage }}</div>
+      }
+
+      @if (loading) {
+        <p class="order-history-loading" aria-live="polite">Looking up your orders…</p>
+      }
+
+      @if (!loading && hasSearched && !errorMessage && rows.length === 0) {
+        <div class="order-history-empty">
+          <p class="order-history-empty-title">No orders found for this email.</p>
+          <p class="order-history-empty-hint">Try another email or complete a booking first.</p>
+        </div>
+      }
+
+      @if (!loading && rows.length > 0) {
+        <p class="order-history-payment-hint">
+          Signed in: payment status is shown when your account can access payment records for linked bookings.
+        </p>
+
+        <!-- Desktop: table -->
+        <div class="order-history-table-wrap" aria-label="Orders table">
+          <table class="order-history-table">
+            <thead>
+              <tr>
+                <th scope="col">Order ID</th>
+                <th scope="col">Customer</th>
+                <th scope="col">Email</th>
+                <th scope="col">Phone</th>
+                <th scope="col">Service / property</th>
+                <th scope="col">Schedule</th>
+                <th scope="col">Home size</th>
+                <th scope="col">Tasks</th>
+                <th scope="col">Date</th>
+                <th scope="col">Time</th>
+                <th scope="col">Address</th>
+                <th scope="col">Status</th>
+                <th scope="col">Total</th>
+                <th scope="col">Payment</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of rows; track row.booking.id) {
+                <tr>
+                  <td class="order-history-mono">{{ row.booking.id }}</td>
+                  <td>{{ display(row.booking.customerFullName) }}</td>
+                  <td>{{ display(row.booking.customerEmail) }}</td>
+                  <td>{{ display(row.booking.customerPhone) }}</td>
+                  <td>{{ display(row.parsed.serviceType) }}</td>
+                  <td>{{ display(row.parsed.schedule) }}</td>
+                  <td>{{ display(row.parsed.homeSize) }}</td>
+                  <td class="order-history-clamp">{{ display(row.parsed.tasks) }}</td>
+                  <td>{{ formatDate(row.booking.date) }}</td>
+                  <td>{{ formatTime(row.booking.date) }}</td>
+                  <td class="order-history-address">{{ display(row.booking.address) }}</td>
+                  <td><span class="order-history-badge">{{ display(row.booking.status) }}</span></td>
+                  <td>{{ display(row.parsed.totalLine) }}</td>
+                  <td>{{ display(row.paymentStatus) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Mobile: cards -->
+        <div class="order-history-cards" aria-label="Orders list">
+          @for (row of rows; track row.booking.id) {
+            <article class="order-card">
+              <div class="order-card__header">
+                <span class="order-card__id order-history-mono">{{ row.booking.id }}</span>
+                <span class="order-history-badge">{{ display(row.booking.status) }}</span>
+              </div>
+              <dl class="order-card__dl">
+                <div class="order-card__row">
+                  <dt>Customer</dt>
+                  <dd>{{ display(row.booking.customerFullName) }}</dd>
+                </div>
+                <div class="order-card__row">
+                  <dt>Email</dt>
+                  <dd>{{ display(row.booking.customerEmail) }}</dd>
+                </div>
+                <div class="order-card__row">
+                  <dt>Phone</dt>
+                  <dd>{{ display(row.booking.customerPhone) }}</dd>
+                </div>
+                <div class="order-card__row">
+                  <dt>Service / property</dt>
+                  <dd>{{ display(row.parsed.serviceType) }}</dd>
+                </div>
+                <div class="order-card__row">
+                  <dt>Schedule</dt>
+                  <dd>{{ display(row.parsed.schedule) }}</dd>
+                </div>
+                <div class="order-card__row">
+                  <dt>Home size</dt>
+                  <dd>{{ display(row.parsed.homeSize) }}</dd>
+                </div>
+                <div class="order-card__row">
+                  <dt>Tasks</dt>
+                  <dd>{{ display(row.parsed.tasks) }}</dd>
+                </div>
+                <div class="order-card__row">
+                  <dt>Date &amp; time</dt>
+                  <dd>{{ formatDate(row.booking.date) }} · {{ formatTime(row.booking.date) }}</dd>
+                </div>
+                <div class="order-card__row">
+                  <dt>Address</dt>
+                  <dd>{{ display(row.booking.address) }}</dd>
+                </div>
+                <div class="order-card__row">
+                  <dt>Total</dt>
+                  <dd>{{ display(row.parsed.totalLine) }}</dd>
+                </div>
+                <div class="order-card__row">
+                  <dt>Payment</dt>
+                  <dd>{{ display(row.paymentStatus) }}</dd>
+                </div>
+              </dl>
+              @if (row.parsed.extraNotes?.trim()) {
+                <details class="order-card__details">
+                  <summary>Additional details</summary>
+                  <pre class="order-card__notes">{{ row.parsed.extraNotes }}</pre>
+                </details>
+              }
+            </article>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</section>

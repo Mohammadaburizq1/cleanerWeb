@@ -32,6 +32,18 @@ export class BookingService {
       .pipe(map((raw) => this.normalizeBooking(raw)));
   }
 
+  /**
+   * GET /api/Booking/by-email?email=
+   * Backend OpenAPI: `/api/Booking/by-email` with query `email`.
+   */
+  listBookingsByEmail(email: string): Observable<BookingDto[]> {
+    const q = (email ?? '').trim();
+    const url = joinUrl(this.apiBaseUrl, '/api/Booking/by-email');
+    return this.http
+      .get<unknown[]>(url, { params: { email: q } })
+      .pipe(map((rows) => (Array.isArray(rows) ? rows.map((r) => this.normalizeBooking(r)) : [])));
+  }
+
   /** POST /api/Booking — body is CreateBookingDto (flat, per OpenAPI). */
   createBooking(dto: CreateBookingDto): Observable<BookingDto> {
     const url = joinUrl(this.apiBaseUrl, '/api/Booking');
