@@ -486,7 +486,8 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
         return;
       }
       this.applySchedulePaymentValidators();
-      queueMicrotask(() => void this.initStripeForCurrentSchedule());
+      // Defer so `@if` card mount exists after switching from subscription → one-time.
+      setTimeout(() => void this.initStripeForCurrentSchedule(), 0);
     });
     this.applySchedulePaymentValidators();
   }
@@ -979,7 +980,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     this.cardElement.update({ style: this.stripeCardStyle(this.isDarkTheme()) });
   }
 
-  /** Weekly / biweekly / monthly use hosted Stripe subscription checkout instead of the Card Element. */
+  /** Weekly / biweekly / monthly — payment card is collected on Stripe Checkout, not via Elements here. */
   isSubscriptionSchedule(): boolean {
     const v = (this.bookingForm.get('schedule')?.value ?? 'one_time').toString();
     return v !== 'one_time';
@@ -1020,8 +1021,14 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   private applySchedulePaymentValidators(): void {
     const cardHolder = this.bookingForm.get('cardHolder');
     if (!cardHolder) return;
-    cardHolder.setValidators([Validators.required, Validators.minLength(2)]);
-    cardHolder.updateValueAndValidity({ emitEvent: false });
+    if (this.isSubscriptionSchedule()) {
+      cardHolder.clearValidators();
+      cardHolder.setValue('', { emitEvent: false });
+      cardHolder.updateValueAndValidity({ emitEvent: false });
+    } else {
+      cardHolder.setValidators([Validators.required, Validators.minLength(2)]);
+      cardHolder.updateValueAndValidity({ emitEvent: false });
+    }
   }
 
   private teardownStripeCard(): void {
@@ -1042,6 +1049,10 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
 
   private async initStripeForCurrentSchedule(): Promise<void> {
     if (!this.stripePublishableKey) return;
+    if (this.isSubscriptionSchedule()) {
+      this.teardownStripeCard();
+      return;
+    }
     if (!this.stripeCardMount) return;
     if (this.cardElement) return;
     await this.initStripe();
@@ -1383,8 +1394,9 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
 
     const skipOneTimePayment = !this.TEST_PAYMENT_MODE && this.total <= 0 && !subscriptionPlan;
 
+    /** Recurring plans: card is collected on Stripe Checkout only — not on this page. */
     const cardRequired =
-      subscriptionPlan ? !this.TEST_PAYMENT_MODE : !skipOneTimePayment;
+      !subscriptionPlan && !skipOneTimePayment && !this.TEST_PAYMENT_MODE;
     if (cardRequired && !this.cardComplete) {
       this.setSubmitError(
         this.cardElementError ??
@@ -1453,9 +1465,6 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
       let pm: { paymentMethodId: string; last4: string; expiryMMYY: string } | null = null;
 
       if (subscriptionPlan) {
-        phase = 'Creating payment method';
-        pm = await this.createPaymentMethod();
-
         phase = 'Starting subscription checkout';
         const meCheckout = await firstValueFrom(this.auth.loadMe());
         if (!meCheckout?.id) {
@@ -1469,7 +1478,6 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
             customerId: meCheckout.id,
             bookingId: createdBooking.id,
             planType: subscriptionPlan,
-            paymentMethodToken: pm.paymentMethodId,
             ...(recurringAmount != null && recurringAmount > 0 ? { recurringAmount } : {}),
             ...(checkoutEmail ? { customerEmail: checkoutEmail } : {}),
           }),

@@ -533,42 +533,52 @@
               }
             </div>
 
-            <div class="form-group form-group-full payment-heading">
-              <h3>Card Information</h3>
-              <p class="booking-card-flow-note">
-                Enter your card details first. Then choose your billing period below—the plan discount is applied based on
-                that period (weekly, biweekly, or monthly).
-              </p>
-            </div>
+            @if (isSubscriptionSchedule()) {
+              <div class="form-group form-group-full payment-heading">
+                <h3>Payment</h3>
+                <p class="booking-card-flow-note">
+                  For weekly, biweekly, or monthly plans you will enter your card on the next screen — secure Stripe
+                  checkout. Choose your billing period below; the plan discount applies to your sub-total.
+                </p>
+              </div>
+            } @else {
+              <div class="form-group form-group-full payment-heading">
+                <h3>Card Information</h3>
+                <p class="booking-card-flow-note">
+                  Enter your card details here for a one-time booking. Then choose your billing period below — select
+                  “One Time” if you do not want a recurring plan.
+                </p>
+              </div>
 
-            <div class="form-group form-group-full">
-              <label for="cardHolder">Card Holder Name</label>
-              <input id="cardHolder" type="text" formControlName="cardHolder" placeholder="Name on card" />
-              @if (submitted && f.cardHolder.errors) {
-                <small class="error">Card holder name is required.</small>
-              }
-            </div>
-
-            <div class="form-group form-group-full">
-              <label class="booking-card-details-label">Card Details</label>
-              <div class="stripe-card-container">
-                <div #stripeCardMount class="stripe-card-element"></div>
-                @if (cardElementError) {
-                  <div class="stripe-card-error">{{ cardElementError }}</div>
+              <div class="form-group form-group-full">
+                <label for="cardHolder">Card Holder Name</label>
+                <input id="cardHolder" type="text" formControlName="cardHolder" placeholder="Name on card" />
+                @if (submitted && f.cardHolder.errors) {
+                  <small class="error">Card holder name is required.</small>
                 }
               </div>
 
-              <p class="stripe-card-tip">
-                Enter the expiry as <strong>MM/YY</strong> (e.g. <strong>12/34</strong>). Click inside the Expiry field in
-                the card box and type both digits.
-              </p>
+              <div class="form-group form-group-full">
+                <label class="booking-card-details-label">Card Details</label>
+                <div class="stripe-card-container">
+                  <div #stripeCardMount class="stripe-card-element"></div>
+                  @if (cardElementError) {
+                    <div class="stripe-card-error">{{ cardElementError }}</div>
+                  }
+                </div>
 
-              @if (cardComplete) {
-                <p class="stripe-card-ok">Card details complete.</p>
-              } @else {
-                <p class="stripe-card-notok">Card details are not complete yet.</p>
-              }
-            </div>
+                <p class="stripe-card-tip">
+                  Enter the expiry as <strong>MM/YY</strong> (e.g. <strong>12/34</strong>). Click inside the Expiry field in
+                  the card box and type both digits.
+                </p>
+
+                @if (cardComplete) {
+                  <p class="stripe-card-ok">Card details complete.</p>
+                } @else {
+                  <p class="stripe-card-notok">Card details are not complete yet.</p>
+                }
+              </div>
+            }
 
             <div class="form-group">
               <label for="schedule">Schedule</label>
@@ -721,8 +731,8 @@
             </button>
             @if (isSubscriptionSchedule()) {
               <p class="booking-payment-hold-note">
-                Your card is confirmed on this page; next, Stripe checkout completes the subscription for your chosen
-                period. Sign in is required for recurring plans.
+                Next, Stripe checkout will collect your card and complete the subscription for your chosen period. Sign in
+                is required for recurring plans.
               </p>
             } @else {
               <p class="booking-payment-hold-note">

@@ -38,7 +38,7 @@ export interface CreateSubscriptionCheckoutDto {
   customerId: string;
   bookingId: string;
   planType: SubscriptionPlanType;
-  /** Stripe PaymentMethod id (`pm_...`) from Elements — send when collected on your site first. */
+  /** Optional `pm_...` if card was collected with Elements before Checkout (omit when card is only entered on Stripe). */
   paymentMethodToken?: string | null;
   /**
    * Optional recurring charge hint for Stripe/backend; if omitted or ≤ 0, server uses booking/default pricing.
