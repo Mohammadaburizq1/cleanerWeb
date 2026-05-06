@@ -9,6 +9,11 @@ export interface CreateBookingDto {
   date: string;
   address: string;
   notes: string | null;
+  /**
+   * When the user is signed in, send fresh `MeDto.id` from GET /api/Auth/me.
+   * Avoids relying only on email matching and prevents backend 400s.
+   */
+  registeredUserId?: string;
 }
 
 export interface BookingDto {

@@ -25,6 +25,7 @@ import { PaymentsService } from '../../core/payments.service';
 import type { SubscriptionPlanType } from '../../core/payments.dto';
 import { AuthService } from '../../core/auth.service';
 import { BookingService } from '../../core/booking.service';
+import type { MeDto } from '../../core/auth.dto';
 import { FeedbackService } from '../../core/feedback.service';
 import type { CreateFeedbackDto } from '../../core/feedback.dto';
 import { SelectedTasksService } from '../../core/selected-tasks.service';
@@ -1396,17 +1397,24 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
       const bookingNotes = this.buildBookingNotes(payload);
       const addressLine = this.resolveServiceAddress(payload);
 
+      /** Fresh profile from GET /api/Auth/me — never trust stale cached id for booking/subscription. */
+      let freshMe: MeDto | null = null;
+      if (this.auth.getAccessToken()) {
+        freshMe = await firstValueFrom(this.auth.loadMe());
+      }
+
       phase = 'Creating booking';
-      const createdBooking = await firstValueFrom(
-        this.bookingService.createBooking({
-          customerFullName: (payload.fullName ?? '').trim(),
-          customerEmail: (payload.email ?? '').trim(),
-          customerPhone: (payload.phone ?? '').trim() || null,
-          date: bookingDateIso,
-          address: addressLine,
-          notes: bookingNotes,
-        }),
-      );
+      const createBookingBody = {
+        customerFullName: (payload.fullName ?? '').trim(),
+        customerEmail: (payload.email ?? '').trim(),
+        customerPhone: (payload.phone ?? '').trim() || null,
+        date: bookingDateIso,
+        address: addressLine,
+        notes: bookingNotes,
+        ...(freshMe?.id ? { registeredUserId: freshMe.id } : {}),
+      };
+
+      const createdBooking = await firstValueFrom(this.bookingService.createBooking(createBookingBody));
       if (!createdBooking.id) {
         throw new Error('Server returned no booking id after POST /api/Booking.');
       }
@@ -1419,19 +1427,18 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
         pm = await this.createPaymentMethod();
 
         phase = 'Starting subscription checkout';
-        let me = this.auth.me();
-        if (!me?.id) {
-          me = await firstValueFrom(this.auth.loadMe());
-        }
-        if (!me?.id) {
+        const meCheckout = await firstValueFrom(this.auth.loadMe());
+        if (!meCheckout?.id) {
           throw new Error('Could not load your account. Sign in and try again.');
         }
+        const recurringAmount = this.total > 0 ? this.total : null;
         const subResp = await firstValueFrom(
           this.paymentsService.createSubscriptionCheckout({
-            customerId: me.id,
+            customerId: meCheckout.id,
             bookingId: createdBooking.id,
             planType: subscriptionPlan,
             paymentMethodToken: pm.paymentMethodId,
+            ...(recurringAmount != null && recurringAmount > 0 ? { recurringAmount } : {}),
           }),
         );
         const checkoutUrl = (subResp.checkoutUrl ?? '').trim();
@@ -1602,13 +1609,20 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   private httpErrorDetail(err: unknown): string {
     if (err instanceof HttpErrorResponse) {
       const body = err.error;
-      if (body && typeof body === 'object' && body !== null && 'errors' in body) {
-        return JSON.stringify((body as { errors: unknown }).errors);
-      }
       if (typeof body === 'string' && body.length > 0) {
         return body;
       }
-      if (body && typeof body === 'object') {
+      if (body && typeof body === 'object' && body !== null) {
+        const o = body as Record<string, unknown>;
+        const pick =
+          (typeof o['message'] === 'string' && o['message'].trim()) ||
+          (typeof o['detail'] === 'string' && o['detail'].trim()) ||
+          (typeof o['title'] === 'string' && o['title'].trim()) ||
+          (typeof o['error'] === 'string' && o['error'].trim());
+        if (pick) return pick;
+        if ('errors' in o && o['errors'] != null) {
+          return JSON.stringify(o['errors']);
+        }
         return JSON.stringify(body);
       }
       return `${err.status} ${err.statusText || ''}`.trim();

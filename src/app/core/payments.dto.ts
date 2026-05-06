@@ -40,6 +40,10 @@ export interface CreateSubscriptionCheckoutDto {
   planType: SubscriptionPlanType;
   /** Stripe PaymentMethod id (`pm_...`) from Elements — send when collected on your site first. */
   paymentMethodToken?: string | null;
+  /**
+   * Optional recurring charge hint for Stripe/backend; if omitted or ≤ 0, server uses booking/default pricing.
+   */
+  recurringAmount?: number | null;
 }
 
 /** Response from POST /api/stripe/create-subscription-checkout */
