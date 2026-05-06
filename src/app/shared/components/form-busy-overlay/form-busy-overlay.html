@@ -1,0 +1,12 @@
+@if (busy()) {
+  <div class="form-busy-overlay" aria-live="polite" aria-busy="true">
+    <div class="form-busy-panel" role="status">
+      <span class="form-busy-spinner" aria-hidden="true"></span>
+      <span class="form-busy-sr">{{ title() }}. Please wait.</span>
+      <p class="form-busy-title">{{ title() }}</p>
+      @if (hint()) {
+        <p class="form-busy-hint">{{ hint() }}</p>
+      }
+    </div>
+  </div>
+}

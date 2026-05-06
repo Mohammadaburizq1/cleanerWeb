@@ -33,9 +33,9 @@ export interface ForgotPasswordRequestDto {
   email: string;
 }
 
-/** Backend returns 200 with an empty body shape (opaque). */
+/** POST /api/Auth/forgot-password — 200 ForgotPasswordResponseDto */
 export interface ForgotPasswordResponseDto {
-  // intentionally loose — API may return {}
+  message: string;
 }
 
 /** POST /api/Auth/reset-password — token min length enforced server-side. */

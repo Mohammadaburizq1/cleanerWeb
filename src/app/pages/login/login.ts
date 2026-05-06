@@ -4,11 +4,12 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { LoginDto } from '../../core/auth.dto';
+import { FormBusyOverlay } from '../../shared/components/form-busy-overlay/form-busy-overlay';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, FormBusyOverlay],
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })

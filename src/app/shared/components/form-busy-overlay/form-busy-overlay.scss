@@ -1,0 +1,74 @@
+.form-busy-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 35000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: color-mix(in srgb, var(--page-bg) 65%, #000 35%);
+  backdrop-filter: blur(4px);
+}
+
+.form-busy-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  max-width: 320px;
+  text-align: center;
+  padding: 28px 24px;
+  border-radius: 18px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+}
+
+.form-busy-spinner {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 4px solid color-mix(in srgb, var(--accent-color) 22%, var(--border-color));
+  border-top-color: var(--accent-color);
+  animation: form-busy-spin 0.7s linear infinite;
+}
+
+@keyframes form-busy-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .form-busy-spinner {
+    animation: none;
+    border-top-color: var(--accent-color);
+    opacity: 0.9;
+  }
+}
+
+.form-busy-title {
+  margin: 4px 0 0;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--accent-color);
+}
+
+.form-busy-hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--text-color) 78%, var(--border-color));
+}
+
+.form-busy-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

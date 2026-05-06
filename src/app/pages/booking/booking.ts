@@ -127,6 +127,8 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   readonly contact = BUSINESS_CONTACT;
   private readonly OFFER_STORAGE_KEY = 'selected-offer-id';
   showTermsModal = false;
+  /** Shown when guest selects weekly/biweekly/monthly — subscription requires sign-in. */
+  showSubscriptionLoginRequiredDialog = false;
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -472,7 +474,17 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
         }
       });
 
-    this.bookingForm.get('schedule')?.valueChanges.subscribe(() => {
+    this.bookingForm.get('schedule')?.valueChanges.subscribe((value) => {
+      const v = (value ?? 'one_time').toString();
+      if (v !== 'one_time' && !this.auth.getAccessToken()) {
+        this.ngZone.run(() => {
+          this.showSubscriptionLoginRequiredDialog = true;
+          this.bookingForm.patchValue({ schedule: 'one_time' }, { emitEvent: false });
+          this.applySchedulePaymentValidators();
+          void this.initStripeForCurrentSchedule();
+        });
+        return;
+      }
       this.applySchedulePaymentValidators();
       queueMicrotask(() => void this.initStripeForCurrentSchedule());
     });
@@ -707,6 +719,15 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
 
   closeTermsModal(): void {
     this.showTermsModal = false;
+  }
+
+  closeSubscriptionLoginRequiredDialog(): void {
+    this.showSubscriptionLoginRequiredDialog = false;
+  }
+
+  goToLoginFromSubscriptionPrompt(): void {
+    this.showSubscriptionLoginRequiredDialog = false;
+    void this.router.navigate(['/login'], { queryParams: { returnUrl: '/booking' } });
   }
 
   /** Selected promotional offer (optional). */

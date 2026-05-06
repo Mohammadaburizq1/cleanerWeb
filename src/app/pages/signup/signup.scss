@@ -115,6 +115,16 @@
 }
 
 
+.form-hint {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--muted-text);
+
+  &--pending {
+    font-style: italic;
+  }
+}
+
 .form-error {
   margin: 0;
   font-size: 13px;

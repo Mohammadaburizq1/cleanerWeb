@@ -5,10 +5,11 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { FeedbackService } from '../../core/feedback.service';
 import type { CreateFeedbackDto } from '../../core/feedback.dto';
 import { BUSINESS_CONTACT } from '../../core/contact.constants';
+import { FormBusyOverlay } from '../../shared/components/form-busy-overlay/form-busy-overlay';
 
 @Component({
   selector: 'app-contact',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormBusyOverlay],
   templateUrl: './contact.html',
   styleUrl: './contact.scss',
 })

@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable, catchError, map, of } from 'rxjs';
 import { API_BASE_URL, joinUrl } from './api-base-url';
 import { jsonStr } from './aspnet-json.util';
 import {
@@ -48,10 +48,42 @@ export class AuthService {
     );
   }
 
-  /** Always 200 for valid requests; does not reveal whether the email exists. */
+  /**
+   * Whether this email can register (not already in use).
+   * Expects `GET /api/Auth/email-available?email=` returning `{ available: boolean }`
+   * or `{ exists: boolean }`. If the endpoint is missing, returns `unknown` (do not block signup).
+   */
+  checkEmailAvailability(
+    email: string,
+  ): Observable<'available' | 'taken' | 'unknown'> {
+    const trimmed = (email ?? '').trim().toLowerCase();
+    if (!trimmed) return of<'available' | 'taken' | 'unknown'>('unknown');
+    const url = joinUrl(this.apiBaseUrl, '/api/Auth/email-available');
+    return this.http.get<unknown>(url, { params: { email: trimmed } }).pipe(
+      map((raw): 'available' | 'taken' | 'unknown' => {
+        if (raw && typeof raw === 'object') {
+          const o = raw as Record<string, unknown>;
+          const avail = o['available'] ?? o['Available'];
+          const exists = o['exists'] ?? o['Exists'];
+          if (typeof avail === 'boolean') return avail ? 'available' : 'taken';
+          if (typeof exists === 'boolean') return exists ? 'taken' : 'available';
+        }
+        return 'unknown';
+      }),
+      catchError((): Observable<'available' | 'taken' | 'unknown'> =>
+        of<'available' | 'taken' | 'unknown'>('unknown')),
+    );
+  }
+
+  /** POST /api/Auth/forgot-password — body `{ email }`; 200 returns `{ message }` per OpenAPI. */
   forgotPassword(dto: ForgotPasswordRequestDto): Observable<ForgotPasswordResponseDto> {
     const url = joinUrl(this.apiBaseUrl, '/api/Auth/forgot-password');
-    return this.http.post<ForgotPasswordResponseDto>(url, dto);
+    const body = { email: (dto.email ?? '').trim() };
+    return this.http.post<unknown>(url, body).pipe(
+      map((raw) => ({
+        message: jsonStr(raw, 'message', 'Message').trim(),
+      })),
+    );
   }
 
   /**

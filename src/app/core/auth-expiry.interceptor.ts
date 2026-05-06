@@ -22,7 +22,9 @@ export const authExpiryInterceptor: HttpInterceptorFn = (req, next) => {
       const status = res?.status ?? 0;
       const url = req.urlWithParams || '';
 
-      const isLoginOrRegister = /\/api\/Auth\/(login|register)\b/i.test(url);
+      const isPublicAuthEndpoint = /\/api\/Auth\/(login|register|forgot-password|reset-password)\b/i.test(
+        url,
+      );
       const isMe = /\/api\/Auth\/me\b/i.test(url);
       const isRefresh = /\/api\/Auth\/refresh\b/i.test(url);
 
@@ -30,8 +32,8 @@ export const authExpiryInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => err);
       }
 
-      // Wrong password / duplicate email — never clear an existing session.
-      if (isLoginOrRegister) {
+      // Wrong credentials / duplicate email / invalid reset token — never wipe session or redirect away.
+      if (isPublicAuthEndpoint) {
         return throwError(() => err);
       }
 

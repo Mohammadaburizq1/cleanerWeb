@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { QuoteService } from '../../../../core/quote.service';
 import type { CreateQuoteRequestDto } from '../../../../core/quote.dto';
+import { FormBusyOverlay } from '../../../../shared/components/form-busy-overlay/form-busy-overlay';
 
 @Component({
   selector: 'app-booking-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormBusyOverlay],
   templateUrl: './booking-form.html',
   styleUrl: './booking-form.scss',
 })

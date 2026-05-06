@@ -34,8 +34,22 @@
               placeholder="you@example.com"
               autocomplete="email"
             />
-            @if ((submitted || email?.touched) && email?.invalid && email?.dirty) {
+            @if (email?.pending) {
+              <p class="form-hint form-hint--pending">Checking if this email is available…</p>
+            }
+            @if ((submitted || email?.touched) && email?.errors?.['required']) {
+              <p class="form-error">Email is required.</p>
+            }
+            @if (
+              (submitted || email?.touched) &&
+              email?.dirty &&
+              email?.errors?.['email'] &&
+              !email?.errors?.['required']
+            ) {
               <p class="form-error">Please enter a valid email address.</p>
+            }
+            @if ((submitted || email?.touched) && email?.errors?.['emailTaken'] && email?.dirty) {
+              <p class="form-error">This email is already registered. Sign in or use a different email.</p>
             }
           </div>
 
@@ -101,4 +115,10 @@
       </div>
     </div>
   </div>
+
+  <app-form-busy-overlay
+    [busy]="loading"
+    title="Creating your account…"
+    hint="This may take a few seconds."
+  />
 </section>
