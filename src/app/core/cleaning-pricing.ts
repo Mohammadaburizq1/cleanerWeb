@@ -1,8 +1,8 @@
 export type HomeSqFtTier = { id: string; label: string; basePriceUsd: number };
 
 /**
- * Single source of truth for cleaning pricing (no discounts).
- * All UI + quote + booking + payment totals should use these values.
+ * Single source of truth for base cleaning pricing and subscription plan discounts.
+ * Promotional offers from the API are separate (booking page).
  */
 export const CLEANING_PRICING = {
   currency: 'USD' as const,
@@ -40,7 +40,27 @@ export const CLEANING_PRICING = {
     smallAcCleaningUsd: 7,
     everyExtra30MinutesUsd: 20,
   },
+
+  /**
+   * Recurring booking schedule: percent off the quote sub-total (before optional promo offer).
+   * Form values: weekly / biweekly / monthly (one_time → no plan discount).
+   */
+  subscriptionPlanDiscountPercent: {
+    weekly: 45,
+    biweekly: 35,
+    monthly: 25,
+  },
 } as const;
+
+/** Percent off sub-total for the booking form `schedule` control (0 for one_time / unknown). */
+export function subscriptionDiscountPercentForSchedule(schedule: string | null | undefined): number {
+  const v = (schedule ?? '').toString().trim();
+  const d = CLEANING_PRICING.subscriptionPlanDiscountPercent;
+  if (v === 'weekly') return d.weekly;
+  if (v === 'biweekly') return d.biweekly;
+  if (v === 'monthly') return d.monthly;
+  return 0;
+}
 
 export function homeSqFtTierById(id: string | null | undefined): HomeSqFtTier | undefined {
   const v = (id ?? '').trim();

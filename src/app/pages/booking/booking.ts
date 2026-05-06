@@ -45,6 +45,7 @@ import {
   CLEANING_CHECKLIST_SECTIONS,
   type ChecklistSection,
 } from '../../core/cleaning-checklist.data';
+import { subscriptionDiscountPercentForSchedule } from '../../core/cleaning-pricing';
 import {
   loadStripe,
   type Stripe,
@@ -964,14 +965,10 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
 
   /**
    * Percent off the quote sub-total for recurring schedules (before optional promotional offer).
-   * Weekly 45%, biweekly 35%, monthly 25%.
+   * Values live in `CLEANING_PRICING.subscriptionPlanDiscountPercent` (weekly 45%, biweekly 35%, monthly 25%).
    */
   get subscriptionDiscountPercent(): number {
-    const v = (this.bookingForm.get('schedule')?.value ?? 'one_time').toString();
-    if (v === 'weekly') return 45;
-    if (v === 'biweekly') return 35;
-    if (v === 'monthly') return 25;
-    return 0;
+    return subscriptionDiscountPercentForSchedule(this.bookingForm.get('schedule')?.value);
   }
 
   /** Currency amount saved by the subscription plan discount (applied to full sub-total). */
