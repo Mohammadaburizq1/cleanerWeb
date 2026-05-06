@@ -95,10 +95,10 @@
                   <td>{{ display(row.parsed.totalLine) }}</td>
                   <td>{{ display(row.paymentStatus) }}</td>
                   <td class="order-history-actions">
-                    @if (isSubscriptionBooking(row)) {
-                      @if (isSubscriptionCanceled(row)) {
-                        <span class="order-history-canceled">Canceled</span>
-                      } @else if (canCancelSubscription(row)) {
+                    @if (isSubscriptionCanceled(row)) {
+                      <span class="order-history-canceled">Canceled</span>
+                    } @else if (isSubscriptionBooking(row)) {
+                      @if (canCancelSubscription(row)) {
                         <button
                           type="button"
                           class="btn-cancel-subscription"
@@ -173,7 +173,7 @@
                   <dt>Payment</dt>
                   <dd>{{ display(row.paymentStatus) }}</dd>
                 </div>
-                @if (isSubscriptionBooking(row)) {
+                @if (isSubscriptionCanceled(row) || isSubscriptionBooking(row)) {
                   <div class="order-card__row order-card__row--actions">
                     <dt>Subscription</dt>
                     <dd>

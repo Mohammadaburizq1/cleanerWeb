@@ -59,13 +59,20 @@ export class OrderHistoryComponent implements OnInit {
     this.loadMyOrders();
   }
 
+  /** Normalize booking id — API may vary GUID casing vs localStorage. */
+  private normBookingId(id: string): string {
+    return id.trim().toLowerCase();
+  }
+
   private loadCancelledSubscriptionIdsFromStorage(): void {
     try {
       const raw = localStorage.getItem(this.LS_CANCELLED_SUB_IDS);
       const parsed = raw ? (JSON.parse(raw) as unknown) : [];
       if (Array.isArray(parsed)) {
         this.cancelledSubscriptionBookingIds = new Set(
-          parsed.filter((x): x is string => typeof x === 'string' && x.length > 0),
+          parsed
+            .filter((x): x is string => typeof x === 'string' && x.length > 0)
+            .map((x) => this.normBookingId(x)),
         );
       }
     } catch {
@@ -87,6 +94,7 @@ export class OrderHistoryComponent implements OnInit {
   }
 
   private loadMyOrders(): void {
+    this.loadCancelledSubscriptionIdsFromStorage();
     this.errorMessage = '';
     this.rows = [];
     this.loading = true;
@@ -167,10 +175,14 @@ export class OrderHistoryComponent implements OnInit {
     return bookingLooksLikeSubscription(row.booking, row.parsed);
   }
 
-  /** Subscription row already cancelled (API notes/status or successful cancel in this browser). */
+  /**
+   * Subscription row already cancelled (API notes/status or successful cancel in this browser).
+   * Check persisted IDs first — after GET refresh, `discountPercent`/notes may not parse as subscription,
+   * which previously hid "Canceled" even though we stored the booking id on successful POST cancel.
+   */
   isSubscriptionCanceled(row: OrderHistoryRow): boolean {
+    if (this.cancelledSubscriptionBookingIds.has(this.normBookingId(row.booking.id))) return true;
     if (!bookingLooksLikeSubscription(row.booking, row.parsed)) return false;
-    if (this.cancelledSubscriptionBookingIds.has(row.booking.id)) return true;
     return subscriptionCancellationIndicatedFromBooking(row.booking);
   }
 
@@ -206,7 +218,7 @@ export class OrderHistoryComponent implements OnInit {
         type: 'ok',
         text: res.message?.trim() || 'Subscription cancellation requested.',
       };
-      this.cancelledSubscriptionBookingIds.add(row.booking.id);
+      this.cancelledSubscriptionBookingIds.add(this.normBookingId(row.booking.id));
       this.persistCancelledSubscriptionIds();
       this.refresh();
     } catch (err: unknown) {
