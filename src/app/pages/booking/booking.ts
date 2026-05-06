@@ -1425,6 +1425,12 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
       }
 
       phase = 'Creating booking';
+      const tierForBase = homeSqFtTierById(this.homeSqFtTierId);
+      const tierBase =
+        tierForBase != null ? Math.round(tierForBase.basePriceUsd * 100) / 100 : undefined;
+      const round2 = (n: number) => Math.round(n * 100) / 100;
+
+      /** Matches OpenAPI CreateBookingDto: `total`, `discountPercent`; optional `baseAmount` for tier floor. */
       const createBookingBody = {
         customerFullName: (payload.fullName ?? '').trim(),
         customerEmail: (payload.email ?? '').trim(),
@@ -1433,6 +1439,9 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
         address: addressLine,
         notes: bookingNotes,
         ...(freshMe?.id ? { registeredUserId: freshMe.id } : {}),
+        discountPercent: this.subscriptionDiscountPercent,
+        total: round2(this.total),
+        ...(tierBase != null ? { baseAmount: tierBase } : {}),
       };
 
       const createdBooking = await firstValueFrom(this.bookingService.createBooking(createBookingBody));
@@ -1453,6 +1462,8 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
           throw new Error('Could not load your account. Sign in and try again.');
         }
         const recurringAmount = this.total > 0 ? this.total : null;
+        const checkoutEmail =
+          (payload.email ?? '').trim() || (meCheckout.email ?? '').trim() || undefined;
         const subResp = await firstValueFrom(
           this.paymentsService.createSubscriptionCheckout({
             customerId: meCheckout.id,
@@ -1460,12 +1471,15 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
             planType: subscriptionPlan,
             paymentMethodToken: pm.paymentMethodId,
             ...(recurringAmount != null && recurringAmount > 0 ? { recurringAmount } : {}),
+            ...(checkoutEmail ? { customerEmail: checkoutEmail } : {}),
           }),
         );
         const checkoutUrl = (subResp.checkoutUrl ?? '').trim();
         if (!checkoutUrl) {
           throw new Error('The server did not return a Stripe checkout URL.');
         }
+        /** Subscription flow skips the post-pay cleanup block — clear persisted quote before leaving for Stripe. */
+        this.selectedTasksService.clearAll();
         window.location.assign(checkoutUrl);
         return;
       }
@@ -1752,6 +1766,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     try {
       await firstValueFrom(this.feedbackService.createFeedback(dto));
       this.bookingFeedbackSubmitted = true;
+      this.selectedTasksService.clearAll();
     } catch (err) {
       this.bookingFeedbackApiError = this.httpErrorDetail(err);
     } finally {
@@ -1761,6 +1776,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
 
   closeBookingFeedbackDialog(): void {
     this.showBookingFeedbackDialog = false;
+    this.selectedTasksService.clearAll();
     this.bookingFeedbackProperty = null;
     this.bookingFeedbackPricing = null;
     this.bookingFeedbackBookingId = null;
@@ -1773,6 +1789,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   /** Close the success dialog and stay on Booking (e.g. book again). */
   goToServicesFromFeedback(): void {
     this.showBookingFeedbackDialog = false;
+    this.selectedTasksService.clearAll();
     this.bookingFeedbackProperty = null;
     this.bookingFeedbackPricing = null;
     this.bookingFeedbackBookingId = null;
@@ -1860,6 +1877,25 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
           : '';
       lines.push(`Promotional offer: ${promo.title}${pct}`);
     }
+
+    const cur = this.currency;
+    lines.push(`Pricing (${cur}): Full quote sub-total ${this.subTotal.toFixed(2)}`);
+    const planPct = this.subscriptionDiscountPercent;
+    if (planPct > 0 && this.subscriptionDiscountAmount > 0) {
+      lines.push(
+        `After subscription plan (${planPct}%): sub-total ${this.subTotalAfterSubscriptionDiscount.toFixed(2)} (saved ${this.subscriptionDiscountAmount.toFixed(2)})`,
+      );
+    }
+    if (this.promoDiscountAmount > 0) {
+      lines.push(
+        `After promo: ${this.subTotalAfterPromo.toFixed(2)} (promo discount ${this.promoDiscountAmount.toFixed(2)})`,
+      );
+    }
+    if (this.salesTax > 0) {
+      lines.push(`Sales tax: ${this.salesTax.toFixed(2)}`);
+    }
+    lines.push(`Total due (what customer pays): ${this.total.toFixed(2)} ${cur}`);
+
     const extra = (payload.notes ?? '').trim();
     if (extra) lines.push(`Notes: ${extra}`);
     const text = lines.filter(Boolean).join('\n');

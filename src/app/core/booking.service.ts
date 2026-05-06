@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { API_BASE_URL, joinUrl } from './api-base-url';
 import { AuthService } from './auth.service';
-import { jsonStr, jsonStrNull } from './aspnet-json.util';
+import { jsonOptionalNum, jsonStr, jsonStrNull } from './aspnet-json.util';
 import { BookingDto, CreateBookingDto } from './booking.dto';
 
 @Injectable({ providedIn: 'root' })
@@ -54,6 +54,11 @@ export class BookingService {
   }
 
   private normalizeBooking(raw: unknown): BookingDto {
+    const baseAmount = jsonOptionalNum(raw, 'baseAmount', 'BaseAmount');
+    const discountPercent = jsonOptionalNum(raw, 'discountPercent', 'DiscountPercent');
+    const total = jsonOptionalNum(raw, 'total', 'Total');
+    const registeredUserIdRaw = jsonStrNull(raw, 'registeredUserId', 'RegisteredUserId');
+
     return {
       id: jsonStr(raw, 'id', 'Id'),
       date: jsonStr(raw, 'date', 'Date'),
@@ -63,6 +68,10 @@ export class BookingService {
       customerPhone: jsonStrNull(raw, 'customerPhone', 'CustomerPhone'),
       notes: jsonStrNull(raw, 'notes', 'Notes'),
       status: jsonStr(raw, 'status', 'Status'),
+      ...(baseAmount !== undefined ? { baseAmount } : {}),
+      ...(discountPercent !== undefined ? { discountPercent } : {}),
+      ...(total !== undefined ? { total } : {}),
+      ...(registeredUserIdRaw != null ? { registeredUserId: registeredUserIdRaw } : {}),
     };
   }
 }

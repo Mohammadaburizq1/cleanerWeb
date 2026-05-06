@@ -44,6 +44,11 @@ export interface CreateSubscriptionCheckoutDto {
    * Optional recurring charge hint for Stripe/backend; if omitted or ≤ 0, server uses booking/default pricing.
    */
   recurringAmount?: number | null;
+  /**
+   * Booking / account email — backend should set Stripe Checkout Session `customer_email` so Checkout
+   * pre-fills contact info (user may still see the field; Stripe uses it for receipts).
+   */
+  customerEmail?: string | null;
 }
 
 /** Response from POST /api/stripe/create-subscription-checkout */

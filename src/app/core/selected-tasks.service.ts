@@ -273,6 +273,10 @@ export class SelectedTasksService {
     this.homeSqFtTierId = null;
     this.estimatedCost = 0;
     this.selectedSectionsWithPrices = [];
-    this.saveToStorage();
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      this.saveToStorage();
+    }
   }
 }
