@@ -27,6 +27,7 @@ export class Contact {
 
   feedbackForm = this.fb.group({
     name: ['', Validators.required],
+    email: ['', Validators.email],
     rating: [0, [Validators.required, Validators.min(1), Validators.max(5)]],
     comment: [''],
   });
@@ -51,9 +52,10 @@ export class Contact {
     }
     this.feedbackError = null;
     this.feedbackSuccess = false;
-    const { name, rating, comment } = this.feedbackForm.getRawValue();
+    const { name, email, rating, comment } = this.feedbackForm.getRawValue();
     const dto: CreateFeedbackDto = {
       guestUserName: (name ?? '').trim() || null,
+      guestEmail: (email ?? '').trim() || null,
       bookingId: null,
       userId: null,
       rating: rating ?? 1,
@@ -64,7 +66,7 @@ export class Contact {
       next: () => {
         this.feedbackSubmitting = false;
         this.feedbackSuccess = true;
-        this.feedbackForm.reset({ name: '', rating: 0, comment: '' });
+        this.feedbackForm.reset({ name: '', email: '', rating: 0, comment: '' });
       },
       error: (err: unknown) => {
         this.feedbackSubmitting = false;

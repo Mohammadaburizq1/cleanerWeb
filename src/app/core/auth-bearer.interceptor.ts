@@ -30,7 +30,8 @@ export const authBearerInterceptor: HttpInterceptorFn = (req, next) => {
     return next(req);
   }
 
-  const publicNoBearer = /\/api\/Auth\/(login|register|forgot-password|reset-password)\b/i.test(url);
+  // Public endpoints: never attach stale/invalid tokens.
+  const publicNoBearer = /\/api\/Auth\/(login|register|forgot-password|reset-password)\b/i.test(url) || /\/api\/Feedback\b/i.test(url);
   if (publicNoBearer) {
     return next(req);
   }

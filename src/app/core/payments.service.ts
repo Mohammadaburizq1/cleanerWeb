@@ -9,6 +9,8 @@ import {
   ConfirmStripePaymentRequest,
   CreatePaymentRequest,
   CreatePaymentResponse,
+  CreateSubscriptionCheckoutDto,
+  CreateSubscriptionCheckoutResponseDto,
   PaymentDto,
 } from './payments.dto';
 
@@ -21,6 +23,18 @@ export class PaymentsService {
   private authHeaders(): Record<string, string> {
     const token = this.auth.getAccessToken();
     return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
+  /** POST /api/stripe/create-subscription-checkout — Stripe Billing checkout session URL. */
+  createSubscriptionCheckout(
+    dto: CreateSubscriptionCheckoutDto,
+  ): Observable<CreateSubscriptionCheckoutResponseDto> {
+    const url = joinUrl(this.apiBaseUrl, '/api/stripe/create-subscription-checkout');
+    return this.http.post<unknown>(url, dto, { headers: this.authHeaders() }).pipe(
+      map((raw) => ({
+        checkoutUrl: jsonStr(raw, 'checkoutUrl', 'CheckoutUrl'),
+      })),
+    );
   }
 
   /** POST /api/Payments — flat CreatePaymentRequest (OpenAPI). */

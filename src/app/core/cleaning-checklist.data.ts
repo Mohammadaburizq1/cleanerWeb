@@ -17,7 +17,7 @@ export const INCLUDED_STANDARD_SECTION_COUNT = 3;
 export const CLEANING_CHECKLIST_SECTIONS: ChecklistSection[] = [
   {
     title: 'Kitchen',
-    pricePerTask: 1,
+    pricePerTask: 0,
     items: [
       'Empty Trash',
       'Dust from Top to Bottom',
@@ -42,7 +42,7 @@ export const CLEANING_CHECKLIST_SECTIONS: ChecklistSection[] = [
   },
   {
     title: 'Living Areas & Bedroom',
-    pricePerTask: 1,
+    pricePerTask: 0,
     items: [
       'Dust from Top to Bottom',
       'Dust Light Fixtures and Fans',
@@ -63,7 +63,7 @@ export const CLEANING_CHECKLIST_SECTIONS: ChecklistSection[] = [
   },
   {
     title: 'Bathrooms',
-    pricePerTask: 1,
+    pricePerTask: 0,
     items: [
       'Dust from Top to Bottom',
       'Dust Light Fixtures and Fans',

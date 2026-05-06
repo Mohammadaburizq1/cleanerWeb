@@ -16,8 +16,6 @@ import {
 } from '../../core/services-quote';
 import type { ReceiptLine } from '../../core/selected-tasks.service';
 import { type SelectedTask, SelectedTasksService } from '../../core/selected-tasks.service';
-import { OfferService } from '../../core/offer.service';
-import type { OfferDto } from '../../core/offer.dto';
 import { catchError, of } from 'rxjs';
 
 @Component({
@@ -28,20 +26,18 @@ import { catchError, of } from 'rxjs';
   styleUrl: './services.scss',
 })
 export class Services implements OnInit {
-  private readonly OFFER_STORAGE_KEY = 'selected-offer-id';
   readonly sectionTag = 'Get a quote';
   readonly mainHeading = 'Get A Quote and Complete Your Booking';
   readonly intro =
     'We’re transparent about what we do. Standard cleaning tasks live on the Checklist page in the menu; here you can get a quote and add optional upgrades.';
 
-    readonly bedroomOptions: { label: string; value: number }[] = [
+  readonly bedroomOptions: { label: string; value: number }[] = [
     { label: 'One Bedroom Home', value: 1 },
     { label: 'Two Bedroom Home', value: 2 },
     { label: 'Three Bedroom Home', value: 3 },
     { label: 'Four Bedroom Home', value: 4 },
     { label: 'Five Bedroom Home', value: 5 },
     { label: 'Six Bedroom Home', value: 6 },
-    { label: 'Hourly Service', value: 0 },
   ];
 
   readonly bathroomOptions: { label: string; value: number }[] = [
@@ -100,8 +96,8 @@ export class Services implements OnInit {
   homeSqFtTierId: string | null = null;
 
   readonly homeSqFtTierOptions = HOME_SQ_FT_TIERS;
+  /** Pets surcharge shown in UI hint and included in quote when checked. */
   readonly petSurchargeJd = QUOTE_PET_SURCHARGE_JD;
-
   /** Base quote: per bedroom and per bathroom (Step 1 drives the total). */
   readonly pricePerBedroom = QUOTE_PRICE_PER_BEDROOM;
   readonly pricePerBathroom = QUOTE_PRICE_PER_BATHROOM;
@@ -112,17 +108,12 @@ export class Services implements OnInit {
   /** Sales tax rate. Set to 0 to disable tax. */
   readonly salesTaxRate = 0;
 
-  /** Active offers from GET /api/Offer — optional promo on this booking/quote */
-  availableOffers: OfferDto[] = [];
-  selectedOfferId: string | null = null;
-
   /** Set when redirected from Booking because quote total was zero */
   bookingRedirectNotice: string | null = null;
 
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private selectedTasksService = inject(SelectedTasksService);
-  private offerService = inject(OfferService);
 
   ngOnInit(): void {
     const st = history.state as { bookingRedirectReason?: string } | null;
@@ -137,6 +128,11 @@ export class Services implements OnInit {
     this.numberOfBathrooms = this.selectedTasksService.getNumberOfBathrooms();
     // Default quote step: 1 Bedroom, 1 Bathroom
     if (this.numberOfBedrooms == null || this.numberOfBedrooms < 0) {
+      this.numberOfBedrooms = 1;
+      this.selectedTasksService.setNumberOfBedrooms(1);
+    }
+    // Hourly Service is disabled — normalize any persisted 0 to 1.
+    if (this.numberOfBedrooms === 0) {
       this.numberOfBedrooms = 1;
       this.selectedTasksService.setNumberOfBedrooms(1);
     }
@@ -163,58 +159,12 @@ export class Services implements OnInit {
       this.selectedTasksService.setHomeSqFtTierId(this.homeSqFtTierId);
     }
 
-    // Load offers + read offer id from query param (?offer=...)
-    this.offerService
-      .listPublicOffers()
-      .pipe(catchError(() => of([])))
-      .subscribe((rows) => {
-        this.availableOffers = rows;
-        const q = (this.route.snapshot.queryParamMap.get('offer') ?? '').trim();
-        const stored = (localStorage.getItem(this.OFFER_STORAGE_KEY) ?? '').trim();
-        const candidate = q || stored;
-
-        if (candidate && rows.some((r) => r.id === candidate)) {
-          this.selectedOfferId = candidate;
-          localStorage.setItem(this.OFFER_STORAGE_KEY, candidate);
-        } else {
-          this.selectedOfferId = null;
-          localStorage.removeItem(this.OFFER_STORAGE_KEY);
-        }
-      });
-
     this.syncCostToService();
-  }
-
-  get selectedOffer(): OfferDto | null {
-    if (!this.selectedOfferId) return null;
-    return this.availableOffers.find((o) => o.id === this.selectedOfferId) ?? null;
-  }
-
-  get offerDiscountPercent(): number {
-    const p = this.selectedOffer?.discountPercent;
-    if (p == null || p <= 0) return 0;
-    return Math.min(100, p);
-  }
-
-  get discountAmount(): number {
-    if (this.offerDiscountPercent <= 0) return 0;
-    const raw = this.subTotal * (this.offerDiscountPercent / 100);
-    return Math.round(raw * 100) / 100;
-  }
-
-  get subTotalAfterDiscount(): number {
-    return Math.max(0, Math.round((this.subTotal - this.discountAmount) * 100) / 100);
-  }
-
-  get totalAfterDiscount(): number {
-    // salesTaxRate is 0, but keep consistent formula
-    const tax = Math.round(this.subTotalAfterDiscount * this.salesTaxRate * 100) / 100;
-    return Math.round((this.subTotalAfterDiscount + tax) * 100) / 100;
   }
 
   /** True when user selected "Hourly Service" (bedrooms = 0) */
   get isHourlyService(): boolean {
-    return (this.numberOfBedrooms ?? 0) === 0;
+    return false;
   }
 
   private syncCostToService(): void {
@@ -330,7 +280,7 @@ export class Services implements OnInit {
   get homeBaseTotal(): number {
     if (this.isHourlyService) return 0;
     const tier = homeSqFtTierById(this.homeSqFtTierId);
-    const base = tier?.surchargeJd ?? 0;
+    const base = tier?.basePriceUsd ?? 0;
     const beds = Math.max(1, this.numberOfBedrooms ?? 1);
     const baths = Math.max(1, this.numberOfBathrooms ?? 1);
     const extraBeds = Math.max(0, beds - 1);
@@ -341,7 +291,7 @@ export class Services implements OnInit {
   get homeSizeBaseOnly(): number {
     if (this.isHourlyService) return 0;
     const tier = homeSqFtTierById(this.homeSqFtTierId);
-    return tier?.surchargeJd ?? 0;
+    return tier?.basePriceUsd ?? 0;
   }
 
   get extraBedroomsCount(): number {
@@ -460,10 +410,7 @@ export class Services implements OnInit {
     this.selectedTasksService.setHasPets(this.hasPets);
     this.selectedTasksService.setHomeSqFtTierId(this.homeSqFtTierId);
     this.syncCostToService();
-    if (this.selectedOfferId) localStorage.setItem(this.OFFER_STORAGE_KEY, this.selectedOfferId);
-    else localStorage.removeItem(this.OFFER_STORAGE_KEY);
     this.router.navigate(['/booking'], {
-      queryParams: this.selectedOfferId ? { offer: this.selectedOfferId } : undefined,
       state: {
         selectedTasks,
         numberOfRooms: this.numberOfRooms,
@@ -475,7 +422,6 @@ export class Services implements OnInit {
         homeSqFtTierId: this.homeSqFtTierId,
         estimatedCost: this.estimatedCost,
         currency: this.currency,
-        offerId: this.selectedOfferId,
         selectedSectionsWithPrices: this.receiptLines.map((line) => ({ ...line })),
       },
     });

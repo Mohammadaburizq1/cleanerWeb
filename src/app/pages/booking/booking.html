@@ -41,47 +41,44 @@
                 <span class="booking-summary-icon" aria-hidden="true">↻</span>
                 <span>{{ scheduleLabel }}</span>
               </div>
-              @if (availableOffers.length > 0) {
-                <div class="booking-summary-row booking-offer-row">
-                  <span class="booking-summary-icon" aria-hidden="true">%</span>
-                  <div class="booking-offer-field">
-                    <label for="booking-offer-select">Promotional offer</label>
-                    <select
-                      id="booking-offer-select"
-                      class="booking-offer-select"
-                      [value]="selectedOfferId ?? ''"
-                      (change)="onOfferSelectChange($event)"
-                    >
-                      @for (o of availableOffers; track o.id) {
-                        <option [value]="o.id" [selected]="o.id === selectedOfferId">
-                          {{ o.title
-                          }}{{
-                            o.discountPercent != null && o.discountPercent > 0
-                              ? ' (' + o.discountPercent + '% off)'
-                              : ''
-                          }}
-                        </option>
-                      }
-                    </select>
-                  </div>
-                </div>
-              }
             </div>
+
+            <div class="booking-summary-offer booking-offer-row">
+              <div class="booking-offer-field">
+                <label for="promotionalOfferSummary" class="booking-promo-label">
+                  <span class="booking-promo-pct-icon" aria-hidden="true">%</span>
+                  <span>Promotional offer</span>
+                </label>
+                <select
+                  id="promotionalOfferSummary"
+                  class="booking-offer-select"
+                  name="promotionalOfferSummary"
+                  [ngModel]="selectedOfferId ?? ''"
+                  (ngModelChange)="onPromotionalOfferSelect($event)"
+                >
+                  <option value="">No discount</option>
+                  @for (o of availableOffers; track o.id) {
+                    <option [value]="o.id">{{ offerOptionLabel(o) }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
             <div class="booking-summary-divider"></div>
             <div class="booking-summary-cost">
               <div class="booking-summary-cost-row">
                 <span>SUB-TOTAL</span>
                 <span>{{ subTotal | number : '1.2-2' }} {{ currency }}</span>
               </div>
-              @if (scheduleDiscountAmount > 0) {
+              @if (subscriptionDiscountAmount > 0) {
                 <div class="booking-summary-cost-row booking-summary-discount">
-                  <span>{{ scheduleLabel }} ({{ scheduleDiscountPercent }}%)</span>
-                  <span>-{{ scheduleDiscountAmount | number : '1.2-2' }} {{ currency }}</span>
+                  <span>PLAN ({{ subscriptionDiscountPercent }}%):</span>
+                  <span>-{{ subscriptionDiscountAmount | number : '1.2-2' }} {{ currency }}</span>
                 </div>
               }
-              @if (discountAmount > 0) {
+              @if (promoDiscountAmount > 0) {
                 <div class="booking-summary-cost-row booking-summary-discount">
-                  <span>PROMO ({{ offerDiscountPercent }}%)</span>
+                  <span>PROMO ({{ offerDiscountPercent }}%):</span>
                   <span>-{{ promoDiscountAmount | number : '1.2-2' }} {{ currency }}</span>
                 </div>
               }
@@ -95,30 +92,18 @@
                 <span>{{ totalLineLabel }}</span>
                 <span>{{ total | number : '1.2-2' }} {{ currency }}</span>
               </div>
-              @if (offerDiscountPercent > 0 || scheduleDiscountPercent > 0) {
-                <p class="booking-total-discount-meta">
-                  <strong>Discount</strong> applied to sub-total:
-                  <strong>
-                    @if (scheduleDiscountPercent > 0) {
-                      {{ scheduleDiscountPercent }}% ({{ scheduleLabel }})
-                    }
-                    @if (scheduleDiscountPercent > 0 && offerDiscountPercent > 0) {
-                      +
-                    }
-                    @if (offerDiscountPercent > 0) {
-                      {{ offerDiscountPercent }}% (promo)
-                    }
-                  </strong>
-                  (sub-total after discount: {{ subTotalAfterDiscount | number : '1.2-2' }} {{ currency }}).
-                </p>
-              }
-              @if (selectedOfferDescription) {
-                <div class="booking-offer-description-block">
-                  <span class="booking-offer-description-label">Offer description</span>
-                  <p class="booking-offer-description-text">{{ selectedOfferDescription }}</p>
-                </div>
+              @if (promoDiscountMetaLine) {
+                <p class="booking-total-discount-meta">{{ promoDiscountMetaLine }}</p>
               }
             </div>
+            @if (selectedOffer; as offer) {
+              @if (offer.detail.trim()) {
+                <div class="booking-offer-description-block" aria-label="Offer description">
+                  <span class="booking-offer-description-label">Offer description</span>
+                  <p class="booking-offer-description-text">{{ offer.detail }}</p>
+                </div>
+              }
+            }
           </div>
 
           @if (selectedTasks.length > 0 || selectedSectionsWithPrices.length > 0) {
@@ -556,6 +541,12 @@
                 <option value="biweekly">Biweekly</option>
                 <option value="monthly">Monthly</option>
               </select>
+              @if (isSubscriptionSchedule()) {
+                <small class="booking-schedule-note">
+                  <strong>{{ subscriptionDiscountPercent }}% off</strong> the sub-total for this plan. Stripe checkout
+                  after booking. Sign in required.
+                </small>
+              }
             </div>
 
             <div class="form-group booking-datetime-field">
@@ -655,38 +646,48 @@
               />
             </div>
 
-            <div class="form-group form-group-full payment-heading">
-              <h3>Card Information</h3>
-            </div>
+            @if (isSubscriptionSchedule()) {
+              <div class="form-group form-group-full booking-subscription-checkout-hint">
+                <h3 class="payment-heading">Subscription checkout</h3>
+                <p>
+                  Payment for this plan is completed on Stripe’s secure page (card entry there). Submit this form to create
+                  your booking first, then you’ll be redirected.
+                </p>
+              </div>
+            } @else {
+              <div class="form-group form-group-full payment-heading">
+                <h3>Card Information</h3>
+              </div>
 
-            <div class="form-group form-group-full">
-              <label for="cardHolder">Card Holder Name</label>
-              <input id="cardHolder" type="text" formControlName="cardHolder" placeholder="Name on card" />
-              @if (submitted && f.cardHolder.errors) {
-                <small class="error">Card holder name is required.</small>
-              }
-            </div>
-
-            <div class="form-group form-group-full">
-              <label class="booking-card-details-label">Card Details</label>
-              <div class="stripe-card-container">
-                <div #stripeCardMount class="stripe-card-element"></div>
-                @if (cardElementError) {
-                  <div class="stripe-card-error">{{ cardElementError }}</div>
+              <div class="form-group form-group-full">
+                <label for="cardHolder">Card Holder Name</label>
+                <input id="cardHolder" type="text" formControlName="cardHolder" placeholder="Name on card" />
+                @if (submitted && f.cardHolder.errors) {
+                  <small class="error">Card holder name is required.</small>
                 }
               </div>
 
-              <p class="stripe-card-tip">
-                Enter the expiry as <strong>MM/YY</strong> (e.g. <strong>12/34</strong>). Click inside the Expiry field in
-                the card box and type both digits.
-              </p>
+              <div class="form-group form-group-full">
+                <label class="booking-card-details-label">Card Details</label>
+                <div class="stripe-card-container">
+                  <div #stripeCardMount class="stripe-card-element"></div>
+                  @if (cardElementError) {
+                    <div class="stripe-card-error">{{ cardElementError }}</div>
+                  }
+                </div>
 
-              @if (cardComplete) {
-                <p class="stripe-card-ok">Card details complete.</p>
-              } @else {
-                <p class="stripe-card-notok">Card details are not complete yet.</p>
-              }
-            </div>
+                <p class="stripe-card-tip">
+                  Enter the expiry as <strong>MM/YY</strong> (e.g. <strong>12/34</strong>). Click inside the Expiry field in
+                  the card box and type both digits.
+                </p>
+
+                @if (cardComplete) {
+                  <p class="stripe-card-ok">Card details complete.</p>
+                } @else {
+                  <p class="stripe-card-notok">Card details are not complete yet.</p>
+                }
+              </div>
+            }
 
             <div class="form-group form-group-full">
               <label for="notes">Additional Notes</label>
@@ -738,15 +739,15 @@
                 <span>SUB-TOTAL</span>
                 <span>{{ subTotal | number : '1.2-2' }} {{ currency }}</span>
               </div>
-              @if (scheduleDiscountAmount > 0) {
-                <div class="booking-mobile-total-row booking-mobile-total-row--discount">
-                  <span>{{ scheduleLabel }} ({{ scheduleDiscountPercent }}%)</span>
-                  <span>-{{ scheduleDiscountAmount | number : '1.2-2' }} {{ currency }}</span>
+              @if (subscriptionDiscountAmount > 0) {
+                <div class="booking-mobile-total-row booking-mobile-total-row--promo">
+                  <span>PLAN ({{ subscriptionDiscountPercent }}%):</span>
+                  <span>-{{ subscriptionDiscountAmount | number : '1.2-2' }} {{ currency }}</span>
                 </div>
               }
-              @if (discountAmount > 0) {
-                <div class="booking-mobile-total-row booking-mobile-total-row--discount">
-                  <span>PROMO ({{ offerDiscountPercent }}%)</span>
+              @if (promoDiscountAmount > 0) {
+                <div class="booking-mobile-total-row booking-mobile-total-row--promo">
+                  <span>PROMO ({{ offerDiscountPercent }}%):</span>
                   <span>-{{ promoDiscountAmount | number : '1.2-2' }} {{ currency }}</span>
                 </div>
               }
@@ -760,6 +761,9 @@
                 <span>{{ totalLineLabel }}</span>
                 <span>{{ total | number : '1.2-2' }} {{ currency }}</span>
               </div>
+              @if (promoDiscountMetaLine) {
+                <p class="booking-total-discount-meta booking-mobile-promo-meta">{{ promoDiscountMetaLine }}</p>
+              }
             </div>
             <button type="submit" class="btn-submit btn-submit--mobile" [disabled]="sending">
               {{ sending ? 'Submitting...' : 'Submit Booking Request' }}
@@ -853,7 +857,7 @@
         We will follow up after your service to ensure satisfaction.
         <ul>
           <li>Re-clean is offered within 5 days for missed areas</li>
-          <li>Partial refunds or discounts may be offered for minor issues</li>
+          <li>Partial refunds may be offered for minor issues</li>
         </ul>
         If no response is received, the service will be considered completed and payment will be processed.
         <br /><br />
@@ -971,9 +975,49 @@
 
         @if (bookingFeedbackCardInfo) {
           <div class="booking-feedback-card-info">
-            <h3>Card</h3>
-            <p>{{ bookingFeedbackCardInfo.holder }}</p>
-            <p>{{ bookingFeedbackCardInfo.maskedNumber }} · {{ bookingFeedbackCardInfo.expiry }}</p>
+            <h3 class="booking-feedback-card-heading">Card details</h3>
+            <p class="booking-feedback-card-holder">{{ bookingFeedbackCardInfo.holder }}</p>
+            <p class="booking-feedback-card-pan">
+              {{ bookingFeedbackCardInfo.maskedNumber }} · {{ bookingFeedbackCardInfo.expiry }}
+            </p>
+          </div>
+        }
+
+        @if (bookingFeedbackPricing; as fp) {
+          <div class="booking-feedback-pricing">
+            <h3>Your price</h3>
+            <ul class="booking-feedback-pricing-list">
+              <li class="booking-feedback-pricing-row">
+                <span class="booking-feedback-pricing-label">Sub-total</span>
+                <span class="booking-feedback-pricing-value">{{ fp.subTotal | number : '1.2-2' }} {{ fp.currency }}</span>
+              </li>
+              @if (fp.promoDiscountAmount > 0) {
+                <li class="booking-feedback-pricing-row booking-feedback-pricing-row--promo">
+                  <span class="booking-feedback-pricing-label">PROMO ({{ fp.offerDiscountPercent }}%):</span>
+                  <span class="booking-feedback-pricing-value"
+                    >-{{ fp.promoDiscountAmount | number : '1.2-2' }} {{ fp.currency }}</span>
+                </li>
+              }
+              @if (fp.salesTax > 0) {
+                <li class="booking-feedback-pricing-row">
+                  <span class="booking-feedback-pricing-label">Sales tax</span>
+                  <span class="booking-feedback-pricing-value">{{ fp.salesTax | number : '1.2-2' }} {{ fp.currency }}</span>
+                </li>
+              }
+              <li class="booking-feedback-pricing-row booking-feedback-pricing-row--total">
+                <span class="booking-feedback-pricing-label">Total</span>
+                <span class="booking-feedback-pricing-value">{{ fp.total | number : '1.2-2' }} {{ fp.currency }}</span>
+              </li>
+            </ul>
+            @if (fp.promoDiscountAmount > 0) {
+              <p class="booking-feedback-pricing-meta">
+                {{ fp.offerDiscountPercent }}% promo
+                @if (fp.offerTitle) {
+                  · {{ fp.offerTitle }}
+                }
+                · Sub-total {{ (fp.subTotal - fp.promoDiscountAmount) | number : '1.2-2' }} {{ fp.currency }}
+              </p>
+            }
           </div>
         }
 
@@ -995,6 +1039,21 @@
           />
           <label for="bookingFeedbackRange" class="booking-feedback-slider-label booking-feedback-slider-label--right">Happy</label>
         </div>
+
+        @if (!bookingFeedbackSubmitted) {
+          <div class="booking-feedback-comment-field">
+            <label for="bookingFeedbackComment">Your feedback (optional)</label>
+            <textarea
+              id="bookingFeedbackComment"
+              name="bookingFeedbackComment"
+              class="booking-feedback-comment-input"
+              rows="3"
+              maxlength="2000"
+              placeholder="Tell us anything about your booking experience…"
+              [(ngModel)]="bookingFeedbackComment"
+            ></textarea>
+          </div>
+        }
 
         @if (bookingFeedbackApiError) {
           <p class="booking-feedback-error" role="alert">{{ bookingFeedbackApiError }}</p>

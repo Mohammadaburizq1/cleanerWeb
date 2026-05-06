@@ -13,6 +13,7 @@ import { CommonModule } from '@angular/common';
 import {
   AbstractControl,
   FormBuilder,
+  FormsModule,
   ReactiveFormsModule,
   ValidationErrors,
   Validators,
@@ -21,10 +22,13 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, firstValueFrom, of } from 'rxjs';
 import { PaymentsService } from '../../core/payments.service';
+import type { SubscriptionPlanType } from '../../core/payments.dto';
+import { AuthService } from '../../core/auth.service';
 import { BookingService } from '../../core/booking.service';
 import { FeedbackService } from '../../core/feedback.service';
 import type { CreateFeedbackDto } from '../../core/feedback.dto';
 import { SelectedTasksService } from '../../core/selected-tasks.service';
+import { OfferService } from '../../core/offer.service';
 import {
   computeServicesQuote,
   HOME_SQ_FT_TIERS,
@@ -36,7 +40,6 @@ import {
   QUOTE_PRICE_PER_BEDROOM,
 } from '../../core/services-quote';
 import { BUSINESS_CONTACT } from '../../core/contact.constants';
-import { OfferService } from '../../core/offer.service';
 import type { OfferDto } from '../../core/offer.dto';
 import {
   CLEANING_CHECKLIST_SECTIONS,
@@ -66,6 +69,17 @@ export type BookingFeedbackPropertySnapshot = {
   hours: number | null;
   hasPets: boolean;
   homeSizeLabel: string | null;
+};
+
+/** Sub-total / promo / total captured when the booking succeeds (for the feedback dialog). */
+export type BookingFeedbackPricingSnapshot = {
+  subTotal: number;
+  promoDiscountAmount: number;
+  offerDiscountPercent: number;
+  salesTax: number;
+  total: number;
+  offerTitle: string | null;
+  currency: string;
 };
 
 /** Nominatim reverse JSON (subset). https://nominatim.org/release-docs/develop/api/Reverse/ */
@@ -103,7 +117,7 @@ function bookingLocationValidator(group: AbstractControl): ValidationErrors | nu
 @Component({
   selector: 'app-booking',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './booking.html',
   styleUrl: './booking.scss',
 })
@@ -114,21 +128,24 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  /** Public offers; optional promo applies a % discount to sub-total (see `promoDiscountAmount`). */
   private offerService = inject(OfferService);
   private selectedTasksService = inject(SelectedTasksService);
   private paymentsService = inject(PaymentsService);
+  private auth = inject(AuthService);
   private bookingService = inject(BookingService);
   private feedbackService = inject(FeedbackService);
   private ngZone = inject(NgZone);
 
   // NOTE: Put your Stripe publishable key here (pk_...). Never put the secret key in the frontend.
-  private readonly stripePublishableKey = 'pk_live_51TK1xIRw8UyOG4twlWkLGoGT28HeGzWr8nL6Oo9YoUmxtBdzuiiamhAPngF2sx1xPGdiNTFhyER8eRvNbvs12cOm0029Sx483H';
+  // private readonly stripePublishableKey = 'pk_live_51TK1xIRw8UyOG4twlWkLGoGT28HeGzWr8nL6Oo9YoUmxtBdzuiiamhAPngF2sx1xPGdiNTFhyER8eRvNbvs12cOm0029Sx483H';
+  private readonly stripePublishableKey = 'pk_test_51TK1xVRykzBb9Zc11JSb6OI928pjU6S6MGEbL0XTA2VRDrlXYs7kR4t5rEVv8SSdLHQuv3l2cpCkP9isqlQku4dp00UhF9fQxg';
 
   /**
    * Temporary checkout override for testing.
    * When enabled, the UI "TOTAL" and the backend payment amount are forced to $1.00.
    */
-  private readonly TEST_PAYMENT_MODE = true;
+  private readonly TEST_PAYMENT_MODE = false;
   private readonly TEST_PAYMENT_TOTAL = 1;
 
   @ViewChild('stripeCardMount', { static: false })
@@ -204,7 +221,6 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     { label: 'Four Bedroom Home', value: 4 },
     { label: 'Five Bedroom Home', value: 5 },
     { label: 'Six Bedroom Home', value: 6 },
-    { label: 'Hourly Service', value: 0 },
   ];
 
   readonly bathroomOptions: { label: string; value: number }[] = [
@@ -214,7 +230,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     { label: '4+ Bathrooms', value: 4 },
   ];
 
-  /** Shown when "Hourly Service" is selected. */
+  /** Hourly Service is disabled (kept for backward compatibility only). */
   readonly cleanerOptions: { label: string; value: number }[] = [
     { label: '1 Cleaner', value: 1 },
     { label: '2 Cleaners', value: 2 },
@@ -306,6 +322,9 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   /** Booking id from last successful submission — sent with POST /api/Feedback. */
   private bookingFeedbackBookingId: string | null = null;
   private bookingFeedbackGuestName: string | null = null;
+  private bookingFeedbackGuestEmail: string | null = null;
+  /** Optional message from the guest in the post-booking feedback dialog (max 2000 on API). */
+  bookingFeedbackComment = '';
   bookingFeedbackSubmitting = false;
   bookingFeedbackApiError: string | null = null;
   bookingFeedbackCardInfo: { holder: string; maskedNumber: string; expiry: string } | null = null;
@@ -316,6 +335,9 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
 
   /** Snapshot of home / property details for the feedback dialog */
   bookingFeedbackProperty: BookingFeedbackPropertySnapshot | null = null;
+
+  /** Snapshot of pricing & promo discount for the feedback dialog */
+  bookingFeedbackPricing: BookingFeedbackPricingSnapshot | null = null;
 
   ngOnInit(): void {
     const state = history.state as {
@@ -390,6 +412,11 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
       this.numberOfBedrooms = 1;
       this.selectedTasksService.setNumberOfBedrooms(1);
     }
+    // Hourly Service is disabled — normalize any persisted 0 to 1.
+    if (this.numberOfBedrooms === 0) {
+      this.numberOfBedrooms = 1;
+      this.selectedTasksService.setNumberOfBedrooms(1);
+    }
     if (this.numberOfBathrooms == null || this.numberOfBathrooms < 1) {
       this.numberOfBathrooms = 1;
       this.selectedTasksService.setNumberOfBathrooms(1);
@@ -410,48 +437,49 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     this.syncCostToState();
     this.takenDatesLoadPromise = this.loadTakenBookingDates();
 
-    const storedOffer = (localStorage.getItem(this.OFFER_STORAGE_KEY) ?? '').trim();
-
-    // Keep selectedOfferId in sync with query params (so it updates even if component stays mounted).
-    this.route.queryParamMap.subscribe((qp) => {
-      const offerFromQuery = (qp.get('offer') ?? '').trim();
-      if (offerFromQuery) {
-        this.selectedOfferId = offerFromQuery;
-        localStorage.setItem(this.OFFER_STORAGE_KEY, offerFromQuery);
-      }
-    });
-
-    // Initial default (query param wins, then router state, then storage)
-    const offerFromQueryNow = (this.route.snapshot.queryParamMap.get('offer') ?? '').trim();
-    const offerFromState = (fromRouter ? (nav.offerId ?? '') : '').toString().trim();
-    const initial = offerFromQueryNow || offerFromState || storedOffer;
-    if (initial) {
-      this.selectedOfferId = initial;
-      localStorage.setItem(this.OFFER_STORAGE_KEY, initial);
+    const offerFromState =
+      fromRouter && nav?.offerId != null && String(nav.offerId).trim() !== ''
+        ? String(nav.offerId).trim()
+        : '';
+    const offerFromQuery = (this.route.snapshot.queryParamMap.get('offerId') ?? '').trim();
+    let offerFromStorage = '';
+    try {
+      offerFromStorage = (localStorage.getItem(this.OFFER_STORAGE_KEY) ?? '').trim();
+    } catch {
+      // ignore
     }
+    const initialOfferId = offerFromState || offerFromQuery || offerFromStorage;
 
+    // Load offers; dropdown lives in the booking summary sidebar.
     this.offerService
       .listPublicOffers()
       .pipe(catchError(() => of([])))
       .subscribe((rows) => {
         this.availableOffers = rows;
-        // If a previously selected offer is invalid (or inactive), clear it.
-        if (this.selectedOfferId && !rows.some((r) => r.id === this.selectedOfferId)) {
+        if (initialOfferId && rows.some((o) => o.id === initialOfferId)) {
+          this.selectedOfferId = initialOfferId;
+        } else {
           this.selectedOfferId = null;
-          localStorage.removeItem(this.OFFER_STORAGE_KEY);
-        }
-
-        // No "None" option in the dropdown — default to the first offer when available.
-        if (!this.selectedOfferId && rows.length > 0) {
-          this.selectedOfferId = rows[0].id;
-          localStorage.setItem(this.OFFER_STORAGE_KEY, this.selectedOfferId);
+          if (initialOfferId) {
+            try {
+              localStorage.removeItem(this.OFFER_STORAGE_KEY);
+            } catch {
+              // ignore
+            }
+          }
         }
       });
+
+    this.bookingForm.get('schedule')?.valueChanges.subscribe(() => {
+      this.applySchedulePaymentValidators();
+      queueMicrotask(() => void this.initStripeForCurrentSchedule());
+    });
+    this.applySchedulePaymentValidators();
   }
 
   /** True when user selected "Hourly Service" (bedrooms = 0). */
   get isHourlyService(): boolean {
-    return (this.numberOfBedrooms ?? 0) === 0;
+    return false;
   }
 
   private computeQuote() {
@@ -679,85 +707,79 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     this.showTermsModal = false;
   }
 
-  /** Currently selected promotional offer (if any). */
+  /** Selected promotional offer (optional). */
   get selectedOffer(): OfferDto | null {
-    if (!this.selectedOfferId) return null;
-    return this.availableOffers.find((o) => o.id === this.selectedOfferId) ?? null;
+    const id = this.selectedOfferId;
+    if (!id) return null;
+    return this.availableOffers.find((o) => o.id === id) ?? null;
   }
 
-  /** Discount rate 0–100 from selected offer. */
   get offerDiscountPercent(): number {
-    const o = this.selectedOffer;
-    const p = o?.discountPercent;
-    if (p == null || p <= 0) return 0;
-    return Math.min(100, p);
+    const p = this.selectedOffer?.discountPercent;
+    return typeof p === 'number' && !Number.isNaN(p) ? p : 0;
   }
 
-  /** Discount rate 0–100 based on schedule selection (weekly/biweekly/monthly). */
-  get scheduleDiscountPercent(): number {
-    const v = (this.bookingForm.get('schedule')?.value ?? 'one_time').toString();
-    if (v === 'weekly') return 45;
-    if (v === 'biweekly') return 35;
-    if (v === 'monthly') return 25;
-    return 0;
+  offerOptionLabel(offer: OfferDto): string {
+    const p = offer.discountPercent;
+    if (typeof p === 'number' && !Number.isNaN(p) && p > 0) {
+      return `${offer.title} (${p}% off)`;
+    }
+    return offer.title;
   }
 
-  /** Sub-total after schedule discount (before promo, before tax). */
-  get subTotalAfterScheduleDiscount(): number {
-    const p = this.scheduleDiscountPercent;
-    if (p <= 0) return this.subTotal;
-    const raw = this.subTotal * (1 - p / 100);
-    return Math.max(0, Math.round(raw * 100) / 100);
+  /** Called from summary `<select>` (`ngModel`) so the chosen option stays in sync after offers load. */
+  onPromotionalOfferSelect(value: string): void {
+    const v = (value ?? '').trim();
+    this.selectedOfferId = v.length > 0 ? v : null;
+    try {
+      if (this.selectedOfferId) {
+        localStorage.setItem(this.OFFER_STORAGE_KEY, this.selectedOfferId);
+      } else {
+        localStorage.removeItem(this.OFFER_STORAGE_KEY);
+      }
+    } catch {
+      // ignore
+    }
   }
 
-  /** Discount amount from schedule (before promo, before tax). */
-  get scheduleDiscountAmount(): number {
-    const raw = this.subTotal - this.subTotalAfterScheduleDiscount;
-    return Math.max(0, Math.round(raw * 100) / 100);
-  }
-
-  /** Discount amount from promo offer, applied after the schedule discount (before tax). */
-  get promoDiscountAmount(): number {
-    if (this.offerDiscountPercent <= 0) return 0;
-    const raw = this.subTotalAfterScheduleDiscount * (this.offerDiscountPercent / 100);
-    return Math.max(0, Math.round(raw * 100) / 100);
-  }
-
-  /** Total discount amount from schedule + promo (before tax). */
-  get discountAmount(): number {
-    return Math.round((this.scheduleDiscountAmount + this.promoDiscountAmount) * 100) / 100;
-  }
-
-  /** Sub-total after schedule + promo discounts (before tax). */
-  get subTotalAfterDiscount(): number {
-    const raw = this.subTotalAfterScheduleDiscount - this.promoDiscountAmount;
-    return Math.max(0, Math.round(raw * 100) / 100);
-  }
-
-  onOfferSelectChange(event: Event): void {
-    const v = (event.target as HTMLSelectElement).value;
-    this.selectedOfferId = v ? v : null;
-    if (this.selectedOfferId) localStorage.setItem(this.OFFER_STORAGE_KEY, this.selectedOfferId);
-    else localStorage.removeItem(this.OFFER_STORAGE_KEY);
-  }
-
-  /** Total row label — shows DiscountPercent when a promo applies. */
   get totalLineLabel(): string {
-    const parts: string[] = [];
-    if (this.scheduleDiscountPercent > 0) parts.push(`${this.scheduleDiscountPercent}% schedule`);
-    if (this.offerDiscountPercent > 0) parts.push(`${this.offerDiscountPercent}% promo`);
-    if (parts.length === 0) return 'TOTAL';
-    return `TOTAL (includes ${parts.join(' + ')} discount)`;
+    const subPct = this.subscriptionDiscountPercent;
+    const promoPct = this.offerDiscountPercent;
+    const hasSub = subPct > 0 && this.subscriptionDiscountAmount > 0;
+    const hasPromo = promoPct > 0 && this.promoDiscountAmount > 0;
+    if (hasSub && hasPromo) {
+      return `TOTAL (includes ${subPct}% plan + ${promoPct}% promo)`;
+    }
+    if (hasSub) {
+      return `TOTAL (includes ${subPct}% subscription discount)`;
+    }
+    if (hasPromo) {
+      return `TOTAL (includes ${promoPct}% promo discount)`;
+    }
+    return 'TOTAL';
   }
 
-  /** Selected offer full description (`detail`) for the booking summary. */
-  get selectedOfferDescription(): string {
-    const d = this.selectedOffer?.detail?.trim();
-    return d ?? '';
+  /** Short hint under the total when subscription and/or promo savings apply (summary + mobile). */
+  get promoDiscountMetaLine(): string | null {
+    const subPct = this.subscriptionDiscountPercent;
+    const subAmt = this.subscriptionDiscountAmount;
+    const promoPct = this.offerDiscountPercent;
+    const promoAmt = this.promoDiscountAmount;
+    const parts: string[] = [];
+    if (subPct > 0 && subAmt > 0) {
+      const afterSub = this.subTotalAfterSubscriptionDiscount.toFixed(2);
+      parts.push(`${subPct}% plan · After savings ${afterSub} ${this.currency}`);
+    }
+    if (promoPct > 0 && promoAmt > 0) {
+      const after = this.subTotalAfterPromo.toFixed(2);
+      parts.push(`${promoPct}% promo · Sub-total ${after} ${this.currency}`);
+    }
+    if (parts.length === 0) return null;
+    return parts.join(' · ');
   }
 
   async ngAfterViewInit(): Promise<void> {
-    await this.initStripe();
+    await this.initStripeForCurrentSchedule();
     await this.takenDatesLoadPromise;
     queueMicrotask(() => this.initLeafletMap());
     this.initDatePicker();
@@ -911,12 +933,12 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     }
     return {
       base: {
-        color: '#32325d',
+        color: '#0a1f12',
         fontFamily: 'system-ui, -apple-system, Segoe UI, sans-serif',
         fontSize: '16px',
         fontSmoothing: 'antialiased',
-        '::placeholder': { color: '#aab7c4' },
-        iconColor: '#424770',
+        '::placeholder': { color: '#5f7364' },
+        iconColor: '#166534',
       },
       invalid: {
         color: '#fa755a',
@@ -934,7 +956,88 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     this.cardElement.update({ style: this.stripeCardStyle(this.isDarkTheme()) });
   }
 
+  /** Weekly / biweekly / monthly use hosted Stripe subscription checkout instead of the Card Element. */
+  isSubscriptionSchedule(): boolean {
+    const v = (this.bookingForm.get('schedule')?.value ?? 'one_time').toString();
+    return v !== 'one_time';
+  }
+
+  /**
+   * Percent off the quote sub-total for recurring schedules (before optional promotional offer).
+   * Weekly 45%, biweekly 35%, monthly 25%.
+   */
+  get subscriptionDiscountPercent(): number {
+    const v = (this.bookingForm.get('schedule')?.value ?? 'one_time').toString();
+    if (v === 'weekly') return 45;
+    if (v === 'biweekly') return 35;
+    if (v === 'monthly') return 25;
+    return 0;
+  }
+
+  /** Currency amount saved by the subscription plan discount (applied to full sub-total). */
+  get subscriptionDiscountAmount(): number {
+    const pct = this.subscriptionDiscountPercent;
+    if (pct <= 0 || this.subTotal <= 0) return 0;
+    const raw = (this.subTotal * pct) / 100;
+    return Math.min(this.subTotal, Math.round(raw * 100) / 100);
+  }
+
+  /** Sub-total after subscription savings; promotional % applies to this amount. */
+  get subTotalAfterSubscriptionDiscount(): number {
+    return Math.max(
+      0,
+      Math.round((this.subTotal - this.subscriptionDiscountAmount) * 100) / 100,
+    );
+  }
+
+  private scheduleToPlanType(schedule: string): SubscriptionPlanType | null {
+    const v = (schedule ?? '').toString().trim();
+    if (v === 'weekly') return 'ONE_WEEK';
+    if (v === 'biweekly') return 'TWO_WEEKS';
+    if (v === 'monthly') return 'FOUR_WEEKS';
+    return null;
+  }
+
+  private applySchedulePaymentValidators(): void {
+    const cardHolder = this.bookingForm.get('cardHolder');
+    if (!cardHolder) return;
+    if (this.isSubscriptionSchedule()) {
+      cardHolder.clearValidators();
+    } else {
+      cardHolder.setValidators([Validators.required, Validators.minLength(2)]);
+    }
+    cardHolder.updateValueAndValidity({ emitEvent: false });
+  }
+
+  private teardownStripeCard(): void {
+    this.bodyThemeObserver?.disconnect();
+    this.bodyThemeObserver = null;
+    try {
+      this.cardElement?.unmount();
+    } catch {
+      // ignore
+    }
+    this.cardElement = null;
+    this.elements = null;
+    this.stripe = null;
+    this.stripeReady = false;
+    this.cardComplete = false;
+    this.cardElementError = null;
+  }
+
+  private async initStripeForCurrentSchedule(): Promise<void> {
+    if (this.isSubscriptionSchedule()) {
+      this.teardownStripeCard();
+      return;
+    }
+    if (!this.stripePublishableKey) return;
+    if (!this.stripeCardMount) return;
+    if (this.cardElement) return;
+    await this.initStripe();
+  }
+
   private async initStripe(): Promise<void> {
+    if (this.cardElement) return;
     if (!this.stripePublishableKey) return;
     if (!this.stripeCardMount) return;
 
@@ -1169,13 +1272,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.bodyThemeObserver?.disconnect();
-    this.bodyThemeObserver = null;
-    try {
-      this.cardElement?.unmount();
-    } catch {
-      // ignore
-    }
+    this.teardownStripeCard();
     this.datePicker?.destroy();
     this.datePicker = null;
     this.timePicker?.destroy();
@@ -1230,11 +1327,14 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     this.bookingFeedbackSubmitted = false;
     this.bookingFeedbackBookingId = null;
     this.bookingFeedbackGuestName = null;
+    this.bookingFeedbackGuestEmail = null;
+    this.bookingFeedbackComment = '';
     this.bookingFeedbackSubmitting = false;
     this.bookingFeedbackApiError = null;
     this.bookingFeedbackSelectedSectionsWithPrices = [];
     this.bookingFeedbackCardInfo = null;
     this.bookingFeedbackProperty = null;
+    this.bookingFeedbackPricing = null;
 
     // Some browsers autofill inputs without firing input events; sync email before validate/submit.
     const emailControl = this.bookingForm.get('email');
@@ -1250,7 +1350,10 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    if (this.total <= 0) {
+    const scheduleControl = (this.bookingForm.get('schedule')?.value ?? 'one_time').toString();
+    const subscriptionPlan = this.scheduleToPlanType(scheduleControl);
+
+    if (this.subTotal <= 0 && !subscriptionPlan) {
       void this.router.navigate(['/booking'], {
         state: {
           bookingRedirectReason:
@@ -1260,7 +1363,16 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    if (!this.cardComplete) {
+    if (subscriptionPlan && !this.auth.getAccessToken()) {
+      this.setSubmitError(
+        'Sign in is required for weekly, biweekly, or monthly plans. Use “One Time” or log in and try again.',
+      );
+      return;
+    }
+
+    const skipOneTimePayment = !this.TEST_PAYMENT_MODE && this.total <= 0 && !subscriptionPlan;
+
+    if (!skipOneTimePayment && !subscriptionPlan && !this.cardComplete) {
       this.setSubmitError(
         this.cardElementError ??
           'Please complete the card (including expiry). Card details must show as complete before submit.',
@@ -1309,30 +1421,59 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
       }
       console.log('[Booking] created booking id:', createdBooking.id);
 
-      // 1) Create pm_... on frontend using Stripe Elements
-      const pm = await this.createPaymentMethod();
+      let pm: { paymentMethodId: string; last4: string; expiryMMYY: string } | null = null;
 
-      phase = 'Creating payment';
-      // 2) Create a Stripe payment intent on backend (OpenAPI CreatePaymentRequest)
-      const createPaymentBody = {
-        provider: 'stripe',
-        currency: this.paymentCurrency,
-        amount: this.total,
-        paymentMethodToken: pm.paymentMethodId,
-        bookingId: createdBooking.id,
-      };
+      if (subscriptionPlan) {
+        phase = 'Starting subscription checkout';
+        let me = this.auth.me();
+        if (!me?.id) {
+          me = await firstValueFrom(this.auth.loadMe());
+        }
+        if (!me?.id) {
+          throw new Error('Could not load your account. Sign in and try again.');
+        }
+        const subResp = await firstValueFrom(
+          this.paymentsService.createSubscriptionCheckout({
+            customerId: me.id,
+            bookingId: createdBooking.id,
+            planType: subscriptionPlan,
+          }),
+        );
+        const checkoutUrl = (subResp.checkoutUrl ?? '').trim();
+        if (!checkoutUrl) {
+          throw new Error('The server did not return a Stripe checkout URL.');
+        }
+        window.location.assign(checkoutUrl);
+        return;
+      }
 
-      const createPaymentResp = await firstValueFrom(
-        this.paymentsService.createPayment(createPaymentBody),
-      );
+      if (!skipOneTimePayment) {
+        // 1) Create pm_... on frontend using Stripe Elements
+        pm = await this.createPaymentMethod();
 
-      const providerPaymentId = createPaymentResp.providerPaymentId;
-      if (!providerPaymentId) throw new Error('Backend did not return providerPaymentId for Stripe.');
+        phase = 'Creating payment';
+        // 2) Create a Stripe payment intent on backend (OpenAPI CreatePaymentRequest)
+        const createPaymentBody = {
+          provider: 'stripe',
+          currency: this.paymentCurrency,
+          amount: this.total,
+          paymentMethodToken: pm.paymentMethodId,
+          bookingId: createdBooking.id,
+        };
 
-      // 3) Confirm payment on backend using pm_...
-      console.log('[PaymentsService.confirmStripePayment] providerPaymentId:', providerPaymentId);
-      console.log('[PaymentsService.confirmStripePayment] paymentMethodId:', pm.paymentMethodId);
-      await firstValueFrom(this.paymentsService.confirmStripePayment(providerPaymentId, pm.paymentMethodId));
+        const createPaymentResp = await firstValueFrom(
+          this.paymentsService.createPayment(createPaymentBody),
+        );
+
+        const providerPaymentId = createPaymentResp.providerPaymentId;
+        if (!providerPaymentId) throw new Error('Backend did not return providerPaymentId for Stripe.');
+
+        phase = 'Confirming payment';
+        // 3) Confirm payment on backend using pm_...
+        console.log('[PaymentsService.confirmStripePayment] providerPaymentId:', providerPaymentId);
+        console.log('[PaymentsService.confirmStripePayment] paymentMethodId:', pm.paymentMethodId);
+        await firstValueFrom(this.paymentsService.confirmStripePayment(providerPaymentId, pm.paymentMethodId));
+      }
 
       const bookedDay = (payload.preferredDate ?? '').trim();
 
@@ -1347,6 +1488,16 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
         hours: this.hourlyDurationHours,
         hasPets: this.hasPets,
         homeSizeLabel: tier?.label ?? null,
+      };
+
+      const feedbackPricingSnapshot: BookingFeedbackPricingSnapshot = {
+        subTotal: this.subTotal,
+        promoDiscountAmount: this.promoDiscountAmount,
+        offerDiscountPercent: this.offerDiscountPercent,
+        salesTax: this.salesTax,
+        total: this.total,
+        offerTitle: this.selectedOffer?.title?.trim() ? this.selectedOffer.title.trim() : null,
+        currency: this.currency,
       };
 
       // Stripe / HTTP callbacks can run outside NgZone — run UI updates inside the zone so the feedback dialog renders.
@@ -1391,24 +1542,37 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
 
         this.bookingFeedbackSelectedSectionsWithPrices = sectionsSnapshot;
         this.bookingFeedbackProperty = feedbackPropertySnapshot;
+        this.bookingFeedbackPricing = feedbackPricingSnapshot;
         this.bookingFeedbackBookingId = createdBooking.id;
         this.bookingFeedbackGuestName = (payload.fullName ?? '').trim() || null;
+        this.bookingFeedbackGuestEmail = (payload.email ?? '').trim().slice(0, 320) || null;
+        this.bookingFeedbackComment = '';
         this.bookingFeedbackApiError = null;
-        this.bookingFeedbackCardInfo = {
-          holder: (payload.cardHolder ?? '').trim(),
-          maskedNumber: `**** **** **** ${pm.last4}`,
-          expiry: pm.expiryMMYY,
-        };
+        this.bookingFeedbackCardInfo = pm
+          ? {
+              holder: (payload.cardHolder ?? '').trim(),
+              maskedNumber: `**** **** **** ${pm.last4}`,
+              expiry: pm.expiryMMYY,
+            }
+          : {
+              holder: (payload.cardHolder ?? '').trim() || '—',
+              maskedNumber: 'No charge — promotional offer',
+              expiry: '—',
+            };
 
-        this.showBookingFeedbackDialog = true;
         this.bookingFeedbackPercent = 100;
         this.bookingFeedbackSubmitted = false;
+        this.showBookingFeedbackDialog = true;
       });
     } catch (err) {
       console.log('[Booking.submit] phase:', phase, 'error:', err);
       let detail = this.httpErrorDetail(err);
       let message = `${phase}: ${detail}`;
-      if (phase === 'Creating payment' || phase === 'Confirming payment') {
+      if (
+        phase === 'Creating payment' ||
+        phase === 'Confirming payment' ||
+        phase === 'Starting subscription checkout'
+      ) {
         message +=
           ' If payment failed, your booking may still exist — check Admin “GET /api/Booking” or Swagger.';
       }
@@ -1459,20 +1623,39 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     return 'Request failed.';
   }
 
-  /** Sub-total from selected services (before tax) */
+  /** Sub-total from selected services (before promo & tax). */
   get subTotal(): number {
     return this.estimatedCost ?? 0;
   }
 
-  /** Sales tax on discounted sub-total */
-  get salesTax(): number {
-    return Math.round(this.subTotalAfterDiscount * this.salesTaxRate * 100) / 100;
+  /**
+   * Promotional offer discount (percent of amount after subscription plan savings, when any).
+   */
+  get promoDiscountAmount(): number {
+    const pct = this.offerDiscountPercent;
+    const base = this.subTotalAfterSubscriptionDiscount;
+    if (pct <= 0 || base <= 0) return 0;
+    const raw = (base * pct) / 100;
+    return Math.min(base, Math.round(raw * 100) / 100);
   }
 
-  /** Total after discount and tax */
+  /** Sub-total after plan + promotional discounts (before tax). */
+  get subTotalAfterPromo(): number {
+    return Math.max(
+      0,
+      Math.round((this.subTotalAfterSubscriptionDiscount - this.promoDiscountAmount) * 100) / 100,
+    );
+  }
+
+  /** Sales tax on amount after promo. */
+  get salesTax(): number {
+    return Math.round(this.subTotalAfterPromo * this.salesTaxRate * 100) / 100;
+  }
+
+  /** Final total (after promo + tax). Test mode forces a fixed charge. */
   get total(): number {
     if (this.TEST_PAYMENT_MODE) return this.TEST_PAYMENT_TOTAL;
-    return Math.round((this.subTotalAfterDiscount + this.salesTax) * 100) / 100;
+    return Math.round((this.subTotalAfterPromo + this.salesTax) * 100) / 100;
   }
 
   /** Label for property/rooms (e.g. "2 Bedrooms, 1 Bathroom") */
@@ -1480,12 +1663,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     const beds = this.numberOfBedrooms ?? 0;
     let base: string;
     if (beds <= 0) {
-      const cleaners = this.numberOfCleaners ?? 1;
-      const hours = this.hourlyDurationHours ?? 0;
-      base =
-        hours <= 0
-          ? 'Hourly Service'
-          : `Hourly Service · ${cleaners} Cleaner${cleaners === 1 ? '' : 's'} · ${hours} Hours`;
+      base = 'Choose property...';
     } else {
       const baths = this.numberOfBathrooms ?? 0;
       const parts: string[] = [];
@@ -1517,12 +1695,25 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     const bookingId = this.bookingFeedbackBookingId;
     const pct = this.bookingFeedbackPercent ?? 50;
     const rating = Math.max(1, Math.min(5, Math.floor(pct / 20) + 1));
+    const pr = this.bookingFeedbackPricing;
+    const promoNote =
+      pr && pr.promoDiscountAmount > 0 && pr.offerDiscountPercent > 0
+        ? ` Promo applied: ${pr.offerDiscountPercent}% off (saved ${pr.promoDiscountAmount.toFixed(2)} ${pr.currency}).`
+        : '';
+    const baseComment = `Booking satisfaction slider: ${pct}% (${this.bookingFeedbackHeadline}).${promoNote}`;
+    const custom = (this.bookingFeedbackComment ?? '').trim();
+    let comment = custom ? `${custom}\n\n${baseComment}` : baseComment;
+    if (comment.length > 2000) {
+      comment = comment.slice(0, 2000);
+    }
+    const guestEmail = (this.bookingFeedbackGuestEmail ?? '').trim().slice(0, 320);
     const dto: CreateFeedbackDto = {
       guestUserName: this.bookingFeedbackGuestName,
+      guestEmail: guestEmail.length > 0 ? guestEmail : null,
       bookingId,
       userId: null,
       rating,
-      comment: `Booking satisfaction slider: ${pct}% (${this.bookingFeedbackHeadline})`,
+      comment,
     };
 
     this.bookingFeedbackSubmitting = true;
@@ -1540,8 +1731,11 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   closeBookingFeedbackDialog(): void {
     this.showBookingFeedbackDialog = false;
     this.bookingFeedbackProperty = null;
+    this.bookingFeedbackPricing = null;
     this.bookingFeedbackBookingId = null;
     this.bookingFeedbackGuestName = null;
+    this.bookingFeedbackGuestEmail = null;
+    this.bookingFeedbackComment = '';
     this.bookingFeedbackApiError = null;
   }
 
@@ -1549,8 +1743,11 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   goToServicesFromFeedback(): void {
     this.showBookingFeedbackDialog = false;
     this.bookingFeedbackProperty = null;
+    this.bookingFeedbackPricing = null;
     this.bookingFeedbackBookingId = null;
     this.bookingFeedbackGuestName = null;
+    this.bookingFeedbackGuestEmail = null;
+    this.bookingFeedbackComment = '';
     this.bookingFeedbackApiError = null;
   }
 
@@ -1604,6 +1801,10 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
               ? 'Monthly'
               : 'One Time';
       lines.push(`Schedule: ${label}`);
+      const planPct = this.subscriptionDiscountPercent;
+      if (planPct > 0) {
+        lines.push(`Subscription plan discount: ${planPct}% off quote sub-total`);
+      }
     }
     const lat = (payload.mapLat ?? '').trim();
     const lng = (payload.mapLng ?? '').trim();
@@ -1620,18 +1821,13 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     if (this.hasPets) {
       lines.push('Pets in home: yes');
     }
-    const offer = this.selectedOffer;
-    if (offer && this.offerDiscountPercent > 0) {
-      lines.push(`DiscountPercent: ${this.offerDiscountPercent}`);
-      lines.push(`Promotional offer: ${offer.title} (offerId=${offer.id})`);
-      lines.push(
-        `Discount amount on sub-total: -${this.discountAmount.toFixed(2)} ${this.currency}; sub-total after discount: ${this.subTotalAfterDiscount.toFixed(2)} ${this.currency}`,
-      );
-      lines.push(`Total due (incl. tax): ${this.total.toFixed(2)} ${this.currency}`);
-      const desc = offer.detail?.trim();
-      if (desc) {
-        lines.push(`Offer description: ${desc}`);
-      }
+    const promo = this.selectedOffer;
+    if (promo) {
+      const pct =
+        typeof promo.discountPercent === 'number' && !Number.isNaN(promo.discountPercent)
+          ? ` (${promo.discountPercent}% off)`
+          : '';
+      lines.push(`Promotional offer: ${promo.title}${pct}`);
     }
     const extra = (payload.notes ?? '').trim();
     if (extra) lines.push(`Notes: ${extra}`);

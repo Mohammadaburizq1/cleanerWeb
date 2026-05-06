@@ -97,9 +97,7 @@
                 @if (o.badge) {
                   <span class="offers-admin-badge">{{ o.badge }}</span>
                 }
-                @if (o.discountPercent != null && o.discountPercent > 0) {
-                  <span class="offers-admin-pct">{{ o.discountPercent }}% off</span>
-                }
+                <!-- Discounts are not shown per pricing requirements. -->
                 <span class="offers-admin-status" [class.offers-admin-status--off]="!o.isActive">
                   {{ o.isActive ? 'Active' : 'Inactive' }}
                 </span>

@@ -110,8 +110,7 @@
                 <span>We have pet(s) in the home</span>
               </label>
               <p id="step-1-pets-hint" class="step-1-hint">
-                Adds {{ petSurchargeJd }} {{ currency }} to your quote. Helps us plan supplies and time for dander, litter,
-                etc.
+                Adds {{ petSurchargeJd }} {{ currency }} to your quote. Helps us plan supplies and time accordingly.
               </p>
             </div>
           </div>
@@ -206,12 +205,6 @@
               <span>SUB-TOTAL</span>
               <span>{{ subTotal | number : '1.2-2' }} {{ currency }}</span>
             </div>
-            @if (discountAmount > 0) {
-              <div class="booking-summary-cost-row booking-summary-discount">
-                <span>PROMO ({{ offerDiscountPercent }}%)</span>
-                <span>-{{ discountAmount | number : '1.2-2' }} {{ currency }}</span>
-              </div>
-            }
             @if (salesTax > 0) {
               <div class="booking-summary-cost-row booking-summary-tax">
                 <span>SALES TAX</span>
@@ -220,7 +213,7 @@
             }
             <div class="booking-summary-cost-row booking-summary-total">
               <span>TOTAL</span>
-              <span>{{ totalAfterDiscount | number : '1.2-2' }} {{ currency }}</span>
+              <span>{{ total | number : '1.2-2' }} {{ currency }}</span>
             </div>
           </div>
         </div>

@@ -23,15 +23,11 @@
             @if (offer.badge) {
               <span class="offer-card__badge">{{ offer.badge }}</span>
             }
-            @if (offer.discountPercent != null && offer.discountPercent > 0) {
-              <span class="offer-card__pct" aria-label="Discount percentage">{{ offer.discountPercent }}% off</span>
-            }
+            <!-- Discounts are not shown per pricing requirements. -->
             <h2 class="offer-card__title">{{ offer.title }}</h2>
             <p class="offer-card__summary">{{ offer.summary }}</p>
             <p class="offer-card__detail">{{ offer.detail }}</p>
-            <a class="offer-card__book" routerLink="/booking" [queryParams]="{ offer: offer.id }">
-              Book with this offer
-            </a>
+            <a class="offer-card__book" routerLink="/booking">Book</a>
           </li>
         }
       </ul>

@@ -30,3 +30,17 @@ export interface PaymentDto {
 export interface ConfirmStripePaymentRequest {
   paymentMethodToken: string;
 }
+
+/** POST /api/stripe/create-subscription-checkout — OpenAPI CreateSubscriptionCheckoutDto */
+export type SubscriptionPlanType = 'ONE_WEEK' | 'TWO_WEEKS' | 'FOUR_WEEKS';
+
+export interface CreateSubscriptionCheckoutDto {
+  customerId: string;
+  bookingId: string;
+  planType: SubscriptionPlanType;
+}
+
+/** Response from POST /api/stripe/create-subscription-checkout */
+export interface CreateSubscriptionCheckoutResponseDto {
+  checkoutUrl: string;
+}

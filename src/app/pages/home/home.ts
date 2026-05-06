@@ -55,9 +55,7 @@ export class Home implements OnInit, OnDestroy {
       .pipe(
         map((offers) =>
           offers.slice(0, 2).map((o) => {
-            const pct =
-              o.discountPercent != null && o.discountPercent > 0 ? ` · up to ${o.discountPercent}% off` : '';
-            return `${o.title}: ${o.summary}${pct}`;
+            return `${o.title}: ${o.summary}`;
           }),
         ),
         catchError(() => of([])),
