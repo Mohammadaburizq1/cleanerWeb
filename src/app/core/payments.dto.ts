@@ -38,6 +38,8 @@ export interface CreateSubscriptionCheckoutDto {
   customerId: string;
   bookingId: string;
   planType: SubscriptionPlanType;
+  /** Stripe PaymentMethod id (`pm_...`) from Elements — send when collected on your site first. */
+  paymentMethodToken?: string | null;
 }
 
 /** Response from POST /api/stripe/create-subscription-checkout */

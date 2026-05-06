@@ -533,6 +533,43 @@
               }
             </div>
 
+            <div class="form-group form-group-full payment-heading">
+              <h3>Card Information</h3>
+              <p class="booking-card-flow-note">
+                Enter your card details first. Then choose your billing period below—the plan discount is applied based on
+                that period (weekly, biweekly, or monthly).
+              </p>
+            </div>
+
+            <div class="form-group form-group-full">
+              <label for="cardHolder">Card Holder Name</label>
+              <input id="cardHolder" type="text" formControlName="cardHolder" placeholder="Name on card" />
+              @if (submitted && f.cardHolder.errors) {
+                <small class="error">Card holder name is required.</small>
+              }
+            </div>
+
+            <div class="form-group form-group-full">
+              <label class="booking-card-details-label">Card Details</label>
+              <div class="stripe-card-container">
+                <div #stripeCardMount class="stripe-card-element"></div>
+                @if (cardElementError) {
+                  <div class="stripe-card-error">{{ cardElementError }}</div>
+                }
+              </div>
+
+              <p class="stripe-card-tip">
+                Enter the expiry as <strong>MM/YY</strong> (e.g. <strong>12/34</strong>). Click inside the Expiry field in
+                the card box and type both digits.
+              </p>
+
+              @if (cardComplete) {
+                <p class="stripe-card-ok">Card details complete.</p>
+              } @else {
+                <p class="stripe-card-notok">Card details are not complete yet.</p>
+              }
+            </div>
+
             <div class="form-group">
               <label for="schedule">Schedule</label>
               <select id="schedule" formControlName="schedule">
@@ -543,8 +580,8 @@
               </select>
               @if (isSubscriptionSchedule()) {
                 <small class="booking-schedule-note">
-                  <strong>{{ subscriptionDiscountPercent }}% off</strong> the sub-total for this plan. Stripe checkout
-                  after booking. Sign in required.
+                  Plan discount <strong>{{ subscriptionDiscountPercent }}%</strong> applies to your sub-total for this billing
+                  period (weekly 45% · biweekly 35% · monthly 25%). Sign in required for recurring plans.
                 </small>
               }
             </div>
@@ -646,49 +683,6 @@
               />
             </div>
 
-            @if (isSubscriptionSchedule()) {
-              <div class="form-group form-group-full booking-subscription-checkout-hint">
-                <h3 class="payment-heading">Subscription checkout</h3>
-                <p>
-                  Payment for this plan is completed on Stripe’s secure page (card entry there). Submit this form to create
-                  your booking first, then you’ll be redirected.
-                </p>
-              </div>
-            } @else {
-              <div class="form-group form-group-full payment-heading">
-                <h3>Card Information</h3>
-              </div>
-
-              <div class="form-group form-group-full">
-                <label for="cardHolder">Card Holder Name</label>
-                <input id="cardHolder" type="text" formControlName="cardHolder" placeholder="Name on card" />
-                @if (submitted && f.cardHolder.errors) {
-                  <small class="error">Card holder name is required.</small>
-                }
-              </div>
-
-              <div class="form-group form-group-full">
-                <label class="booking-card-details-label">Card Details</label>
-                <div class="stripe-card-container">
-                  <div #stripeCardMount class="stripe-card-element"></div>
-                  @if (cardElementError) {
-                    <div class="stripe-card-error">{{ cardElementError }}</div>
-                  }
-                </div>
-
-                <p class="stripe-card-tip">
-                  Enter the expiry as <strong>MM/YY</strong> (e.g. <strong>12/34</strong>). Click inside the Expiry field in
-                  the card box and type both digits.
-                </p>
-
-                @if (cardComplete) {
-                  <p class="stripe-card-ok">Card details complete.</p>
-                } @else {
-                  <p class="stripe-card-notok">Card details are not complete yet.</p>
-                }
-              </div>
-            }
-
             <div class="form-group form-group-full">
               <label for="notes">Additional Notes</label>
               <textarea
@@ -725,11 +719,18 @@
             <button type="submit" class="btn-submit" [disabled]="sending">
               {{ sending ? 'Submitting...' : 'Submit Booking Request' }}
             </button>
-            <p class="booking-payment-hold-note">
-              By booking, you agree that a temporary authorization hold will be placed on your card before your
-              appointment. This is not an immediate charge. Final payment will be processed after the service is
-              completed.
-            </p>
+            @if (isSubscriptionSchedule()) {
+              <p class="booking-payment-hold-note">
+                Your card is confirmed on this page; next, Stripe checkout completes the subscription for your chosen
+                period. Sign in is required for recurring plans.
+              </p>
+            } @else {
+              <p class="booking-payment-hold-note">
+                By booking, you agree that a temporary authorization hold will be placed on your card before your
+                appointment. This is not an immediate charge. Final payment will be processed after the service is
+                completed.
+              </p>
+            }
           </div>
 
           <!-- Mobile-only: totals + submit at end of form (scrolls with page). -->

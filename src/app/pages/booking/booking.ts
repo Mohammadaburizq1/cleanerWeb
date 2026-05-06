@@ -998,11 +998,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   private applySchedulePaymentValidators(): void {
     const cardHolder = this.bookingForm.get('cardHolder');
     if (!cardHolder) return;
-    if (this.isSubscriptionSchedule()) {
-      cardHolder.clearValidators();
-    } else {
-      cardHolder.setValidators([Validators.required, Validators.minLength(2)]);
-    }
+    cardHolder.setValidators([Validators.required, Validators.minLength(2)]);
     cardHolder.updateValueAndValidity({ emitEvent: false });
   }
 
@@ -1023,10 +1019,6 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private async initStripeForCurrentSchedule(): Promise<void> {
-    if (this.isSubscriptionSchedule()) {
-      this.teardownStripeCard();
-      return;
-    }
     if (!this.stripePublishableKey) return;
     if (!this.stripeCardMount) return;
     if (this.cardElement) return;
@@ -1369,7 +1361,9 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
 
     const skipOneTimePayment = !this.TEST_PAYMENT_MODE && this.total <= 0 && !subscriptionPlan;
 
-    if (!skipOneTimePayment && !subscriptionPlan && !this.cardComplete) {
+    const cardRequired =
+      subscriptionPlan ? !this.TEST_PAYMENT_MODE : !skipOneTimePayment;
+    if (cardRequired && !this.cardComplete) {
       this.setSubmitError(
         this.cardElementError ??
           'Please complete the card (including expiry). Card details must show as complete before submit.',
@@ -1421,6 +1415,9 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
       let pm: { paymentMethodId: string; last4: string; expiryMMYY: string } | null = null;
 
       if (subscriptionPlan) {
+        phase = 'Creating payment method';
+        pm = await this.createPaymentMethod();
+
         phase = 'Starting subscription checkout';
         let me = this.auth.me();
         if (!me?.id) {
@@ -1434,6 +1431,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
             customerId: me.id,
             bookingId: createdBooking.id,
             planType: subscriptionPlan,
+            paymentMethodToken: pm.paymentMethodId,
           }),
         );
         const checkoutUrl = (subResp.checkoutUrl ?? '').trim();
@@ -1568,7 +1566,8 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
       if (
         phase === 'Creating payment' ||
         phase === 'Confirming payment' ||
-        phase === 'Starting subscription checkout'
+        phase === 'Starting subscription checkout' ||
+        phase === 'Creating payment method'
       ) {
         message +=
           ' If payment failed, your booking may still exist — check Admin “GET /api/Booking” or Swagger.';
