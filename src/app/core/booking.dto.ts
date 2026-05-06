@@ -44,7 +44,7 @@ export interface BookingDto {
   customerEmail: string;
   customerPhone: string | null;
   baseAmount?: number;
-  discountPercent?: number;
+  discountPercent?: number | string;
   total?: number;
   registeredUserId?: string | null;
 }

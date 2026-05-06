@@ -55,3 +55,17 @@ export interface CreateSubscriptionCheckoutDto {
 export interface CreateSubscriptionCheckoutResponseDto {
   checkoutUrl: string;
 }
+
+/** POST /api/stripe/cancel-subscription — OpenAPI CancelSubscriptionDto */
+export interface CancelSubscriptionDto {
+  customerId: string;
+  bookingId: string;
+  /** When true, Stripe typically cancels at period end (default true for safer UX). */
+  cancelAtPeriodEnd?: boolean;
+}
+
+/** POST /api/stripe/cancel-subscription response */
+export interface CancelSubscriptionResponseDto {
+  cancelAtPeriodEnd: boolean;
+  message: string;
+}

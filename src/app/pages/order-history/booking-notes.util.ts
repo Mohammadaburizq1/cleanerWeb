@@ -76,3 +76,26 @@ function afterColon(line: string): string | null {
   const v = line.slice(i + 1).trim();
   return v || null;
 }
+
+/**
+ * True when booking looks like a recurring (subscription) plan vs one-time.
+ * Uses API `discountPercent` when present (> 0 = plan discount saved), else parses schedule label from notes.
+ */
+function subscriptionDiscountNumber(value: unknown): number {
+  if (typeof value === 'number' && !Number.isNaN(value)) return value;
+  if (typeof value === 'string') {
+    const n = parseFloat(value);
+    return Number.isFinite(n) ? n : 0;
+  }
+  return 0;
+}
+
+export function bookingLooksLikeSubscription(
+  booking: { discountPercent?: number | string },
+  parsed: ParsedBookingNotes,
+): boolean {
+  if (subscriptionDiscountNumber(booking.discountPercent) > 0) return true;
+  const s = (parsed.schedule ?? '').trim().toLowerCase();
+  if (!s || s === 'one time') return false;
+  return true;
+}

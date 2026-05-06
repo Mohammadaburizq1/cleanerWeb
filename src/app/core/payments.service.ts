@@ -9,6 +9,8 @@ import {
   ConfirmStripePaymentRequest,
   CreatePaymentRequest,
   CreatePaymentResponse,
+  CancelSubscriptionDto,
+  CancelSubscriptionResponseDto,
   CreateSubscriptionCheckoutDto,
   CreateSubscriptionCheckoutResponseDto,
   PaymentDto,
@@ -33,6 +35,25 @@ export class PaymentsService {
     return this.http.post<unknown>(url, dto, { headers: this.authHeaders() }).pipe(
       map((raw) => ({
         checkoutUrl: jsonStr(raw, 'checkoutUrl', 'CheckoutUrl'),
+      })),
+    );
+  }
+
+  /** POST /api/stripe/cancel-subscription — cancel Stripe subscription linked to a booking. */
+  cancelSubscription(dto: CancelSubscriptionDto): Observable<CancelSubscriptionResponseDto> {
+    const url = joinUrl(this.apiBaseUrl, '/api/stripe/cancel-subscription');
+    const body: CancelSubscriptionDto = {
+      customerId: dto.customerId,
+      bookingId: dto.bookingId,
+      ...(dto.cancelAtPeriodEnd !== undefined ? { cancelAtPeriodEnd: dto.cancelAtPeriodEnd } : {}),
+    };
+    return this.http.post<unknown>(url, body, { headers: this.authHeaders() }).pipe(
+      map((raw) => ({
+        cancelAtPeriodEnd:
+          typeof (raw as { cancelAtPeriodEnd?: unknown })?.cancelAtPeriodEnd === 'boolean'
+            ? (raw as { cancelAtPeriodEnd: boolean }).cancelAtPeriodEnd
+            : false,
+        message: jsonStr(raw, 'message', 'Message'),
       })),
     );
   }

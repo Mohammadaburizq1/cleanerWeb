@@ -1,13 +1,17 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { catchError, finalize, map, of, switchMap } from 'rxjs';
+import { catchError, finalize, firstValueFrom, map, of, switchMap } from 'rxjs';
 import { BookingService } from '../../core/booking.service';
 import { PaymentsService } from '../../core/payments.service';
 import { AuthService } from '../../core/auth.service';
 import type { BookingDto } from '../../core/booking.dto';
 import type { MeDto } from '../../core/auth.dto';
-import { parseBookingNotesForDisplay, type ParsedBookingNotes } from './booking-notes.util';
+import {
+  bookingLooksLikeSubscription,
+  parseBookingNotesForDisplay,
+  type ParsedBookingNotes,
+} from './booking-notes.util';
 
 /** One row for table/cards (booking + parsed notes + optional payment status). */
 export interface OrderHistoryRow {
@@ -36,6 +40,14 @@ export class OrderHistoryComponent implements OnInit {
   accountEmail: string | null = null;
   rows: OrderHistoryRow[] = [];
 
+  /** Signed-in user id — required to call cancel-subscription (matches booking.registeredUserId when set). */
+  private currentUserId: string | null = null;
+
+  /** Booking id being cancelled (subscription). */
+  cancellingBookingId: string | null = null;
+
+  cancelBanner: { type: 'ok' | 'err'; text: string } | null = null;
+
   ngOnInit(): void {
     this.loadMyOrders();
   }
@@ -56,7 +68,10 @@ export class OrderHistoryComponent implements OnInit {
 
     profile$
       .pipe(
-        switchMap((me) => this.ordersForProfile(me)),
+        switchMap((me) => {
+          this.currentUserId = me?.id?.trim() ? me.id.trim() : null;
+          return this.ordersForProfile(me);
+        }),
         finalize(() => {
           this.loading = false;
           this.hasLoaded = true;
@@ -116,6 +131,68 @@ export class OrderHistoryComponent implements OnInit {
   formatTime(iso: string): string {
     const d = new Date(iso);
     return isNaN(d.getTime()) ? '—' : d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  }
+
+  /** True when notes/API indicate recurring plan (Weekly / Biweekly / Monthly). */
+  isSubscriptionBooking(row: OrderHistoryRow): boolean {
+    return bookingLooksLikeSubscription(row.booking, row.parsed);
+  }
+
+  /** Show cancel only for subscription-like bookings owned by this account. */
+  canCancelSubscription(row: OrderHistoryRow): boolean {
+    if (!this.currentUserId || !bookingLooksLikeSubscription(row.booking, row.parsed)) return false;
+    const rid = row.booking.registeredUserId?.trim();
+    if (rid) return rid === this.currentUserId;
+    const em = (row.booking.customerEmail ?? '').trim().toLowerCase();
+    const ac = (this.accountEmail ?? '').trim().toLowerCase();
+    return !!em && em === ac;
+  }
+
+  async cancelSubscription(row: OrderHistoryRow): Promise<void> {
+    if (!this.canCancelSubscription(row) || !this.currentUserId) return;
+    const ok = window.confirm(
+      'Cancel this subscription? Billing typically stops at the end of the current period (depending on your Stripe settings). This cannot be undone from here.',
+    );
+    if (!ok) return;
+
+    this.cancelBanner = null;
+    this.cancellingBookingId = row.booking.id;
+    try {
+      const res = await firstValueFrom(
+        this.paymentsService.cancelSubscription({
+          customerId: this.currentUserId,
+          bookingId: row.booking.id,
+          cancelAtPeriodEnd: true,
+        }),
+      );
+      this.cancelBanner = {
+        type: 'ok',
+        text: res.message?.trim() || 'Subscription cancellation requested.',
+      };
+      this.refresh();
+    } catch (err: unknown) {
+      this.cancelBanner = {
+        type: 'err',
+        text: this.formatCancelError(err),
+      };
+    } finally {
+      this.cancellingBookingId = null;
+    }
+  }
+
+  private formatCancelError(err: unknown): string {
+    if (err instanceof HttpErrorResponse) {
+      const raw = err.error;
+      if (typeof raw === 'object' && raw !== null && 'message' in raw && typeof (raw as { message?: unknown }).message === 'string') {
+        const m = (raw as { message: string }).message.trim();
+        if (m) return m;
+      }
+      if (typeof raw === 'string' && raw.trim()) return raw.trim();
+      return err.status === 404
+        ? 'Cancel subscription API not found. Deploy POST /api/stripe/cancel-subscription.'
+        : `Could not cancel (${err.status}).`;
+    }
+    return 'Could not cancel subscription. Try again later.';
   }
 
   private enrichRows(bookings: BookingDto[]) {

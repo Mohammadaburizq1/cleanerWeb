@@ -26,6 +26,17 @@
         <div class="order-history-banner order-history-banner--error" role="alert">{{ errorMessage }}</div>
       }
 
+      @if (cancelBanner) {
+        <div
+          class="order-history-banner"
+          [class.order-history-banner--error]="cancelBanner.type === 'err'"
+          [class.order-history-banner--success]="cancelBanner.type === 'ok'"
+          role="status"
+        >
+          {{ cancelBanner.text }}
+        </div>
+      }
+
       @if (loading) {
         <p class="order-history-loading" aria-live="polite">Loading your orders…</p>
       }
@@ -63,6 +74,7 @@
                 <th scope="col">Status</th>
                 <th scope="col">Total</th>
                 <th scope="col">Payment</th>
+                <th scope="col">Subscription</th>
               </tr>
             </thead>
             <tbody>
@@ -82,6 +94,22 @@
                   <td><span class="order-history-badge">{{ display(row.booking.status) }}</span></td>
                   <td>{{ display(row.parsed.totalLine) }}</td>
                   <td>{{ display(row.paymentStatus) }}</td>
+                  <td class="order-history-actions">
+                    @if (canCancelSubscription(row)) {
+                      <button
+                        type="button"
+                        class="btn-cancel-subscription"
+                        [disabled]="cancellingBookingId === row.booking.id"
+                        (click)="cancelSubscription(row)"
+                      >
+                        {{ cancellingBookingId === row.booking.id ? 'Cancelling…' : 'Cancel subscription' }}
+                      </button>
+                    } @else if (isSubscriptionBooking(row)) {
+                      <span class="order-history-muted">Sign-in booking only</span>
+                    } @else {
+                      <span class="order-history-muted">—</span>
+                    }
+                  </td>
                 </tr>
               }
             </tbody>
@@ -141,6 +169,26 @@
                   <dt>Payment</dt>
                   <dd>{{ display(row.paymentStatus) }}</dd>
                 </div>
+                @if (canCancelSubscription(row)) {
+                  <div class="order-card__row order-card__row--actions">
+                    <dt>Subscription</dt>
+                    <dd>
+                      <button
+                        type="button"
+                        class="btn-cancel-subscription"
+                        [disabled]="cancellingBookingId === row.booking.id"
+                        (click)="cancelSubscription(row)"
+                      >
+                        {{ cancellingBookingId === row.booking.id ? 'Cancelling…' : 'Cancel subscription' }}
+                      </button>
+                    </dd>
+                  </div>
+                } @else if (isSubscriptionBooking(row)) {
+                  <div class="order-card__row">
+                    <dt>Subscription</dt>
+                    <dd><span class="order-history-muted">Cancel available when booking is tied to your account.</span></dd>
+                  </div>
+                }
               </dl>
               @if (row.parsed.extraNotes?.trim()) {
                 <details class="order-card__details">
