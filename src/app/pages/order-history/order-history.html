@@ -95,17 +95,21 @@
                   <td>{{ display(row.parsed.totalLine) }}</td>
                   <td>{{ display(row.paymentStatus) }}</td>
                   <td class="order-history-actions">
-                    @if (canCancelSubscription(row)) {
-                      <button
-                        type="button"
-                        class="btn-cancel-subscription"
-                        [disabled]="cancellingBookingId === row.booking.id"
-                        (click)="cancelSubscription(row)"
-                      >
-                        {{ cancellingBookingId === row.booking.id ? 'Cancelling…' : 'Cancel subscription' }}
-                      </button>
-                    } @else if (isSubscriptionBooking(row)) {
-                      <span class="order-history-muted">Sign-in booking only</span>
+                    @if (isSubscriptionBooking(row)) {
+                      @if (isSubscriptionCanceled(row)) {
+                        <span class="order-history-canceled">Canceled</span>
+                      } @else if (canCancelSubscription(row)) {
+                        <button
+                          type="button"
+                          class="btn-cancel-subscription"
+                          [disabled]="cancellingBookingId === row.booking.id"
+                          (click)="cancelSubscription(row)"
+                        >
+                          {{ cancellingBookingId === row.booking.id ? 'Cancelling…' : 'Cancel subscription' }}
+                        </button>
+                      } @else {
+                        <span class="order-history-muted">Sign-in booking only</span>
+                      }
                     } @else {
                       <span class="order-history-muted">—</span>
                     }
@@ -169,24 +173,25 @@
                   <dt>Payment</dt>
                   <dd>{{ display(row.paymentStatus) }}</dd>
                 </div>
-                @if (canCancelSubscription(row)) {
+                @if (isSubscriptionBooking(row)) {
                   <div class="order-card__row order-card__row--actions">
                     <dt>Subscription</dt>
                     <dd>
-                      <button
-                        type="button"
-                        class="btn-cancel-subscription"
-                        [disabled]="cancellingBookingId === row.booking.id"
-                        (click)="cancelSubscription(row)"
-                      >
-                        {{ cancellingBookingId === row.booking.id ? 'Cancelling…' : 'Cancel subscription' }}
-                      </button>
+                      @if (isSubscriptionCanceled(row)) {
+                        <span class="order-history-canceled">Canceled</span>
+                      } @else if (canCancelSubscription(row)) {
+                        <button
+                          type="button"
+                          class="btn-cancel-subscription"
+                          [disabled]="cancellingBookingId === row.booking.id"
+                          (click)="cancelSubscription(row)"
+                        >
+                          {{ cancellingBookingId === row.booking.id ? 'Cancelling…' : 'Cancel subscription' }}
+                        </button>
+                      } @else {
+                        <span class="order-history-muted">Cancel available when booking is tied to your account.</span>
+                      }
                     </dd>
-                  </div>
-                } @else if (isSubscriptionBooking(row)) {
-                  <div class="order-card__row">
-                    <dt>Subscription</dt>
-                    <dd><span class="order-history-muted">Cancel available when booking is tied to your account.</span></dd>
                   </div>
                 }
               </dl>

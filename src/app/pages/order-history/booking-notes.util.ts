@@ -99,3 +99,36 @@ export function bookingLooksLikeSubscription(
   if (!s || s === 'one time') return false;
   return true;
 }
+
+/** Status values that do not imply subscription cancellation (payment/booking flow). */
+const NEUTRAL_BOOKING_STATUS =
+  /^(confirmed|pending|succeeded|paid|processing|complete|completed|scheduled|active)$/i;
+
+/**
+ * True when GET booking data indicates the Stripe subscription was cancelled or is scheduled to end.
+ * Use together with local IDs after POST cancel — API may still return "Succeeded" until webhook updates.
+ */
+export function subscriptionCancellationIndicatedFromBooking(booking: {
+  status?: string | null;
+  notes?: string | null;
+}): boolean {
+  const st = (booking.status ?? '').trim();
+  if (st && !NEUTRAL_BOOKING_STATUS.test(st)) {
+    const lower = st.toLowerCase();
+    if (
+      /cancel|canceled|cancelled|unsub|inactive|revoked|expired|ended|termination/i.test(lower) &&
+      !/non.?cancel/i.test(lower)
+    ) {
+      return true;
+    }
+  }
+  const notes = (booking.notes ?? '').toLowerCase();
+  if (
+    /subscription\s*(cancel|canceled|cancelled|ending)|cancel.*subscription|cancel_at_period_end|will\s+end\s+after.*(billing|period)/i.test(
+      notes,
+    )
+  ) {
+    return true;
+  }
+  return false;
+}

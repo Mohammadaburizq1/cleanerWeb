@@ -10,6 +10,7 @@ import type { MeDto } from '../../core/auth.dto';
 import {
   bookingLooksLikeSubscription,
   parseBookingNotesForDisplay,
+  subscriptionCancellationIndicatedFromBooking,
   type ParsedBookingNotes,
 } from './booking-notes.util';
 
@@ -48,8 +49,36 @@ export class OrderHistoryComponent implements OnInit {
 
   cancelBanner: { type: 'ok' | 'err'; text: string } | null = null;
 
+  /** Booking ids the user successfully cancelled (persisted — GET often still shows old status until webhook). */
+  private cancelledSubscriptionBookingIds = new Set<string>();
+
+  private readonly LS_CANCELLED_SUB_IDS = 'cleanhome-cancelled-sub-booking-ids';
+
   ngOnInit(): void {
+    this.loadCancelledSubscriptionIdsFromStorage();
     this.loadMyOrders();
+  }
+
+  private loadCancelledSubscriptionIdsFromStorage(): void {
+    try {
+      const raw = localStorage.getItem(this.LS_CANCELLED_SUB_IDS);
+      const parsed = raw ? (JSON.parse(raw) as unknown) : [];
+      if (Array.isArray(parsed)) {
+        this.cancelledSubscriptionBookingIds = new Set(
+          parsed.filter((x): x is string => typeof x === 'string' && x.length > 0),
+        );
+      }
+    } catch {
+      this.cancelledSubscriptionBookingIds = new Set();
+    }
+  }
+
+  private persistCancelledSubscriptionIds(): void {
+    try {
+      localStorage.setItem(this.LS_CANCELLED_SUB_IDS, JSON.stringify([...this.cancelledSubscriptionBookingIds]));
+    } catch {
+      // ignore quota / private mode
+    }
   }
 
   /** Reload bookings for the signed-in account email. */
@@ -138,8 +167,16 @@ export class OrderHistoryComponent implements OnInit {
     return bookingLooksLikeSubscription(row.booking, row.parsed);
   }
 
+  /** Subscription row already cancelled (API notes/status or successful cancel in this browser). */
+  isSubscriptionCanceled(row: OrderHistoryRow): boolean {
+    if (!bookingLooksLikeSubscription(row.booking, row.parsed)) return false;
+    if (this.cancelledSubscriptionBookingIds.has(row.booking.id)) return true;
+    return subscriptionCancellationIndicatedFromBooking(row.booking);
+  }
+
   /** Show cancel only for subscription-like bookings owned by this account. */
   canCancelSubscription(row: OrderHistoryRow): boolean {
+    if (this.isSubscriptionCanceled(row)) return false;
     if (!this.currentUserId || !bookingLooksLikeSubscription(row.booking, row.parsed)) return false;
     const rid = row.booking.registeredUserId?.trim();
     if (rid) return rid === this.currentUserId;
@@ -169,6 +206,8 @@ export class OrderHistoryComponent implements OnInit {
         type: 'ok',
         text: res.message?.trim() || 'Subscription cancellation requested.',
       };
+      this.cancelledSubscriptionBookingIds.add(row.booking.id);
+      this.persistCancelledSubscriptionIds();
       this.refresh();
     } catch (err: unknown) {
       this.cancelBanner = {
@@ -205,7 +244,8 @@ export class OrderHistoryComponent implements OnInit {
     return this.paymentsService.listPayments().pipe(
       map((payments) => {
         const byBooking = new Map<string, string>();
-        for (const p of payments) {
+        const safe = Array.isArray(payments) ? payments : [];
+        for (const p of safe) {
           const bid = p.bookingId?.trim();
           if (bid) byBooking.set(bid, p.status);
         }
