@@ -533,20 +533,36 @@
               }
             </div>
 
+            <div class="form-group">
+              <label for="schedule">Schedule</label>
+              <select id="schedule" formControlName="schedule">
+                <option value="one_time">One Time</option>
+                <option value="weekly">Weekly</option>
+                <option value="biweekly">Biweekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+              @if (isSubscriptionSchedule()) {
+                <small class="booking-schedule-note">
+                  Plan discount <strong>{{ subscriptionDiscountPercent }}%</strong> applies to your sub-total for this billing
+                  period (weekly 45% · biweekly 35% · monthly 25%). Sign in required for recurring plans.
+                </small>
+              }
+            </div>
+
             @if (isSubscriptionSchedule()) {
               <div class="form-group form-group-full payment-heading">
                 <h3>Payment</h3>
                 <p class="booking-card-flow-note">
                   For weekly, biweekly, or monthly plans you will enter your card on the next screen — secure Stripe
-                  checkout. Choose your billing period below; the plan discount applies to your sub-total.
+                  checkout. The plan discount applies to your sub-total based on the schedule you chose above.
                 </p>
               </div>
             } @else {
               <div class="form-group form-group-full payment-heading">
                 <h3>Card Information</h3>
                 <p class="booking-card-flow-note">
-                  Enter your card details here for a one-time booking. Then choose your billing period below — select
-                  “One Time” if you do not want a recurring plan.
+                  Choose “One Time” above for a single visit, or a recurring plan for subscription pricing. Enter your card
+                  details below for one-time bookings only.
                 </p>
               </div>
 
@@ -579,22 +595,6 @@
                 }
               </div>
             }
-
-            <div class="form-group">
-              <label for="schedule">Schedule</label>
-              <select id="schedule" formControlName="schedule">
-                <option value="one_time">One Time</option>
-                <option value="weekly">Weekly</option>
-                <option value="biweekly">Biweekly</option>
-                <option value="monthly">Monthly</option>
-              </select>
-              @if (isSubscriptionSchedule()) {
-                <small class="booking-schedule-note">
-                  Plan discount <strong>{{ subscriptionDiscountPercent }}%</strong> applies to your sub-total for this billing
-                  period (weekly 45% · biweekly 35% · monthly 25%). Sign in required for recurring plans.
-                </small>
-              }
-            </div>
 
             <div class="form-group booking-datetime-field">
               <label for="preferredDate">Preferred date</label>
