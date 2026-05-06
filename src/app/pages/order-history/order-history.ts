@@ -1,7 +1,7 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, NgZone, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { catchError, finalize, firstValueFrom, map, of, switchMap } from 'rxjs';
+import { Subscription, catchError, finalize, firstValueFrom, map, of, switchMap } from 'rxjs';
 import { BookingService } from '../../core/booking.service';
 import { PaymentsService } from '../../core/payments.service';
 import { AuthService } from '../../core/auth.service';
@@ -28,10 +28,14 @@ export interface OrderHistoryRow {
   templateUrl: './order-history.html',
   styleUrl: './order-history.scss',
 })
-export class OrderHistoryComponent implements OnInit {
+export class OrderHistoryComponent implements OnInit, OnDestroy {
   private readonly bookingService = inject(BookingService);
   private readonly paymentsService = inject(PaymentsService);
   private readonly auth = inject(AuthService);
+  private readonly ngZone = inject(NgZone);
+
+  /** Abort in-flight load when starting another (e.g. refresh right after cancel). */
+  private ordersLoadSub: Subscription | null = null;
 
   loading = false;
   /** True after first load attempt finishes (success or error). */
@@ -57,6 +61,11 @@ export class OrderHistoryComponent implements OnInit {
   ngOnInit(): void {
     this.loadCancelledSubscriptionIdsFromStorage();
     this.loadMyOrders();
+  }
+
+  ngOnDestroy(): void {
+    this.ordersLoadSub?.unsubscribe();
+    this.ordersLoadSub = null;
   }
 
   /** Normalize booking id — API may vary GUID casing vs localStorage. */
@@ -94,6 +103,9 @@ export class OrderHistoryComponent implements OnInit {
   }
 
   private loadMyOrders(): void {
+    this.ordersLoadSub?.unsubscribe();
+    this.ordersLoadSub = null;
+
     this.loadCancelledSubscriptionIdsFromStorage();
     this.errorMessage = '';
     this.rows = [];
@@ -103,20 +115,33 @@ export class OrderHistoryComponent implements OnInit {
     const profile$ =
       cached?.email?.trim() ? of(cached) : this.auth.loadMe().pipe(catchError((err: unknown) => of(null as MeDto | null)));
 
-    profile$
+    this.ordersLoadSub = profile$
       .pipe(
         switchMap((me) => {
           this.currentUserId = me?.id?.trim() ? me.id.trim() : null;
           return this.ordersForProfile(me);
         }),
         finalize(() => {
-          this.loading = false;
-          this.hasLoaded = true;
+          this.ngZone.run(() => {
+            this.loading = false;
+            this.hasLoaded = true;
+          });
         }),
       )
       .subscribe({
         next: (list) => {
-          this.rows = list;
+          this.ngZone.run(() => {
+            this.rows = list;
+          });
+        },
+        error: () => {
+          this.ngZone.run(() => {
+            this.loading = false;
+            this.hasLoaded = true;
+            if (!this.errorMessage.trim()) {
+              this.errorMessage = 'Could not load orders.';
+            }
+          });
         },
       });
   }
