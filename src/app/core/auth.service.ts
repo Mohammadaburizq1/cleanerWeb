@@ -208,6 +208,17 @@ export class AuthService {
     return '';
   }
 
+  /** Role strings the API / JWT may use for staff admin access (used by admin routes + nav). */
+  hasAdminAccess(): boolean {
+    if (this.isAdminRole(this._me()?.role)) return true;
+    return this.isAdminRole(this.getRoleFromAccessToken());
+  }
+
+  private isAdminRole(role: string | null | undefined): boolean {
+    const r = (role ?? '').toString().toLowerCase().trim();
+    return r === 'admin' || r === 'administrator' || r === 'superadmin';
+  }
+
   private handleAuthResult(result: AuthResultDto): void {
     if (result && result.success && result.accessToken) {
       this.saveTokens(result.accessToken, result.refreshToken ?? null);

@@ -22,12 +22,9 @@ export class Header implements OnInit {
   readonly isLoggedIn = this.auth.isLoggedIn;
   readonly me = this.auth.me;
   readonly isAdmin = computed(() => {
-    const roleRaw = (this.me()?.role ?? this.auth.getRoleFromAccessToken() ?? '').toString();
-    const role = roleRaw.toLowerCase().trim();
-    return (
-      !!role &&
-      (role === 'admin' || role === 'administrator' || role === 'superadmin')
-    );
+    this.isLoggedIn();
+    this.me();
+    return this.auth.hasAdminAccess();
   });
 
   constructor() {

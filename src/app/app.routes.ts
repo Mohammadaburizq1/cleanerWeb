@@ -13,6 +13,7 @@ import { AdminOffers } from './pages/admin-offers/admin-offers';
 import { Offers } from './pages/offers/offers';
 import { OrderHistoryComponent } from './pages/order-history/order-history';
 import { authGuard } from './core/auth.guard';
+import { adminGuard } from './core/admin.guard';
 
 export const routes: Routes = [
   {
@@ -80,11 +81,13 @@ export const routes: Routes = [
     path: 'admin',
     component: Admin,
     title: 'Admin – Bookings',
+    canActivate: [adminGuard],
   },
   {
     path: 'admin/offers',
     component: AdminOffers,
     title: 'Admin – Offers',
+    canActivate: [adminGuard],
   },
   {
     path: '**',
