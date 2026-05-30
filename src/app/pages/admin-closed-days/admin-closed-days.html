@@ -1,0 +1,102 @@
+<section class="admin-closed-days-page" [class.admin-closed-days-page--embedded]="embedded">
+  <div class="container">
+    @if (!embedded) {
+      <header class="admin-closed-days-hero">
+        <a routerLink="/admin" class="back-link">← Orders admin</a>
+        <span class="section-tag">ADMIN</span>
+        <h1>Closed booking days</h1>
+        <p>
+          Block customers from booking on specific dates. API:
+          <code>GET|POST|DELETE /api/ClosedDays</code> (auth required for writes).
+        </p>
+      </header>
+    } @else {
+      <header class="admin-closed-days-embedded-head">
+        <h2 class="admin-closed-days-embedded-title">Closed booking days</h2>
+        <p class="admin-closed-days-embedded-desc">
+          Pick dates when new bookings are not accepted. Closed days are hidden on the public
+          <a routerLink="/booking">Booking</a> calendar.
+        </p>
+      </header>
+    }
+
+    @if (loadError) {
+      <div class="banner banner--error" role="alert">{{ loadError }}</div>
+    }
+
+    <div class="closed-days-editor card">
+      <h2 class="closed-days-editor-title">Close a day</h2>
+      @if (formError) {
+        <p class="form-error" role="alert">{{ formError }}</p>
+      }
+      <div class="field-grid">
+        <label class="field">
+          <span class="field-label">Date</span>
+          <input
+            type="date"
+            class="field-input"
+            [(ngModel)]="newDate"
+            name="newDate"
+            [min]="minDate()"
+          />
+        </label>
+        <label class="field">
+          <span class="field-label">Reason (optional, admin only)</span>
+          <input
+            type="text"
+            class="field-input"
+            [(ngModel)]="newReason"
+            name="newReason"
+            placeholder="e.g. Public holiday"
+            autocomplete="off"
+          />
+        </label>
+      </div>
+      <div class="closed-days-editor-actions">
+        <button type="button" class="btn btn-primary" (click)="addClosedDay()" [disabled]="busy">
+          Close this day
+        </button>
+      </div>
+    </div>
+
+    <div class="closed-days-list-head">
+      <h2 class="closed-days-list-title">Closed days</h2>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="loadClosedDays()" [disabled]="busy">
+        Refresh
+      </button>
+    </div>
+
+    @if (busy && closedDays.length === 0) {
+      <p class="muted">Loading…</p>
+    } @else if (closedDays.length === 0) {
+      <div class="empty-state">
+        <p>No closed days configured.</p>
+        <p class="empty-hint">Add a date above to block bookings on that day.</p>
+      </div>
+    } @else {
+      <ul class="closed-days-admin-list">
+        @for (d of closedDays; track d.id) {
+          <li class="closed-days-admin-item" [class.closed-days-admin-item--past]="isPast(d.date)">
+            <div class="closed-days-admin-item-main">
+              <span class="closed-days-admin-date">{{ formatDisplayDate(d.date) }}</span>
+              <span class="closed-days-admin-ymd">{{ d.date }}</span>
+              @if (d.reason) {
+                <p class="closed-days-admin-reason">{{ d.reason }}</p>
+              }
+            </div>
+            <div class="closed-days-admin-item-actions">
+              <button
+                type="button"
+                class="btn btn-sm btn-primary"
+                (click)="reopenDay(d)"
+                [disabled]="busy"
+              >
+                Reopen
+              </button>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</section>

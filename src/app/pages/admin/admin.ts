@@ -5,6 +5,7 @@ import { catchError, finalize, of } from 'rxjs';
 import { BookingService } from '../../core/booking.service';
 import { BookingDto } from '../../core/booking.dto';
 import { AdminOffers } from '../admin-offers/admin-offers';
+import { AdminClosedDays } from '../admin-closed-days/admin-closed-days';
 import { PaymentsService } from '../../core/payments.service';
 import type { PaymentDto } from '../../core/payments.dto';
 import { DialogService } from '../../shared/components/dialog/dialog.service';
@@ -29,7 +30,7 @@ const NON_REFUNDABLE = new Set(
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, RouterLink, AdminOffers],
+  imports: [CommonModule, RouterLink, AdminOffers, AdminClosedDays],
   templateUrl: './admin.html',
   styleUrl: './admin.scss',
 })

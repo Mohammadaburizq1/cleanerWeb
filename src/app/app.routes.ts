@@ -10,6 +10,7 @@ import { ForgotPassword } from './pages/forgot-password/forgot-password';
 import { ResetPassword } from './pages/reset-password/reset-password';
 import { Admin } from './pages/admin/admin';
 import { AdminOffers } from './pages/admin-offers/admin-offers';
+import { AdminClosedDays } from './pages/admin-closed-days/admin-closed-days';
 import { Offers } from './pages/offers/offers';
 import { OrderHistoryComponent } from './pages/order-history/order-history';
 import { authGuard } from './core/auth.guard';
@@ -87,6 +88,12 @@ export const routes: Routes = [
     path: 'admin/offers',
     component: AdminOffers,
     title: 'Admin – Offers',
+    canActivate: [adminGuard],
+  },
+  {
+    path: 'admin/closed-days',
+    component: AdminClosedDays,
+    title: 'Admin – Closed days',
     canActivate: [adminGuard],
   },
   {

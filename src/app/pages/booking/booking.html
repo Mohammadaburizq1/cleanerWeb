@@ -608,10 +608,16 @@
                 autocomplete="off"
               />
               <input type="hidden" formControlName="preferredDate" />
-              @if (takenDatesUnavailable) {
+              @if (takenDatesUnavailable || closedDatesUnavailable) {
                 <small class="booking-datetime-note">
-                  Could not load existing bookings. Days that are already full may still appear — the server may reject
-                  conflicts.
+                  @if (takenDatesUnavailable && closedDatesUnavailable) {
+                    Could not load booking availability. Some dates may still be unavailable on the server.
+                  } @else if (closedDatesUnavailable) {
+                    Could not load closed days — unavailable dates may still appear until you refresh.
+                  } @else {
+                    Could not load existing bookings. Days that are already full may still appear — the server may reject
+                    conflicts.
+                  }
                 </small>
               } @else {
                 <small class="booking-datetime-note"></small>

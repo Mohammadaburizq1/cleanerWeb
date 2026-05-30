@@ -30,6 +30,7 @@ import { FeedbackService } from '../../core/feedback.service';
 import type { CreateFeedbackDto } from '../../core/feedback.dto';
 import { SelectedTasksService } from '../../core/selected-tasks.service';
 import { OfferService } from '../../core/offer.service';
+import { ClosedDaysService } from '../../core/closed-days.service';
 import {
   computeServicesQuote,
   HOME_SQ_FT_TIERS,
@@ -134,6 +135,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   private route = inject(ActivatedRoute);
   /** Public offers; optional promo applies a % discount to sub-total (see `promoDiscountAmount`). */
   private offerService = inject(OfferService);
+  private closedDaysService = inject(ClosedDaysService);
   private selectedTasksService = inject(SelectedTasksService);
   private paymentsService = inject(PaymentsService);
   private auth = inject(AuthService);
@@ -202,7 +204,11 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
   readonly maxBookingsPerDay = 4;
   /** True when GET /api/Booking failed (e.g. auth); calendar cannot show capacity. */
   takenDatesUnavailable = false;
-  private takenDatesLoadPromise: Promise<void> = Promise.resolve();
+  /** Admin-closed calendar dates (local YYYY-MM-DD). */
+  private readonly closedDays = new Set<string>();
+  /** True when closed days could not be loaded. */
+  closedDatesUnavailable = false;
+  private availabilityLoadPromise: Promise<void> = Promise.resolve();
 
   /** Tasks chosen on the Services page (from "Book Now" with checkboxes) */
   selectedTasks: SelectedTask[] = [];
@@ -439,7 +445,10 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.syncCostToState();
-    this.takenDatesLoadPromise = this.loadTakenBookingDates();
+    this.availabilityLoadPromise = Promise.all([
+      this.loadTakenBookingDates(),
+      this.loadClosedDays(),
+    ]).then(() => undefined);
 
     const offerFromState =
       fromRouter && nav?.offerId != null && String(nav.offerId).trim() !== ''
@@ -804,7 +813,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
 
   async ngAfterViewInit(): Promise<void> {
     await this.initStripeForCurrentSchedule();
-    await this.takenDatesLoadPromise;
+    await this.availabilityLoadPromise;
     queueMicrotask(() => this.initLeafletMap());
     this.initDatePicker();
     this.initTimePicker();
@@ -835,6 +844,30 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     return this.bookingCountForDay(ymd) >= this.maxBookingsPerDay;
   }
 
+  /** Loads admin-closed dates so they are not selectable in the calendar. */
+  private loadClosedDays(): Promise<void> {
+    return firstValueFrom(this.closedDaysService.listPublicClosedDays())
+      .then((list) => {
+        this.closedDays.clear();
+        for (const row of list) {
+          const key = (row.date ?? '').slice(0, 10);
+          if (key) this.closedDays.add(key);
+        }
+        this.closedDatesUnavailable = false;
+      })
+      .catch(() => {
+        this.closedDatesUnavailable = true;
+      });
+  }
+
+  private isDayClosed(ymd: string): boolean {
+    return this.closedDays.has(ymd);
+  }
+
+  private isDayUnavailable(ymd: string): boolean {
+    return this.isDayClosed(ymd) || this.isDayFullyBooked(ymd);
+  }
+
   private isBookingCancelled(status: string): boolean {
     return /cancel/i.test((status ?? '').trim());
   }
@@ -857,6 +890,7 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     if (!el) return;
 
     const fullyBookedTooltip = 'Fully booked today';
+    const closedDayTooltip = 'Not available for booking';
 
     this.datePicker?.destroy();
     this.datePicker = flatpickr(el, {
@@ -867,18 +901,23 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
       altInputClass: 'booking-datetime-input booking-datetime-input--date',
       disableMobile: true,
       minDate: 'today',
-      disable: [(d: Date) => this.isDayFullyBooked(this.dateToYmd(d))],
+      disable: [(d: Date) => this.isDayUnavailable(this.dateToYmd(d))],
       onDayCreate: (_dates, _dateStr, _instance, dayElem) => {
         if (!dayElem) return;
         const elSpan = dayElem as HTMLSpanElement & { dateObj?: Date };
         const dateObj = elSpan.dateObj;
         if (!(dateObj instanceof Date) || isNaN(dateObj.getTime())) return;
         const key = this.dateToYmd(dateObj);
-        if (!this.isDayFullyBooked(key)) return;
-        elSpan.setAttribute('title', fullyBookedTooltip);
+        const tooltip = this.isDayClosed(key)
+          ? closedDayTooltip
+          : this.isDayFullyBooked(key)
+            ? fullyBookedTooltip
+            : null;
+        if (!tooltip) return;
+        elSpan.setAttribute('title', tooltip);
         const a11y = elSpan.getAttribute('aria-label') ?? '';
-        if (!/\bfully booked\b/i.test(a11y)) {
-          elSpan.setAttribute('aria-label', `${a11y}. ${fullyBookedTooltip}`);
+        if (!a11y.toLowerCase().includes(tooltip.toLowerCase())) {
+          elSpan.setAttribute('aria-label', `${a11y}. ${tooltip}`);
         }
       },
       onChange: (selectedDates) => {
@@ -1369,6 +1408,16 @@ export class Booking implements OnInit, AfterViewInit, OnDestroy {
     if (this.bookingForm.invalid) {
       this.bookingForm.markAllAsTouched();
       this.scrollToFirstFormError();
+      return;
+    }
+
+    const preferredDate = (this.bookingForm.get('preferredDate')?.value ?? '').toString().trim();
+    if (preferredDate && this.isDayClosed(preferredDate)) {
+      this.setSubmitError('That date is not available for booking. Please choose another day.');
+      return;
+    }
+    if (preferredDate && this.isDayFullyBooked(preferredDate)) {
+      this.setSubmitError('That date is fully booked. Please choose another day.');
       return;
     }
 

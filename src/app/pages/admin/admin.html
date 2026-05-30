@@ -3,12 +3,9 @@
     <div class="admin-hero">
       <span class="section-tag">ADMIN</span>
       <h1>Bookings</h1>
-      <p>
-        List from <code>GET /api/Booking</code>. Every card has a <strong>Refund</strong> in the top bar. It
-        is only active when <code>GET /api/Payments</code> includes a row whose <code>bookingId</code> matches
-        the booking, or you can refund the same charge from the Payments list below.
-      </p>
     </div>
+
+    <app-admin-closed-days [embedded]="true" />
 
     <app-admin-offers [embedded]="true" />
 
