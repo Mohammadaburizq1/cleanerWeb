@@ -1,4 +1,4 @@
-import { Component, Input, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -17,6 +17,7 @@ import { DialogService } from '../../shared/components/dialog/dialog.service';
 export class AdminClosedDays {
   private readonly closedDaysService = inject(ClosedDaysService);
   private readonly dialog = inject(DialogService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   /** When true, compact header for use inside main `/admin` page. */
   @Input() embedded = false;
@@ -44,7 +45,8 @@ export class AdminClosedDays {
     this.loadError = null;
     return firstValueFrom(this.closedDaysService.listAllClosedDays())
       .then((rows) => {
-        this.closedDays = rows;
+        this.closedDays = [...rows];
+        this.cdr.markForCheck();
       })
       .catch((err: unknown) => {
         this.loadError = this.errMessage(err);
@@ -58,6 +60,23 @@ export class AdminClosedDays {
   minDate(): string {
     const d = new Date();
     return this.dateToYmd(d);
+  }
+
+  private upsertClosedDayInList(day: ClosedDayDto): void {
+    if (!day.date) return;
+    const idx = this.closedDays.findIndex((d) => d.id === day.id || d.date === day.date);
+    if (idx >= 0) {
+      this.closedDays = [...this.closedDays.slice(0, idx), day, ...this.closedDays.slice(idx + 1)];
+    } else {
+      this.closedDays = [...this.closedDays, day];
+    }
+    this.closedDays = [...this.closedDays].sort((a, b) => a.date.localeCompare(b.date));
+    this.cdr.markForCheck();
+  }
+
+  private removeClosedDayFromList(id: string): void {
+    this.closedDays = this.closedDays.filter((d) => d.id !== id);
+    this.cdr.markForCheck();
   }
 
   async addClosedDay(): Promise<void> {
@@ -79,11 +98,13 @@ export class AdminClosedDays {
     this.busy = true;
     try {
       const reason = this.newReason.trim() === '' ? null : this.newReason.trim();
-      await firstValueFrom(this.closedDaysService.createClosedDay({ date, reason }));
+      const created = await firstValueFrom(this.closedDaysService.createClosedDay({ date, reason }));
+      if (created) this.upsertClosedDayInList(created);
       this.newDate = '';
       this.newReason = '';
       await this.reloadClosedDaysFromServer(false);
       this.busy = false;
+      this.cdr.markForCheck();
     } catch (err: unknown) {
       this.formError = this.errMessage(err);
       this.busy = false;
@@ -103,8 +124,10 @@ export class AdminClosedDays {
     this.formError = null;
     try {
       await firstValueFrom(this.closedDaysService.deleteClosedDay(day.id));
+      this.removeClosedDayFromList(day.id);
       await this.reloadClosedDaysFromServer(false);
       this.busy = false;
+      this.cdr.markForCheck();
     } catch (err: unknown) {
       this.formError = this.errMessage(err);
       this.busy = false;

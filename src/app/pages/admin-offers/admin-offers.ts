@@ -1,4 +1,4 @@
-import { Component, Input, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -17,6 +17,7 @@ import { DialogService } from '../../shared/components/dialog/dialog.service';
 export class AdminOffers {
   private readonly offerService = inject(OfferService);
   private readonly dialog = inject(DialogService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   /** When true, compact header for use inside main `/admin` page. */
   @Input() embedded = false;
@@ -64,7 +65,8 @@ export class AdminOffers {
     this.loadError = null;
     return firstValueFrom(this.offerService.listAllOffers())
       .then((rows) => {
-        this.offers = rows;
+        this.offers = [...rows];
+        this.cdr.markForCheck();
       })
       .catch((err: unknown) => {
         this.loadError = this.errMessage(err);
@@ -109,6 +111,24 @@ export class AdminOffers {
     };
   }
 
+  /** Merge one offer into the visible list immediately (before/without waiting on GET). */
+  private upsertOfferInList(offer: OfferDto): void {
+    if (!offer.id) return;
+    const idx = this.offers.findIndex((o) => o.id === offer.id);
+    if (idx >= 0) {
+      this.offers = [...this.offers.slice(0, idx), offer, ...this.offers.slice(idx + 1)];
+    } else {
+      this.offers = [...this.offers, offer];
+    }
+    this.offers = [...this.offers].sort((a, b) => a.sortOrder - b.sortOrder);
+    this.cdr.markForCheck();
+  }
+
+  private removeOfferFromList(id: string): void {
+    this.offers = this.offers.filter((o) => o.id !== id);
+    this.cdr.markForCheck();
+  }
+
   async save(): Promise<void> {
     const dto = this.buildDto();
     if (!dto.title || !dto.summary || !dto.detail) {
@@ -118,14 +138,14 @@ export class AdminOffers {
     this.formError = null;
     this.busy = true;
     try {
-      if (this.editingId) {
-        await firstValueFrom(this.offerService.updateOffer(this.editingId, dto as UpdateOfferDto));
-      } else {
-        await firstValueFrom(this.offerService.createOffer(dto));
-      }
+      const saved = this.editingId
+        ? await firstValueFrom(this.offerService.updateOffer(this.editingId, dto as UpdateOfferDto))
+        : await firstValueFrom(this.offerService.createOffer(dto));
+      if (saved?.id) this.upsertOfferInList(saved);
       this.emptyForm();
       await this.reloadOffersFromServer(false);
       this.busy = false;
+      this.cdr.markForCheck();
     } catch (err: unknown) {
       this.formError = this.errMessage(err);
       this.busy = false;
@@ -145,8 +165,10 @@ export class AdminOffers {
     try {
       await firstValueFrom(this.offerService.deleteOffer(o.id));
       if (this.editingId === o.id) this.emptyForm();
+      this.removeOfferFromList(o.id);
       await this.reloadOffersFromServer(false);
       this.busy = false;
+      this.cdr.markForCheck();
     } catch (err: unknown) {
       this.formError = this.errMessage(err);
       this.busy = false;
