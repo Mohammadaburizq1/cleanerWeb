@@ -55,18 +55,23 @@ export class AdminOffers {
   }
 
   loadOffers(): void {
-    this.busy = true;
+    void this.reloadOffersFromServer(true);
+  }
+
+  /** Refetch offers from the API so the list matches server state after CRUD. */
+  private reloadOffersFromServer(showBusy: boolean): Promise<void> {
+    if (showBusy) this.busy = true;
     this.loadError = null;
-    this.offerService.listAllOffers().subscribe({
-      next: (rows) => {
+    return firstValueFrom(this.offerService.listAllOffers())
+      .then((rows) => {
         this.offers = rows;
-        this.busy = false;
-      },
-      error: (err: unknown) => {
-        this.busy = false;
+      })
+      .catch((err: unknown) => {
         this.loadError = this.errMessage(err);
-      },
-    });
+      })
+      .finally(() => {
+        if (showBusy) this.busy = false;
+      });
   }
 
   startEdit(o: OfferDto): void {
@@ -113,29 +118,13 @@ export class AdminOffers {
     this.formError = null;
     this.busy = true;
     try {
-      let saved: OfferDto | null = null;
       if (this.editingId) {
-        saved = await firstValueFrom(this.offerService.updateOffer(this.editingId, dto as UpdateOfferDto));
+        await firstValueFrom(this.offerService.updateOffer(this.editingId, dto as UpdateOfferDto));
       } else {
-        saved = await firstValueFrom(this.offerService.createOffer(dto));
+        await firstValueFrom(this.offerService.createOffer(dto));
       }
-
-      // Update the list immediately (no manual refresh needed).
-      if (saved && saved.id) {
-        const idx = this.offers.findIndex((o) => o.id === saved!.id);
-        if (idx >= 0) {
-          this.offers = [
-            ...this.offers.slice(0, idx),
-            saved,
-            ...this.offers.slice(idx + 1),
-          ];
-        } else {
-          this.offers = [...this.offers, saved];
-        }
-        this.offers = [...this.offers].sort((a, b) => a.sortOrder - b.sortOrder);
-      }
-
       this.emptyForm();
+      await this.reloadOffersFromServer(false);
       this.busy = false;
     } catch (err: unknown) {
       this.formError = this.errMessage(err);
@@ -156,7 +145,7 @@ export class AdminOffers {
     try {
       await firstValueFrom(this.offerService.deleteOffer(o.id));
       if (this.editingId === o.id) this.emptyForm();
-      this.offers = this.offers.filter((x) => x.id !== o.id);
+      await this.reloadOffersFromServer(false);
       this.busy = false;
     } catch (err: unknown) {
       this.formError = this.errMessage(err);

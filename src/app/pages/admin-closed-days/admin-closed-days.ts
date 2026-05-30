@@ -35,18 +35,23 @@ export class AdminClosedDays {
   }
 
   loadClosedDays(): void {
-    this.busy = true;
+    void this.reloadClosedDaysFromServer(true);
+  }
+
+  /** Refetch closed days from the API so the list matches server state after CRUD. */
+  private reloadClosedDaysFromServer(showBusy: boolean): Promise<void> {
+    if (showBusy) this.busy = true;
     this.loadError = null;
-    this.closedDaysService.listAllClosedDays().subscribe({
-      next: (rows) => {
+    return firstValueFrom(this.closedDaysService.listAllClosedDays())
+      .then((rows) => {
         this.closedDays = rows;
-        this.busy = false;
-      },
-      error: (err: unknown) => {
-        this.busy = false;
+      })
+      .catch((err: unknown) => {
         this.loadError = this.errMessage(err);
-      },
-    });
+      })
+      .finally(() => {
+        if (showBusy) this.busy = false;
+      });
   }
 
   /** Minimum selectable date (today, local). */
@@ -74,12 +79,10 @@ export class AdminClosedDays {
     this.busy = true;
     try {
       const reason = this.newReason.trim() === '' ? null : this.newReason.trim();
-      const created = await firstValueFrom(this.closedDaysService.createClosedDay({ date, reason }));
-      if (created?.id) {
-        this.closedDays = [...this.closedDays, created].sort((a, b) => a.date.localeCompare(b.date));
-      }
+      await firstValueFrom(this.closedDaysService.createClosedDay({ date, reason }));
       this.newDate = '';
       this.newReason = '';
+      await this.reloadClosedDaysFromServer(false);
       this.busy = false;
     } catch (err: unknown) {
       this.formError = this.errMessage(err);
@@ -100,7 +103,7 @@ export class AdminClosedDays {
     this.formError = null;
     try {
       await firstValueFrom(this.closedDaysService.deleteClosedDay(day.id));
-      this.closedDays = this.closedDays.filter((d) => d.id !== day.id);
+      await this.reloadClosedDaysFromServer(false);
       this.busy = false;
     } catch (err: unknown) {
       this.formError = this.errMessage(err);
