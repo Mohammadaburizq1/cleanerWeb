@@ -51,6 +51,22 @@
       }
 
       @if (!loading && rows.length > 0) {
+        <div class="order-history-list-meta">
+          <span class="order-history-list-count">{{ orderPageRangeLabel }} orders</span>
+          <label class="order-history-page-size">
+            <span class="order-history-page-size__label">Per page</span>
+            <select
+              class="order-history-page-size__select"
+              [value]="orderPageSize"
+              (change)="setOrderPageSize(+$any($event.target).value)"
+            >
+              @for (n of orderPageSizeOptions; track n) {
+                <option [value]="n">{{ n }}</option>
+              }
+            </select>
+          </label>
+        </div>
+
         <p class="order-history-payment-hint">
           Payment status appears when your account can access payment records for linked bookings.
         </p>
@@ -78,7 +94,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (row of rows; track row.booking.id) {
+              @for (row of paginatedRows; track row.booking.id) {
                 <tr>
                   <td class="order-history-mono">{{ row.booking.id }}</td>
                   <td>{{ display(row.booking.customerFullName) }}</td>
@@ -122,7 +138,7 @@
 
         <!-- Mobile: cards -->
         <div class="order-history-cards" aria-label="Orders list">
-          @for (row of rows; track row.booking.id) {
+          @for (row of paginatedRows; track row.booking.id) {
             <article class="order-card">
               <div class="order-card__header">
                 <span class="order-card__id order-history-mono">{{ row.booking.id }}</span>
@@ -204,6 +220,30 @@
             </article>
           }
         </div>
+
+        @if (totalOrderPages > 1) {
+          <nav class="order-history-pagination" aria-label="Orders pagination">
+            <button
+              type="button"
+              class="order-history-pagination__btn"
+              (click)="prevOrderPage()"
+              [disabled]="orderPage <= 1"
+            >
+              Previous
+            </button>
+            <span class="order-history-pagination__status">
+              Page {{ orderPage }} of {{ totalOrderPages }}
+            </span>
+            <button
+              type="button"
+              class="order-history-pagination__btn"
+              (click)="nextOrderPage()"
+              [disabled]="orderPage >= totalOrderPages"
+            >
+              Next
+            </button>
+          </nav>
+        }
       }
     </div>
   </div>

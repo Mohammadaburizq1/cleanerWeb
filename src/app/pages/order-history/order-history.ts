@@ -45,6 +45,11 @@ export class OrderHistoryComponent implements OnInit, OnDestroy {
   accountEmail: string | null = null;
   rows: OrderHistoryRow[] = [];
 
+  /** Order list pagination (client-side). */
+  orderPage = 1;
+  orderPageSize = 10;
+  readonly orderPageSizeOptions = [5, 10, 20, 50] as const;
+
   /** Signed-in user id — required to call cancel-subscription (matches booking.registeredUserId when set). */
   private currentUserId: string | null = null;
 
@@ -99,7 +104,59 @@ export class OrderHistoryComponent implements OnInit, OnDestroy {
 
   /** Reload bookings for the signed-in account email. */
   refresh(): void {
+    this.orderPage = 1;
     this.loadMyOrders();
+  }
+
+  get totalOrders(): number {
+    return this.rows.length;
+  }
+
+  get totalOrderPages(): number {
+    if (this.totalOrders === 0) return 1;
+    return Math.ceil(this.totalOrders / this.orderPageSize);
+  }
+
+  get paginatedRows(): OrderHistoryRow[] {
+    const page = Math.min(Math.max(this.orderPage, 1), this.totalOrderPages);
+    const start = (page - 1) * this.orderPageSize;
+    return this.rows.slice(start, start + this.orderPageSize);
+  }
+
+  get orderPageRangeLabel(): string {
+    const total = this.totalOrders;
+    if (total === 0) return '0';
+    const page = Math.min(Math.max(this.orderPage, 1), this.totalOrderPages);
+    const start = (page - 1) * this.orderPageSize + 1;
+    const end = Math.min(page * this.orderPageSize, total);
+    return `${start}–${end} of ${total}`;
+  }
+
+  setOrderPageSize(size: number): void {
+    const n = Number(size);
+    if (!Number.isFinite(n) || n <= 0) return;
+    this.orderPageSize = n;
+    this.clampOrderPage();
+  }
+
+  goToOrderPage(page: number): void {
+    const p = Math.floor(page);
+    if (p < 1 || p > this.totalOrderPages) return;
+    this.orderPage = p;
+  }
+
+  prevOrderPage(): void {
+    this.goToOrderPage(this.orderPage - 1);
+  }
+
+  nextOrderPage(): void {
+    this.goToOrderPage(this.orderPage + 1);
+  }
+
+  private clampOrderPage(): void {
+    const max = this.totalOrderPages;
+    if (this.orderPage > max) this.orderPage = max;
+    if (this.orderPage < 1) this.orderPage = 1;
   }
 
   private loadMyOrders(): void {
@@ -132,6 +189,7 @@ export class OrderHistoryComponent implements OnInit, OnDestroy {
         next: (list) => {
           this.ngZone.run(() => {
             this.rows = list;
+            this.clampOrderPage();
           });
         },
         error: () => {
