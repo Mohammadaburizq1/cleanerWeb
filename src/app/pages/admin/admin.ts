@@ -52,6 +52,11 @@ export class Admin implements OnInit {
   loading = false;
   loadError: string | null = null;
 
+  /** Bookings list pagination (client-side on filtered results). */
+  bookingPage = 1;
+  bookingPageSize = 10;
+  readonly bookingPageSizeOptions = [5, 10, 20, 50] as const;
+
   ngOnInit(): void {
     this.reloadAll();
   }
@@ -77,6 +82,7 @@ export class Admin implements OnInit {
       )
       .subscribe((rows) => {
         this.bookings = rows;
+        this.clampBookingPage();
       });
   }
 
@@ -239,17 +245,73 @@ export class Admin implements OnInit {
   }
 
   get filteredBookings(): BookingDto[] {
-    if (this.filterStatus === 'all') return this.bookings;
-    if (this.filterStatus === 'refunded') {
-      return this.bookings.filter(
+    let list: BookingDto[];
+    if (this.filterStatus === 'all') {
+      list = [...this.bookings];
+    } else if (this.filterStatus === 'refunded') {
+      list = this.bookings.filter(
         (b) => (this.paymentForBooking(b.id)?.status || '').toLowerCase() === 'refunded',
       );
+    } else {
+      list = this.bookings.filter((b) => b.status === this.filterStatus);
     }
-    return this.bookings.filter((b) => b.status === this.filterStatus);
+    return list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
+  get totalFilteredBookings(): number {
+    return this.filteredBookings.length;
+  }
+
+  get totalBookingPages(): number {
+    if (this.totalFilteredBookings === 0) return 1;
+    return Math.ceil(this.totalFilteredBookings / this.bookingPageSize);
+  }
+
+  get paginatedBookings(): BookingDto[] {
+    const page = Math.min(Math.max(this.bookingPage, 1), this.totalBookingPages);
+    const start = (page - 1) * this.bookingPageSize;
+    return this.filteredBookings.slice(start, start + this.bookingPageSize);
+  }
+
+  get bookingPageRangeLabel(): string {
+    const total = this.totalFilteredBookings;
+    if (total === 0) return '0 bookings';
+    const page = Math.min(Math.max(this.bookingPage, 1), this.totalBookingPages);
+    const start = (page - 1) * this.bookingPageSize + 1;
+    const end = Math.min(page * this.bookingPageSize, total);
+    return `${start}–${end} of ${total}`;
   }
 
   setFilter(status: 'all' | string): void {
     this.filterStatus = status;
+    this.bookingPage = 1;
+  }
+
+  setBookingPageSize(size: number): void {
+    const n = Number(size);
+    if (!Number.isFinite(n) || n <= 0) return;
+    this.bookingPageSize = n;
+    this.clampBookingPage();
+  }
+
+  goToBookingPage(page: number): void {
+    const p = Math.floor(page);
+    if (p < 1 || p > this.totalBookingPages) return;
+    this.bookingPage = p;
+  }
+
+  prevBookingPage(): void {
+    this.goToBookingPage(this.bookingPage - 1);
+  }
+
+  nextBookingPage(): void {
+    this.goToBookingPage(this.bookingPage + 1);
+  }
+
+  private clampBookingPage(): void {
+    const max = this.totalBookingPages;
+    if (this.bookingPage > max) this.bookingPage = max;
+    if (this.bookingPage < 1) this.bookingPage = 1;
   }
 
   formatDate(iso: string): string {

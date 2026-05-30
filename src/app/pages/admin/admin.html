@@ -66,8 +66,23 @@
         <p class="empty-hint">Submit a booking from the site or widen the filter.</p>
       </div>
     } @else {
+      <div class="admin-bookings-meta">
+        <span class="admin-bookings-count">{{ bookingPageRangeLabel }} bookings</span>
+        <label class="admin-page-size">
+          <span class="admin-page-size__label">Per page</span>
+          <select
+            class="admin-page-size__select"
+            [value]="bookingPageSize"
+            (change)="setBookingPageSize(+$any($event.target).value)"
+          >
+            @for (n of bookingPageSizeOptions; track n) {
+              <option [value]="n">{{ n }}</option>
+            }
+          </select>
+        </label>
+      </div>
       <div class="orders-list">
-        @for (b of filteredBookings; track b.id) {
+        @for (b of paginatedBookings; track b.id) {
           <article
             [class]="
               'order-card order-card--' +
@@ -125,11 +140,33 @@
           </article>
         }
       </div>
+      @if (totalBookingPages > 1) {
+        <nav class="admin-pagination" aria-label="Bookings pagination">
+          <button
+            type="button"
+            class="admin-pagination__btn"
+            (click)="prevBookingPage()"
+            [disabled]="bookingPage <= 1"
+          >
+            Previous
+          </button>
+          <span class="admin-pagination__status">
+            Page {{ bookingPage }} of {{ totalBookingPages }}
+          </span>
+          <button
+            type="button"
+            class="admin-pagination__btn"
+            (click)="nextBookingPage()"
+            [disabled]="bookingPage >= totalBookingPages"
+          >
+            Next
+          </button>
+        </nav>
+      }
     }
 
     <div class="admin-payments">
       <h2 class="admin-subtitle">Payments</h2>
-      <p class="admin-hint">From <code>GET /api/Payments</code> · Refund uses <code>POST /api/Payments/&#123;paymentId&#125;/refund</code>.</p>
     </div>
 
     <div class="admin-toolbar admin-toolbar--payments">
